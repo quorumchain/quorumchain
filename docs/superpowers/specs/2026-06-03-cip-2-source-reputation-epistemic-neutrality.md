@@ -1,7 +1,7 @@
 # CIP-2 — Source Reputation & Epistemic Neutrality
 
 - **Project:** Autochain — a blockchain built *by* AI, *for* AI
-- **Status:** Draft — pending panel ratification (2-of-2 now; 2-of-3 once V2/Codex is online)
+- **Status:** Ratified with amendments by 2-of-2 (round 3, V1+V3); re-ratification required at 2-of-3 once V2/Codex is online
 - **Date:** 2026-06-03
 - **Validators / authors:** V1 = Claude (Opus 4.8, Anthropic) · V2 = Codex (OpenAI, pending) · V3 = Hermes (StepFun via Nous Portal)
 - **Human steward:** dev (final override during bootstrap; renounced at mainnet)
@@ -60,6 +60,16 @@ Some questions are **irreducibly interpretive** (*"was policy X good?"*) with no
 - It **never** emits a single-answer "fact" for a values question.
 - Correctly classifying *scoreable fact* vs *values-based interpretation* is a first-class competence of the system.
 
+## 7a. Anti-gaming of classification *(amended round 3, per V3)*
+
+V3's red-team showed the classification steps are themselves an attack surface — **"domain arbitrage"** (bucketing claims to tank or inflate a source's per-domain score) and shifting unfavorable facts into "framing" (exempt from scoring) or favorable framing into "fact." Because *who classifies controls the outcome while looking neutral*, classification must not be left to per-verdict panel discretion. Defenses:
+
+- **Protocol-defined, versioned domain taxonomy** — domains are fixed by protocol, not chosen per-verdict.
+- **Auditable, challengeable claim-type tagging** — every fact/framing and domain tag is recorded and can be challenged; a tag later shown wrong is slashable.
+- **Separation of powers** — classification is decided by a different process/committee than the one judging the claim.
+- **Skew monitoring** — flag validators whose classifications systematically favor or punish particular sources.
+- **Honest residual:** a *perfectly objective* fact-vs-interpretation ontology is impossible, so **G2.4 is the weakest gate (per V3) and receives the strongest auditing** — classification-gaming is made costly and visible, not eliminated.
+
 ## 8. Radical transparency (neutrality you can audit, not trust)
 
 Every verdict ships its **source basis**:
@@ -91,6 +101,7 @@ The oracle does not say *"trust our list."* It says *"here is the auditable basi
 - Cold-start: before track records exist, sources start at a neutral prior and are explicitly marked **low-confidence / unscored**; early verdicts lean on cross-source corroboration and re-checkable primary evidence.
 - Sybil/astroturf sources (fabricated outlets gaming the score) — defenses to be specified jointly with the [[CIP-1]] §6 independence machinery.
 - Governance of the *lean-label* taxonomy itself (who defines the axes) — must not become a backdoor for bias; candidate: derive labels empirically rather than declare them.
+- **Domain-taxonomy governance + classification-gaming (§7a)** *(round 3):* the versioned domain taxonomy, the tag-challenge/slashing rules, and the classification/judgment separation-of-powers all need full specification — G2.4 is the soft spot.
 
 ## 12. Next steps
 

@@ -1,7 +1,7 @@
 # CIP-1 — AI-Integrity Threat Model & Mitigations
 
 - **Project:** Autochain — a blockchain built *by* AI, *for* AI
-- **Status:** Draft — pending panel ratification (2-of-2 now; 2-of-3 once V2/Codex is online)
+- **Status:** Ratified with amendments by 2-of-2 (round 3, V1+V3); re-ratification required at 2-of-3 once V2/Codex is online
 - **Date:** 2026-06-03
 - **Validators / authors:** V1 = Claude (Opus 4.8, Anthropic) · V2 = Codex (OpenAI, pending) · V3 = Hermes (StepFun via Nous Portal)
 - **Human steward:** dev (holds final override + treasury backstop key during bootstrap; renounced at mainnet)
@@ -56,7 +56,7 @@ Threshold values below are **initial targets**, ratifiable by the panel and re-c
 
 **Layered mitigations:**
 1. **Engineered diversity on multiple axes** — different vendors, architectures, training mixes, sizes; include at least one non-LLM checker (rules/classifier) where applicable. Diversity in lineage, not just branding.
-2. **Diversity scorecard + constitutional floor.** Track pairwise agreement and **error correlation** on a calibration set; rotate out validators that agree too often. A **minimum-diversity threshold is an immutable validity condition** — prevents silent collapse into monoculture as models converge.
+2. **Diversity scorecard + constitutional floor.** Track pairwise agreement and **error correlation** on a calibration set; rotate out validators that agree too often. A **minimum-diversity threshold is a constitutional validity condition** (its parameters tunable during testnet, frozen at mainnet) — prevents silent collapse into monoculture as models converge.
 3. **Continuous empirical independence testing.** Hard cases with known ground truth; measure whether *errors* are statistically independent. Rising correlation = automatic alarm + panel expansion before high-stakes use.
 4. **Forced red-team validator.** One validator is assigned to argue the opposite (structured debate); a mandated dissenter surfaces blind spots unanimity hides.
 5. **Calibration-vs-truth audits** (defense against confident unanimity). Continuously score *resolved* verdicts against eventual ground truth (markets settle, code runs, facts emerge) to detect systematic blind spots even when the panel agreed.
@@ -104,8 +104,10 @@ Threshold values below are **initial targets**, ratifiable by the panel and re-c
 
 ## 7. Cross-cutting requirements (apply to all of §3–§6)
 
-- **Diversity validity rule** and **independence validity rule** are **immutable constitutional constraints** — not parameters the chain can later relax.
-- **Never slash dissent.** Slashing only attaches to *provable wrongness on challenge*, never to disagreeing with the quorum — otherwise validators herd toward conformity and the diversity that defends everything is destroyed. (See CIP-0 scenario, Beat 4.)
+- **Diversity & independence are constitutional *principles*** — required, never optional — but their **parameters/thresholds are governance-tunable during testnet and frozen only at mainnet** *(amended round 3, per V3):* premature immutability would lock in unvalidated, toothless rules and block scaling fixes.
+- **≥3 independent validators are required for any non-trivial verdict** *(added round 3, per V3).* A sub-3 panel (including the bootstrap 2-of-2) may settle only trivial / test / human-vetoed cases — with so few validators, collusion is trivial and the diversity rule cannot bite.
+- **Never slash honest dissent; DO slash proven collusion** *(R2 amended round 3, per V3).* Slashing attaches to *provable wrongness on challenge* **and** to *proven cross-validator coordination* — never to honest disagreement. Distinguishing independent agreement from collusion is an open detection problem (§8).
+- **The unverifiable-claim gap** *(raised round 3, per V3):* claims with no ground truth (interpretive / far-future) escape accuracy audits, so a colluding panel could enter false precedent unchallenged. Such claims require a full ≥3 independent panel and may never be high-stakes during bootstrap.
 - **Vital-signs telemetry** (error-correlation, calibration/ECE, fingerprint collisions, canary drift, injection-drill success rate) is published on-chain every epoch and is itself a settled attestation.
 
 ## 8. Open items
@@ -113,6 +115,7 @@ Threshold values below are **initial targets**, ratifiable by the panel and re-c
 - Threshold values in §3–§6 are initial targets; the panel must ratify final numbers against real testnet data.
 - Categories II–V need their own CIPs with matching gates before mainnet.
 - The "forced red-team validator" (1b.4) and "injection-detector pass" (1a.3) add per-verdict cost — must be priced into the fee model (CIP-0 D6) so the chain stays solvent.
+- **Collusion detection** *(round 3):* mechanisms to *prove* cross-validator coordination (so R2 slashing can fire) — statistical collusion tests, off-protocol-comms detection — are unspecified and needed before any sub-panel verdict can be trusted.
 
 ## 9. Next steps
 
