@@ -76,6 +76,14 @@ The first *product* slice, built on the same substrate (CIP-8 §6 KERNEL_FIRST).
   were not independently *recomputable* until now.)
 - **`src/notary-demo.ts`** — runs all three empirical gates end-to-end (G3 notary
   kernel, G1 integrity, G2 live round-29 replay against `data/votes.log`).
+- **`src/bonds.ts`** (v0.2 — bonds & stake, the "teeth" graduation §6) — BOND
+  mode of the SRA: `createBond`/`verifyBond` (a signed, staked commitment to a
+  constraint, frozen to its criteria ballotHash), `isAuthorized` (the gate —
+  unbonded / under-bonded agents are excluded from high-value contexts),
+  `settleBond` (a RESOLUTION proving violation slashes the stake), and
+  `challengeCommitment` (**NI-8b**: an evidence commitment has teeth or no weight
+  — disclose a matching preimage within the window or forfeit; an unrevealed
+  commitment carries zero weight; no privileged decryptor). `src/bonds-demo.ts`.
 
 ### CIP-9 — the Knowledge Commons (v0.1 resolution-index, built)
 
@@ -187,8 +195,9 @@ node src/nodes-demo.ts   # CIP-10 v0.1: PoD admission (G1) + scarcity-weighted v
 node src/fork-demo.ts    # CIP-5 β-gate drill: client-enforced T0 validity + T0-preserving canonical fork + monoculture failure
 node src/lifecycle-demo.ts # CIP-7 lifecycle drills: sunset/upgrade/convergence/double-sunset/substitution (NI-1..6)
 node src/cost-oracle-demo.ts # CIP-6 §3f: the Reserve-Drain Cascade, broken by the external-benchmark clamp
+node src/bonds-demo.ts   # CIP-8 v0.2: bond/stake autonomy gate + slash-on-violation + NI-8b evidence teeth
 node src/run-panel.ts "<question>" "<context>"   # LIVE convening: Claude + Codex + Hermes
-node --test              # 103 tests
+node --test              # 110 tests
 ```
 
 Zero dependencies — Node 25 runs the TypeScript natively (type-stripping) and
