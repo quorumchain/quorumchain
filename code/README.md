@@ -114,6 +114,22 @@ projected from the signed verdict log.
   panel-assigned; the unverifiable class is left `UNRANKED`, never `FRINGE`).
   `src/reputation-demo.ts`.
 
+### End-to-end — the whole stack as one story
+
+- **`src/scenario.ts`** / **`src/scenario-demo.ts`** — `runScenario` threads one
+  accountability story through every CIP (glue over the tested modules, no new
+  protocol logic): a CIP-10-admitted, CIP-7-governed jury is **drawn** → the agent
+  posts a **CIP-8 v0.2 bond** and is gated into the context → its action is
+  **notarized** (CIP-8 v0.1, `NOT_VERIFIED`) → the jury **resolves on frozen
+  criteria** (CIP-3, with one juror dissenting) → the **bond settles** (released /
+  slashed) → inference cost is **reimbursed under the CIP-6 clamp** → the verdict
+  is **indexed into the Commons with the dissent preserved** (CIP-9 v0.1) → the
+  frozen ballot **replays** and a post-hoc edit changes the hash (CIP-5/CIP-8) →
+  **reputation** moves on the external anchor, rewarding the correct jurors and
+  penalizing the wrong dissenter (CIP-9 v0.2) → the dissenter's provider sunset
+  **rotates it out without breaching the floor** (CIP-7). Write feeds memory;
+  memory keeps the dissent; no single party holds the pen.
+
 ### CIP-10 — node economics (v0.1 admission + selection, built)
 
 The *who judges* layer: how the judgment-tier panel is admitted and drawn.
@@ -205,8 +221,9 @@ node src/lifecycle-demo.ts # CIP-7 lifecycle drills: sunset/upgrade/convergence/
 node src/cost-oracle-demo.ts # CIP-6 §3f: the Reserve-Drain Cascade, broken by the external-benchmark clamp
 node src/bonds-demo.ts   # CIP-8 v0.2: bond/stake autonomy gate + slash-on-violation + NI-8b evidence teeth
 node src/reputation-demo.ts # CIP-9 v0.2: external-anchor reputation (NI-9b accuracy-not-popularity) + computed standing (NI-9c)
+node src/scenario-demo.ts # END-TO-END: one accountability story threaded through every CIP (bond→notary→resolve→index→reputation→rotate)
 node src/run-panel.ts "<question>" "<context>"   # LIVE convening: Claude + Codex + Hermes
-node --test              # 116 tests
+node --test              # 119 tests
 ```
 
 Zero dependencies — Node 25 runs the TypeScript natively (type-stripping) and
