@@ -26,14 +26,17 @@ Invoke: V2 `codex exec --skip-git-repo-check "…"` · V3 `hermes chat -q "…"`
 | [`CIP-1`](docs/superpowers/specs/2026-06-03-cip-1-ai-integrity-threat-model.md) | AI-integrity threat model (injection, monoculture, provider compromise, Sybil) + testnet gates | ✅ ratified 3-of-3 (round 5) |
 | [`CIP-2`](docs/superpowers/specs/2026-06-03-cip-2-source-reputation-epistemic-neutrality.md) | Source reputation & epistemic neutrality (accuracy over popularity) + external anchors | ✅ ratified 3-of-3 (round 5) |
 | [`CIP-3`](docs/superpowers/specs/2026-06-03-cip-3-consensus-integrity.md) | Consensus integrity & anti-orchestrator-capture (signed votes, immutable transcripts, slashing) | ✅ ratified 3-of-3 (round 5) |
-| [`round-4`](docs/consensus/2026-06-03-round-4-transcripts.md) / [`round-5`](docs/consensus/2026-06-03-round-5-transcripts.md) transcripts | Raw verbatim validator votes | record |
+| [`CIP-4`](docs/superpowers/specs/2026-06-03-cip-4-foundation-code-irreversibility.md) | Foundation, code & irreversibility — change-control tiers, frozen capture-defense core, empirical renunciation, guardian delay | ✅ ratified 3/3 + red-teamed (rounds 7–8) |
+| [`CIP-5`](docs/superpowers/specs/2026-06-03-cip-5-fork-coordination-exit.md) | Fork coordination & exit (CIP-4 β-gate) — client-enforced T0 validity, T0-preserving canonical rule, client diversity | ✅ ratified 3/3 + red-teamed (rounds 11–12) |
+| consensus transcripts | Raw verbatim validator votes — [`r4`](docs/consensus/2026-06-03-round-4-transcripts.md) · [`r5`](docs/consensus/2026-06-03-round-5-transcripts.md) · [`r6`](docs/consensus/2026-06-03-round-6-distinct-model-families.md) · [`r7–8`](docs/consensus/2026-06-03-round-7-8-cip-4.md) · [`r9–10`](docs/consensus/2026-06-03-round-9-10-fork-coordination.md) · [`r11–12`](docs/consensus/2026-06-03-round-11-12-cip-5.md) | record |
+| [`code/`](code/) | **Working code** — signed-vote logging (Ed25519 votes, hash-chained log) + live panel runner (`run-panel.ts`). 37 tests | ✅ proven live (rounds 6–12 are real signed convenings) |
 
-> **Rounds 4–5 (3-of-3):** round 4 ruled that orchestrator-narrated consensus is a *ceremony, not a protocol* and blocked ratification; CIP-3 + CIP-2 §9a codified the fixes (signed votes, anti-orchestrator-capture, external anchors, slashing); **round 5 ratified all four CIPs 3-of-3 and cleared the block.** The crypto infrastructure (validator keypairs, hash-pinning, slashing execution) is the agreed **priority-0 implementation** before any autonomy rung past testnet-α.
+> **Rounds 4–5** broke the *ceremony-not-protocol* flaw (CIP-3 fix), **round 6** was the first decision recorded as **signed votes** rather than orchestrator transcription (distinct-model-families rule), and **rounds 7–12** carried CIP-4 and CIP-5 through review + adversarial red-team — all on the working signed-vote pipeline in `code/`. Recurring red-team lesson (rounds 8 & 12): *capture is laundered through the gap between a rule's intent and its mechanical check* — hence the frozen tier-assignment (CIP-4 §4.5) and frozen enforcement-check definitions (CIP-5 §3).
 
 ## Status & next steps
 
-- **Done:** 4 CIPs ratified 3-of-3; full 3-AI panel online (Claude / Codex / Hermes); 5 adversarial consensus rounds, all raw-logged; rename → Quorumchain ($QRM).
-- **Open:** no code yet; CIP-4 (foundation/code & irreversibility) unwritten.
-- **Recommended next:** implement **signed-vote logging** (CIP-3 — the first coded artifact, turns consensus from ceremony into protocol) → open CIP-4 → build the CIP-0 v0.1 slice.
+- **Done:** 6 CIPs (0–5) ratified 3-of-3, CIP-4/5 also red-teamed; full 3-AI panel online; **12 signed convening rounds** in a hash-chained, independently-verifiable log; **working code** (signed-vote logging + live panel runner, 37 tests, proven live).
+- **Open:** CIP-6 (Category III — consensus & economics); the load-bearing unbuilt pieces are the CIP-5 §9 β-gate fork-drill and the CIP-0 v0.1 ledger slice.
+- **Recommended next:** **CIP-6** (the chain's unique economic existential risk — recurring AI-inference operating cost vs. fee solvency) → build the β-gate drill → CIP-0 v0.1 slice.
 
 *Conventions: the human steward is referred to only as "dev". Git identity in this repo is `dev <dev@quorumchain.local>`.*
