@@ -30,8 +30,9 @@ export function parseVerdict(rawOutput: string): string {
 }
 
 /** Build the prompt sent to every validator: the question, the evidence, and the
- *  required structured ending so the verdict is machine-parseable. */
-export function buildPrompt(prompt: string, context: string): string {
+ *  required structured ending so the verdict is machine-parseable. `verdicts`
+ *  lets a ballot be multiple-choice (e.g. design options) rather than YES/NO. */
+export function buildPrompt(prompt: string, context: string, verdicts: string[] = ['YES', 'NO', 'ABSTAIN']): string {
   return [
     'You are a Quorumchain validator judging one ballot. Reason briefly, then commit.',
     '',
@@ -39,7 +40,7 @@ export function buildPrompt(prompt: string, context: string): string {
     `EVIDENCE/CONTEXT: ${context}`,
     '',
     'End your response with exactly one line:',
-    'VERDICT: <YES|NO|ABSTAIN>',
+    `VERDICT: <${verdicts.join('|')}>`,
   ].join('\n');
 }
 
@@ -50,9 +51,10 @@ export async function convene(params: {
   keyring: Record<string, string>;
   quorum: number;
   logPath: string;
+  verdicts?: string[];
 }): Promise<ConveneResult> {
   const bh = ballotHash(params.prompt, params.context);
-  const fullPrompt = buildPrompt(params.prompt, params.context);
+  const fullPrompt = buildPrompt(params.prompt, params.context, params.verdicts);
   const votes: SignedVote[] = [];
   // Sequential: appendVote reads-then-writes the file, so concurrent appends
   // would race the hash chain. A 3-validator panel does not need parallelism.

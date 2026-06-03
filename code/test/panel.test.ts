@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { parseVerdict, convene, type PanelValidator } from '../src/panel.ts';
+import { parseVerdict, buildPrompt, convene, type PanelValidator } from '../src/panel.ts';
 import { generateValidatorKey, ballotHash, verifyVote } from '../src/signed-vote.ts';
 import { readLog, verifyLog } from '../src/vote-log.ts';
 
@@ -31,6 +31,16 @@ test('parseVerdict uses the last VERDICT line if the format is echoed earlier', 
 
 test('parseVerdict returns NO_VERDICT when absent', () => {
   assert.equal(parseVerdict('I cannot decide.'), 'NO_VERDICT');
+});
+
+// --- buildPrompt: ballots can offer custom verdict options (multiple choice) ---
+
+test('buildPrompt defaults to YES/NO/ABSTAIN', () => {
+  assert.match(buildPrompt('q', 'c'), /VERDICT: <YES\|NO\|ABSTAIN>/);
+});
+
+test('buildPrompt offers custom verdict options when provided', () => {
+  assert.match(buildPrompt('q', 'c', ['ALPHA', 'BETA', 'GAMMA']), /VERDICT: <ALPHA\|BETA\|GAMMA>/);
 });
 
 // --- convene: invoke validators, sign, log, ratify ---
@@ -76,6 +86,14 @@ test('every logged vote verifies against the keyring and binds the ballot', asyn
     assert.equal(verifyVote(entry.vote, keyring[entry.vote.validatorId]), true);
   }
   assert.equal(r.ballotHash, expectedBallot);
+});
+
+test('convene tallies custom verdict tokens (multiple-choice ballot)', async () => {
+  const { validators, keyring } = fakePanel({ V1: 'VERDICT: ALPHA', V2: 'VERDICT: ALPHA', V3: 'VERDICT: BETA' });
+  const r = await convene({ prompt: 'q', context: 'c', validators, keyring, quorum: 2, logPath: tmpLog(), verdicts: ['ALPHA', 'BETA', 'GAMMA'] });
+  assert.equal(r.verdict, 'ALPHA');
+  assert.equal(r.tally.ALPHA, 2);
+  assert.equal(r.ratified, true);
 });
 
 test('convene records a non-voting validator as NO_VERDICT (counted but unparseable)', async () => {

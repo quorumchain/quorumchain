@@ -79,8 +79,13 @@ async function main() {
     { id: 'V3', privateKeyPem: ks.keys.V3.privateKeyPem, invoke: safe('V3', hermesInvoke) },
   ];
 
+  // Optional multiple-choice ballot: QRM_VERDICTS="A,B,C" (default YES/NO/ABSTAIN).
+  const verdicts = process.env.QRM_VERDICTS
+    ? process.env.QRM_VERDICTS.split(',').map((s) => s.trim())
+    : undefined;
+
   console.error(`Convening panel on: ${prompt}`);
-  const r = await convene({ prompt, context, validators, keyring: ks.keyring, quorum: 2, logPath: LOG });
+  const r = await convene({ prompt, context, validators, keyring: ks.keyring, quorum: 2, logPath: LOG, verdicts });
 
   console.log('\nBallot hash :', r.ballotHash);
   for (const v of r.votes) console.log(`  ${v.validatorId}: ${v.verdict}`);
