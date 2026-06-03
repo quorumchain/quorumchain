@@ -1,0 +1,10 @@
+{
+  "name": "quorumchain",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
+  "description": "Quorumchain ($QRM) — signed-vote consensus protocol (CIP-3)",
+  "scripts": {
+    "test": "node --test"
+  }
+}

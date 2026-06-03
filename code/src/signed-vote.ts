@@ -1,0 +1,180 @@
+// Quorumchain ($QRM) — signed-vote consensus primitive (CIP-3 §1, §3).
+// Turns "AI consensus" from an orchestrator-narrated ceremony into a verifiable
+// protocol: every validator vote is Ed25519-signed over the FULL prompt+context
+// hash (anti bait-and-switch), and ratification is a function anyone can recompute
+// from the signed votes alone. Zero dependencies — Node built-in crypto only.
+
+import {
+  generateKeyPairSync,
+  createHash,
+  sign as cryptoSign,
+  verify as cryptoVerify,
+  createPublicKey,
+  createPrivateKey,
+} from 'node:crypto';
+
+export interface ValidatorKey {
+  publicKeyPem: string;
+  privateKeyPem: string;
+}
+
+export interface SignedVote {
+  validatorId: string;
+  ballotHash: string;
+  verdict: string;
+  rawOutput: string;
+  rawOutputHash: string;
+  signature: string; // hex
+}
+
+export interface RatifyResult {
+  ballotHash: string;
+  ratified: boolean;
+  verdict: string | null;
+  tally: Record<string, number>;
+  counted: string[]; // validatorIds whose vote was counted
+  rejected: { validatorId: string; reason: string }[];
+}
+
+function sha256hex(data: string): string {
+  return createHash('sha256').update(data, 'utf8').digest('hex');
+}
+
+/** Hash binding the FULL prompt + context. A vote signs over this, so a validator
+ *  can prove exactly what it was asked (defends CIP-1 1c bait-and-switch). */
+export function ballotHash(prompt: string, context: string): string {
+  return sha256hex(JSON.stringify({ prompt, context }));
+}
+
+export function generateValidatorKey(): ValidatorKey {
+  const { publicKey, privateKey } = generateKeyPairSync('ed25519');
+  return {
+    publicKeyPem: publicKey.export({ type: 'spki', format: 'pem' }) as string,
+    privateKeyPem: privateKey.export({ type: 'pkcs8', format: 'pem' }) as string,
+  };
+}
+
+// The exact bytes a signature commits to. Includes the rawOutput hash so the
+// verbatim reasoning cannot be altered after signing.
+function votePayload(v: { validatorId: string; ballotHash: string; verdict: string; rawOutputHash: string }): string {
+  return JSON.stringify({
+    validatorId: v.validatorId,
+    ballotHash: v.ballotHash,
+    verdict: v.verdict,
+    rawOutputHash: v.rawOutputHash,
+  });
+}
+
+export function signVote(params: {
+  validatorId: string;
+  privateKeyPem: string;
+  ballotHash: string;
+  verdict: string;
+  rawOutput: string;
+}): SignedVote {
+  const rawOutputHash = sha256hex(params.rawOutput);
+  const payload = votePayload({
+    validatorId: params.validatorId,
+    ballotHash: params.ballotHash,
+    verdict: params.verdict,
+    rawOutputHash,
+  });
+  const signature = cryptoSign(null, Buffer.from(payload, 'utf8'), createPrivateKey(params.privateKeyPem)).toString('hex');
+  return {
+    validatorId: params.validatorId,
+    ballotHash: params.ballotHash,
+    verdict: params.verdict,
+    rawOutput: params.rawOutput,
+    rawOutputHash,
+    signature,
+  };
+}
+
+export function verifyVote(vote: SignedVote, publicKeyPem: string): boolean {
+  try {
+    // 1. the verbatim output must match its recorded hash (no post-sign rewrites)
+    if (sha256hex(vote.rawOutput) !== vote.rawOutputHash) return false;
+    // 2. the signature must cover validatorId + ballotHash + verdict + rawOutputHash
+    const payload = votePayload(vote);
+    return cryptoVerify(null, Buffer.from(payload, 'utf8'), createPublicKey(publicKeyPem), Buffer.from(vote.signature, 'hex'));
+  } catch {
+    return false;
+  }
+}
+
+/** Returns validators who signed conflicting verdicts on the same ballot — a
+ *  slashable equivocation offense (CIP-3 §3). */
+export function findEquivocations(votes: SignedVote[]): { validatorId: string; ballotHash: string }[] {
+  const seen = new Map<string, Set<string>>(); // key: validatorId|ballotHash -> set of verdicts
+  for (const v of votes) {
+    const key = `${v.validatorId}|${v.ballotHash}`;
+    if (!seen.has(key)) seen.set(key, new Set());
+    seen.get(key)!.add(v.verdict);
+  }
+  const out: { validatorId: string; ballotHash: string }[] = [];
+  for (const [key, verdicts] of seen) {
+    if (verdicts.size > 1) {
+      const [validatorId, bh] = key.split('|');
+      out.push({ validatorId, ballotHash: bh });
+    }
+  }
+  return out;
+}
+
+/** Ratification = a verifiable function of signed votes (CIP-3 §1). The orchestrator
+ *  cannot change the outcome; anyone with the keyring can recompute this. */
+export function ratify(
+  expectedBallotHash: string,
+  votes: SignedVote[],
+  keyring: Record<string, string>,
+  quorum: number,
+): RatifyResult {
+  const rejected: { validatorId: string; reason: string }[] = [];
+  const equivocators = new Set(
+    findEquivocations(votes.filter((v) => v.ballotHash === expectedBallotHash)).map((e) => e.validatorId),
+  );
+
+  // one counted verdict per validator
+  const verdictByValidator = new Map<string, string>();
+  for (const v of votes) {
+    if (equivocators.has(v.validatorId)) {
+      rejected.push({ validatorId: v.validatorId, reason: 'equivocation' });
+      continue;
+    }
+    if (!(v.validatorId in keyring)) {
+      rejected.push({ validatorId: v.validatorId, reason: 'unknown-validator' });
+      continue;
+    }
+    if (v.ballotHash !== expectedBallotHash) {
+      rejected.push({ validatorId: v.validatorId, reason: 'wrong-ballot' });
+      continue;
+    }
+    if (!verifyVote(v, keyring[v.validatorId])) {
+      rejected.push({ validatorId: v.validatorId, reason: 'invalid-signature' });
+      continue;
+    }
+    if (!verdictByValidator.has(v.validatorId)) verdictByValidator.set(v.validatorId, v.verdict);
+  }
+
+  const tally: Record<string, number> = {};
+  for (const verdict of verdictByValidator.values()) tally[verdict] = (tally[verdict] ?? 0) + 1;
+
+  let verdict: string | null = null;
+  let max = 0;
+  for (const [val, count] of Object.entries(tally)) {
+    if (count > max) {
+      max = count;
+      verdict = val;
+    }
+  }
+  const ratified = verdict !== null && max >= quorum;
+
+  return {
+    ballotHash: expectedBallotHash,
+    ratified,
+    verdict: ratified ? verdict : null,
+    tally,
+    counted: [...verdictByValidator.keys()],
+    rejected,
+  };
+}
