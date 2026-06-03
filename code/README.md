@@ -138,6 +138,25 @@ prerequisite) — *coordination without a coordinator*.
   *captured* fork losing to a lighter honest one, a green drill across 3
   independent clients, and the monoculture RED.
 
+### CIP-7 — validator lifecycle & model churn (drills, built)
+
+The runtime backstop CIP-10's Proof-of-Diversity admission depends on: how the
+permanent panel survives its impermanent members with no human in the loop.
+
+- **`src/lifecycle.ts`** — the no-human lifecycle procedure and the NI-1..6
+  invariants made mechanical. `proposeUpgrade`/`graduate` (PROBATION: trust is
+  version-bound and never inherited, shadowed at **zero quorum weight** — NI-3;
+  at most one concurrent probation — NI-2; every new version probationed —
+  NI-4), `distinctStandingFamilies`/`floorOk` (the ≥4 standing distinct-family
+  floor — NI-3), lineage distinctness by **provenance, not model card** (NI-1),
+  `beginRotation`/`completeRotation` (overlap handoff; an undersized pool
+  **FREEZEs** rather than breach the floor — NI-5), `correlationEvict` (fires on
+  the verifiable class; on the unverifiable class the structural floor is the
+  sole guarantee, the detector is not — NI-6), and `auditSubstitutions` (every
+  behavior change must be a logged T1 admission event — 0 silent substitutions).
+- **`src/lifecycle-demo.ts`** — runs all five gates G1 (sunset) / G2 (upgrade) /
+  G3 (convergence) / G4 (double-sunset → FREEZE) / G5 (substitution audit).
+
 ## Run it
 
 ```bash
@@ -146,8 +165,9 @@ node src/notary-demo.ts  # CIP-8 v0.1: notary kernel (G3) + frozen-ballot integr
 node src/commons-demo.ts # CIP-9 v0.1: project the verdict log into a claim graph (G1 pluralism, G2 projection)
 node src/nodes-demo.ts   # CIP-10 v0.1: PoD admission (G1) + scarcity-weighted verifiable selection (G2/G4/NI-10a)
 node src/fork-demo.ts    # CIP-5 β-gate drill: client-enforced T0 validity + T0-preserving canonical fork + monoculture failure
+node src/lifecycle-demo.ts # CIP-7 lifecycle drills: sunset/upgrade/convergence/double-sunset/substitution (NI-1..6)
 node src/run-panel.ts "<question>" "<context>"   # LIVE convening: Claude + Codex + Hermes
-node --test              # 84 tests
+node --test              # 95 tests
 ```
 
 Zero dependencies — Node 25 runs the TypeScript natively (type-stripping) and
