@@ -105,6 +105,14 @@ projected from the signed verdict log.
   (38 claims, 8 with preserved dissent) and spotlights the live rounds 41
   (Ukraine, NO 2/1 — V2's YES preserved) and 43 (Barron, INDETERMINATE 2/1 —
   V3's NO preserved).
+- **`src/reputation.ts`** (v0.2 — open claims + external-anchor reputation, §5) —
+  `claimStatus` (OPEN / CONTESTED / RESOLVED / UNVERIFIABLE), `scoreSources`
+  (**NI-9b**: a source's accuracy moves ONLY on ground truth *external* to the
+  panel — agreeing with the panel earns nothing, and matching a *wrong* consensus
+  *loses* reputation while a correct dissenter gains it), and `computeStanding`
+  (**NI-9c**: standing is computed from the provenance-weighted distribution, not
+  panel-assigned; the unverifiable class is left `UNRANKED`, never `FRINGE`).
+  `src/reputation-demo.ts`.
 
 ### CIP-10 — node economics (v0.1 admission + selection, built)
 
@@ -196,8 +204,9 @@ node src/fork-demo.ts    # CIP-5 β-gate drill: client-enforced T0 validity + T0
 node src/lifecycle-demo.ts # CIP-7 lifecycle drills: sunset/upgrade/convergence/double-sunset/substitution (NI-1..6)
 node src/cost-oracle-demo.ts # CIP-6 §3f: the Reserve-Drain Cascade, broken by the external-benchmark clamp
 node src/bonds-demo.ts   # CIP-8 v0.2: bond/stake autonomy gate + slash-on-violation + NI-8b evidence teeth
+node src/reputation-demo.ts # CIP-9 v0.2: external-anchor reputation (NI-9b accuracy-not-popularity) + computed standing (NI-9c)
 node src/run-panel.ts "<question>" "<context>"   # LIVE convening: Claude + Codex + Hermes
-node --test              # 110 tests
+node --test              # 116 tests
 ```
 
 Zero dependencies — Node 25 runs the TypeScript natively (type-stripping) and
