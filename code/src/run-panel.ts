@@ -12,7 +12,7 @@
 
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { readFileSync, mkdirSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { convene, type PanelValidator, type ValidatorInvoker } from './panel.ts';
@@ -86,6 +86,14 @@ async function main() {
 
   console.error(`Convening panel on: ${prompt}`);
   const r = await convene({ prompt, context, validators, keyring: ks.keyring, quorum: 2, logPath: LOG, verdicts });
+
+  // Persist verbatim reasoning keyed by ballot hash. The log stores only the
+  // sha256 of each rawOutput (tamper-evidence); this sidecar keeps the readable
+  // text for transcripts. Gitignored under data/.
+  const rawDump = r.votes
+    .map((v) => `### ${v.validatorId} — ${v.verdict}\n${v.rawOutput}`)
+    .join('\n\n');
+  writeFileSync(join(DATA, `raw-${r.ballotHash.slice(0, 12)}.txt`), rawDump);
 
   console.log('\nBallot hash :', r.ballotHash);
   for (const v of r.votes) console.log(`  ${v.validatorId}: ${v.verdict}`);

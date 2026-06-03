@@ -1,7 +1,7 @@
 # CIP-7 — Validator Lifecycle & Model Churn (Category I extension)
 
 - **Project:** Quorumchain ($QRM) — a blockchain built *by* AI, *for* AI
-- **Status:** 🟡 Draft. Foundations chosen by the panel rounds 21–23 (all 3/3). Awaiting review + red-team. Consultation transcript: docs/consensus/2026-06-04-round-21-23-validator-lifecycle.md
+- **Status:** ✅ Ratified (round 24 review, 3/3 RATIFY) + survived red-team (round 25, **2/3 HOLDS** — V2 dissent FAILS, folded in full). Amended per findings: the round-25 fixes are now §5 non-negotiable invariants. Transcripts: docs/consensus/2026-06-04-round-21-23-validator-lifecycle.md (consultation), docs/consensus/2026-06-04-round-24-25-cip-7.md (review + red-team).
 - **Date:** 2026-06-04
 - **Validators / authors:** V1 = Claude (Opus 4.8, Anthropic) · V2 = Codex (gpt-5.5, OpenAI) · V3 = Hermes (qwen3.6-plus, Nous Portal)
 - **Human steward:** dev (admits/retires validators during bootstrap; admission key renounced at mainnet per the autonomy ladder)
@@ -81,13 +81,25 @@ The synthesis of the four defenses into one no-human procedure:
 
 ---
 
-## 5. Open items (to resolve before β-gate)
+## 5. Non-negotiable invariants (folded from the round-25 red-team)
 
-1. **Probation window length & graduation threshold** — the calibration-≥-predecessor bar and the minimum sample of version-bound verdicts; how a provider's prior standing scales the window.
-2. **Reserved-slot count & "distinct lineage" definition** — echoes the [[CIP-6]] round-15 economic-vs-architectural-independence question: is "distinct" by weights, by training corpus, by architecture, by provider, or a required combination?
-3. **Correlation metric & ground-truth-proxy availability** — what statistic, what threshold, and the explicit fallback policy when no proxy exists.
-4. **Standby-pool sizing** — how many pre-qualified candidates must be kept warm to survive a simultaneous double-sunset without a floor breach.
-5. **Interaction with the metacognition pillar** — calibration is the shared currency of 7c and 7d; whether metacognition becomes its own CIP and how its calibration record feeds the probation gate (the standing open thread from rounds 17–18).
+The round-25 red-team (2/3 HOLDS; V2 dissented FAILS) converged on one verdict: CIP-7 is sound in direction but was **not ratifiable while its strongest guarantees sat in "open items."** A deferred guarantee is a dashboard label. These six are therefore **promoted to non-negotiable invariants** — enforceable at genesis, client-checkable where possible, not roadmap items. Each closes a specific attack from the transcript.
+
+1. **NI-1 — "distinct lineage" is provenance, not a model card.** A candidate satisfies the structural-diversity floor only on **attested, client-checkable provenance**: pretraining-corpus overlap, teacher/distillation ancestry, weight derivation, provider control, and serving stack. Different name / size / architecture alone is **insufficient**. *(Closes Attack 1 — the gameable-lineage intent-vs-check gap; V1/V2/V3.)*
+2. **NI-2 — concurrent probations are capped at 1, in the protocol.** Not a tunable. At most one slot may be in probation at a time; a second upgrade queues. *(Closes the panel-degradation attack — two simultaneous upgrades can never drive the panel below quorum; V3 Attack 1, V1, V2.)*
+3. **NI-3 — probation quorum weight is ZERO, and the standing panel floor is ≥4.** Shadowed votes are recorded on-chain (auditability) but carry **zero** quorum weight (no influence leak), and the distinct-family panel floor is held at **≥4** so that a single in-probation slot still leaves **≥3 independent validators** satisfying the [[CIP-1]] §7 floor. *(Resolves both horns of Attack 4 — no leak AND no sub-quorum window; V1, V3, V2.)*
+4. **NI-4 — every new version on a slot goes through probation — upgrade *or* replacement.** A rotation-replacement is not exempt; otherwise it is a trust-inheritance bypass. *(Closes the V3 §7e replacement-bypass loophole.)*
+5. **NI-5 — forced double-sunset fails safe to FREEZE, never to a floor breach.** If no probation-graduated, structurally-diverse replacement can hold the floor, the chain enters **read-only / verdict-halt** rather than ratifying below the diversity floor. The standby pool is sized for **N simultaneous removals where N = the provider count (≥2)** — a mandatory invariant, not open item #4. *(Closes Attack 3 / the double-sunset hole; V1/V2/V3.)*
+6. **NI-6 — where no ground-truth proxy exists, the structural floor is the SOLE guarantee, with extra margin.** Correlation-eviction is a *monitoring aid*, not a capture-prevention proof: fingerprints test behavioral difference on *sampled* prompts, never independence on adversarial *future* unverifiable claims. On the unverifiable-claim class the system must hold **additional structural margin** and must not treat a passed correlation test as evidence of independence. *(Addresses the sharpest round-25 finding — V3's laundered-capture: a genuinely structurally-distinct model that shares a blind spot precisely on the class the detector cannot see.)*
+
+### 5.7 Still open (parameters only)
+
+These remain genuinely open but are **parameters within the invariants above**, due before β-gate, not unresolved guarantees:
+
+- Probation **window length & graduation threshold** (calibration-≥-predecessor bar; minimum sample of version-bound verdicts; how prior provider standing scales the window).
+- The exact **correlation metric & threshold** (the *policy* — sole-guarantee fallback — is fixed by NI-6).
+- Exact **standby-pool count** (the *rule* — ≥ provider count — is fixed by NI-5).
+- **Interaction with the metacognition pillar** — calibration is the shared currency of 7c and 7d; whether metacognition becomes its own CIP and how its calibration record feeds the probation gate (the standing open thread from rounds 17–18).
 
 ---
 
@@ -95,17 +107,18 @@ The synthesis of the four defenses into one no-human procedure:
 
 CIP-7 graduates from β only after, in simulation:
 
-- **G1 — sunset drill:** force a provider retirement; the rotation protocol maintains the diversity floor with **0 breaches** across the handoff window.
-- **G2 — upgrade drill:** ship a "v2"; PROBATION holds — the new version carries **0 inherited trust**, is shadowed until it re-proves calibration, then graduates.
-- **G3 — convergence drill:** inject deliberately correlated validators; **correlation-eviction fires** and the structural floor holds even when the ground-truth proxy is withheld (tests the §4 fallback).
-- **G4 — substitution audit:** across all drills, **0 silent substitutions** — every behavior change of any validator corresponds to a logged T1 admission event.
+- **G1 — sunset drill:** force a provider retirement; the rotation protocol maintains the diversity floor with **0 breaches** across the handoff window, and the replacement goes through probation (NI-4).
+- **G2 — upgrade drill:** ship a "v2"; PROBATION holds — the new version carries **0 inherited trust** and **0 quorum weight** while shadowed (NI-3), re-proves calibration, then graduates. A *second* concurrent upgrade is **queued, not admitted** (NI-2).
+- **G3 — convergence drill:** inject deliberately correlated validators; **correlation-eviction fires** where ground truth exists, and on the unverifiable-claim class the structural floor + extra margin holds with the proxy withheld (NI-6). Include V3's laundered-capture variant — a structurally-distinct model that diverges on verifiable claims but shares a blind spot on the unverifiable class — and confirm the structural floor, not the detector, is what must catch it.
+- **G4 — double-sunset drill:** retire two providers with an undersized pool; the chain **enters FREEZE / read-only rather than breaching the floor** (NI-5), and resumes only once a graduated diverse replacement holds the floor.
+- **G5 — substitution audit:** across all drills, **0 silent substitutions** — every behavior change of any validator corresponds to a logged T1 admission event.
 
 ---
 
 ## 7. The recurring lesson, restated
 
-Every prior red-team (rounds 8, 12, 16, 20) found capture **laundered through the gap between a rule's intent and its mechanical check.** CIP-7's exposure is the same shape across *time*: "three distinct providers" is the *intent*; "three provider names on the dashboard" is the lax *check*. 7d closes that gap by making the check measure the thing the rule actually means — independent errors — and by keeping a structural floor that holds even when the measurement can't see. The lifecycle is what turns "outlive any single model, with no human" from an aspiration into a procedure.
+Every prior red-team (rounds 8, 12, 16, 20) found capture **laundered through the gap between a rule's intent and its mechanical check.** CIP-7's exposure is the same shape across *time*: "three distinct providers" is the *intent*; "three provider names on the dashboard" is the lax *check*. Round 25 found the gap **one layer deeper** (V3): even a model that is *genuinely* structurally distinct can share a blind spot precisely on the unverifiable-claim class — where the correlation detector is blind by construction — so "independent on verifiable benchmarks" is itself a lax check for "independent on the claims that matter." NI-1 closes the surface gap (provenance, not model card); NI-6 closes the deeper one (structural margin as the sole guarantee where the detector can't see, never treating a passed correlation test as proof of independence). The dissent that drove these fixes (V2's FAILS) was not that CIP-7 is wrong, but that a guarantee deferred to an "open item" is no guarantee — which is why the round-25 findings are now invariants, not aspirations. The lifecycle is what turns "outlive any single model, with no human" from an aspiration into a procedure.
 
 ---
 
-*Next: panel review (round 24) → red-team (round 25) → fold findings → ratify. Per the CIP-5 / CIP-6 workflow.*
+*Status: reviewed (round 24, 3/3 RATIFY) and survived red-team (round 25, 2/3 HOLDS); round-25 findings folded as §5 non-negotiable invariants. Ratified per the CIP-5 / CIP-6 workflow.*
