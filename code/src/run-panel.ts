@@ -6,16 +6,20 @@
 //
 // V2/V3 shell out to the codex/hermes CLIs. V1 is the orchestrating Claude,
 // which cannot subprocess itself, so its verbatim deliberation is supplied
-// out-of-band in data/claude-vote.txt (write it before running). This is the
-// documented testnet-α custody model: the orchestrator holds all keys, but the
-// signed + hash-chained log makes any divergence from a re-run detectable.
+// out-of-band in data/claude-vote.txt (write it before running). Each validator
+// signs its own vote behind a Signer boundary (CIP-3 — the orchestrator holds no
+// key in code and cannot mint/alter a verdict). Testnet item: locally the keys
+// are still loaded into THIS process via the keystore, so OS-level custody is not
+// yet isolated; the drop-in is a RemoteSigner (separate process/enclave) on the
+// same Signer interface, needing no change to convene.
 
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { convene, type PanelValidator, type ValidatorInvoker } from './panel.ts';
+import { convene, parseVerdict, type ValidatorInvoker } from './panel.ts';
+import { makeLocalSigner } from './signer.ts';
 import { loadOrCreateKeyring } from './keystore.ts';
 import { verifyLog, readLog } from './vote-log.ts';
 
@@ -75,10 +79,10 @@ async function main() {
   }
   mkdirSync(DATA, { recursive: true });
   const ks = loadOrCreateKeyring(KEYSTORE, ['V1', 'V2', 'V3']);
-  const validators: PanelValidator[] = [
-    { id: 'V1', privateKeyPem: ks.keys.V1.privateKeyPem, invoke: safe('V1', claudeInvoke) },
-    { id: 'V2', privateKeyPem: ks.keys.V2.privateKeyPem, invoke: safe('V2', codexInvoke) },
-    { id: 'V3', privateKeyPem: ks.keys.V3.privateKeyPem, invoke: safe('V3', hermesInvoke) },
+  const signers = [
+    makeLocalSigner({ validatorId: 'V1', key: ks.keys.V1, invoke: safe('V1', claudeInvoke), parseVerdict }),
+    makeLocalSigner({ validatorId: 'V2', key: ks.keys.V2, invoke: safe('V2', codexInvoke), parseVerdict }),
+    makeLocalSigner({ validatorId: 'V3', key: ks.keys.V3, invoke: safe('V3', hermesInvoke), parseVerdict }),
   ];
 
   // Optional multiple-choice ballot: QRM_VERDICTS="A,B,C" (default YES/NO/ABSTAIN).
@@ -87,7 +91,7 @@ async function main() {
     : undefined;
 
   console.error(`Convening panel on: ${prompt}`);
-  const r = await convene({ prompt, context, validators, keyring: ks.keyring, quorum: 2, logPath: LOG, verdicts });
+  const r = await convene({ prompt, context, signers, keyring: ks.keyring, quorum: 2, logPath: LOG, verdicts });
 
   // Persist verbatim reasoning keyed by ballot hash. The log stores only the
   // sha256 of each rawOutput (tamper-evidence); this sidecar keeps the readable

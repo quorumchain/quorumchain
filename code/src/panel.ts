@@ -3,17 +3,12 @@
 // it invokes each validator, signs their VERBATIM output, appends it to the
 // tamper-evident log, and ratifies — all recomputable from the log afterward.
 
-import { ballotHash, signVote, ratify, type SignedVote, type RatifyResult } from './signed-vote.ts';
+import { ballotHash, ratify, type SignedVote, type RatifyResult } from './signed-vote.ts';
 import { appendVote } from './vote-log.ts';
+import { type Signer } from './signer.ts';
 
 /** Runs a validator on the full ballot prompt and returns its VERBATIM output. */
 export type ValidatorInvoker = (fullPrompt: string) => Promise<string>;
-
-export interface PanelValidator {
-  id: string;
-  privateKeyPem: string;
-  invoke: ValidatorInvoker;
-}
 
 export interface ConveneResult extends RatifyResult {
   votes: SignedVote[];
@@ -47,7 +42,7 @@ export function buildPrompt(prompt: string, context: string, verdicts: string[] 
 export async function convene(params: {
   prompt: string;
   context: string;
-  validators: PanelValidator[];
+  signers: Signer[];
   keyring: Record<string, string>;
   quorum: number;
   logPath: string;
@@ -58,15 +53,11 @@ export async function convene(params: {
   const votes: SignedVote[] = [];
   // Sequential: appendVote reads-then-writes the file, so concurrent appends
   // would race the hash chain. A 3-validator panel does not need parallelism.
-  for (const v of params.validators) {
-    const rawOutput = await v.invoke(fullPrompt);
-    const vote = signVote({
-      validatorId: v.id,
-      privateKeyPem: v.privateKeyPem,
-      ballotHash: bh,
-      verdict: parseVerdict(rawOutput),
-      rawOutput,
-    });
+  // The orchestrator holds NO key: each validator signs its own vote behind the
+  // Signer boundary (CIP-3 — the orchestrator is not the trust root). It can
+  // collect and verify, but cannot mint or alter a verdict.
+  for (const s of params.signers) {
+    const vote = await s.signBallot(bh, fullPrompt);
     appendVote(params.logPath, vote);
     votes.push(vote);
   }

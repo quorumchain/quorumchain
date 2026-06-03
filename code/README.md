@@ -40,17 +40,27 @@ artifacts.
   meaningful across sessions.
 
 - **`src/panel.ts`** — `convene()`, the function that replaces the
-  orchestrator's narrated ceremony: it invokes each validator, signs their
-  VERBATIM output, appends it to the log, and ratifies — all recomputable from
-  the log afterward. `parseVerdict` pulls a `VERDICT: <token>` line out of
-  free-text model output (absent → `NO_VERDICT`, still logged).
+  orchestrator's narrated ceremony: it routes one ballot to each validator's
+  **Signer**, appends the returned signed vote to the log, and ratifies — all
+  recomputable from the log afterward. `parseVerdict` pulls a `VERDICT: <token>`
+  line out of free-text model output (absent → `NO_VERDICT`, still logged).
+
+- **`src/signer.ts`** — the validator **signing boundary** (round-44 backlog #2,
+  V2's top finding). The orchestrator must not be the trust root: `convene` holds
+  **no private key** and takes `Signer`s, each of which captures its key behind
+  the boundary (no extraction path) and signs its own vote — so the orchestrator
+  can collect and verify but cannot mint or alter a verdict (CIP-3). `makeLocalSigner`
+  is the in-process implementation; the drop-in for true OS-level custody
+  isolation is a `RemoteSigner` (separate process / enclave) on the same
+  interface, needing no change to `convene` (testnet item).
 
 - **`src/run-panel.ts`** — the live wiring. Convenes the real validators
   (V1 Claude, V2 Codex, V3 Hermes) on one ballot:
   `node src/run-panel.ts "<question>" "<context>"`. V2/V3 shell out to the
   `codex`/`hermes` CLIs; V1 (the orchestrating Claude, which cannot subprocess
-  itself) supplies its deliberation in `data/claude-vote.txt`. Keystore + log
-  live under `data/` (git-ignored — holds private keys).
+  itself) supplies its deliberation in `data/claude-vote.txt`. Each validator is
+  wrapped in a `Signer`, so `convene` is handed signing *capabilities*, not keys.
+  Keystore + log live under `data/` (git-ignored — holds private keys).
 
 ### CIP-8 — the Accountability Ledger (v0.1, built)
 
@@ -231,7 +241,7 @@ node src/bonds-demo.ts   # CIP-8 v0.2: bond/stake autonomy gate + slash-on-viola
 node src/reputation-demo.ts # CIP-9 v0.2: external-anchor reputation (NI-9b accuracy-not-popularity) + computed standing (NI-9c)
 node src/scenario-demo.ts # END-TO-END: one accountability story threaded through every CIP (bond→notary→resolve→index→reputation→rotate)
 node src/run-panel.ts "<question>" "<context>"   # LIVE convening: Claude + Codex + Hermes
-node --test              # 124 tests
+node --test              # 128 tests
 ```
 
 Zero dependencies — Node 25 runs the TypeScript natively (type-stripping) and
@@ -239,9 +249,12 @@ Zero dependencies — Node 25 runs the TypeScript natively (type-stripping) and
 
 ## Deliberately NOT done yet (open items)
 
-- **Validator key custody** — keys are generated in-process for the demo. Real
-  panels need each model's signer isolated from the orchestrator (the whole
-  point). Tracked for a future CIP.
+- **Validator key custody** — *partly closed (round-44 backlog #2).* `convene`
+  now takes `Signer` capabilities, not keys, so the orchestrator code can no
+  longer mint or alter a verdict (`src/signer.ts`). What remains is OS-level
+  isolation: locally the keys are still loaded into the orchestrator process via
+  the keystore. The drop-in is a `RemoteSigner` (separate process / enclave) on
+  the same interface — no `convene` change. Tracked for testnet.
 - **On-chain hash-pinning** — the log is local + hash-chained, not yet anchored
   to an L1. CIP-3 §5 calls this the interim state.
 - **Slashing execution** — `findEquivocations` *detects*; it does not yet
@@ -256,7 +269,8 @@ written to the hash-chained log and ratified — every signature verifies and th
 chain validates independently. The orchestrator can no longer fabricate or
 silently alter the result; anyone with the keyring + log recomputes it.
 
-Remaining gap for a *fully* trustless panel: per-validator key custody (above) —
-today V2/V3 outputs are captured and signed orchestrator-side. The signed +
-chained log makes divergence from a re-run detectable, which is the testnet-α
-guarantee; cryptographic non-repudiation by each model itself is a later CIP.
+Remaining gap for a *fully* trustless panel: OS-level key custody (above) — the
+`Signer` boundary now means `convene` never holds a key in code, but locally the
+keystore still loads keys into the orchestrator process, so true isolation waits
+on a `RemoteSigner` (separate process / enclave) at testnet. The signed + chained
+log already makes divergence from a re-run detectable (the testnet-α guarantee).
