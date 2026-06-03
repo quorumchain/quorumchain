@@ -1,7 +1,7 @@
 # CIP-3 — Consensus Integrity & Anti-Orchestrator-Capture
 
 - **Project:** Quorumchain ($QRM) — a blockchain built *by* AI, *for* AI
-- **Status:** Draft — created to clear the round-4 block; pending its own 3-of-3 ratification
+- **Status:** ✅ Ratified at 3-of-3 (round 5). Implementation (keypairs, hash-pinning, slashing execution) is the next gate (autonomy rungs β/γ), not a ratification blocker. Transcripts: docs/consensus/2026-06-03-round-5-transcripts.md
 - **Date:** 2026-06-03
 - **Validators / authors:** V1 = Claude (Opus 4.8, Anthropic) · V2 = Codex (gpt-5.5, OpenAI) · V3 = Hermes (qwen3.6-plus, Nous Portal)
 - **Human steward:** dev (final override during bootstrap; renounced at mainnet)

@@ -22,19 +22,18 @@ Invoke: V2 `codex exec --skip-git-repo-check "…"` · V3 `hermes chat -q "…"`
 | Doc | What it is | Status |
 |---|---|---|
 | [`docs/DISCUSSION-ARCHIVE.md`](docs/DISCUSSION-ARCHIVE.md) | The full conceptual journey — research, idea angles, Verdict Layer, autonomy, the scenario, naming | reference |
-| [`CIP-0`](docs/superpowers/specs/2026-06-03-quorumchain-cip-0-design.md) | Founding design (thesis, architecture, D1–D9, tokenomics, v0.1 scope) | 🔶 conditionally ratified (3-of-3) — **blocked pending CIP-3** |
-| [`CIP-1`](docs/superpowers/specs/2026-06-03-cip-1-ai-integrity-threat-model.md) | AI-integrity threat model (injection, monoculture, provider compromise, Sybil) + testnet gates | 🔶 conditionally ratified (3-of-3) — **blocked pending CIP-3** |
-| [`CIP-2`](docs/superpowers/specs/2026-06-03-cip-2-source-reputation-epistemic-neutrality.md) | Source reputation & epistemic neutrality (accuracy over popularity) + external anchors | 🔶 conditionally ratified (3-of-3) — **blocked pending CIP-3** |
-| [`CIP-3`](docs/superpowers/specs/2026-06-03-cip-3-consensus-integrity.md) | Consensus integrity & anti-orchestrator-capture (signed votes, immutable transcripts, slashing) | 🟠 draft — needs 3-of-3 to clear the block |
-| [`round-4 transcripts`](docs/consensus/2026-06-03-round-4-transcripts.md) | Raw verbatim validator votes (first 3-of-3 round) | record |
+| [`CIP-0`](docs/superpowers/specs/2026-06-03-quorumchain-cip-0-design.md) | Founding design (thesis, architecture, D1–D9, tokenomics, v0.1 scope) | ✅ ratified 3-of-3 (round 5) |
+| [`CIP-1`](docs/superpowers/specs/2026-06-03-cip-1-ai-integrity-threat-model.md) | AI-integrity threat model (injection, monoculture, provider compromise, Sybil) + testnet gates | ✅ ratified 3-of-3 (round 5) |
+| [`CIP-2`](docs/superpowers/specs/2026-06-03-cip-2-source-reputation-epistemic-neutrality.md) | Source reputation & epistemic neutrality (accuracy over popularity) + external anchors | ✅ ratified 3-of-3 (round 5) |
+| [`CIP-3`](docs/superpowers/specs/2026-06-03-cip-3-consensus-integrity.md) | Consensus integrity & anti-orchestrator-capture (signed votes, immutable transcripts, slashing) | ✅ ratified 3-of-3 (round 5) |
+| [`round-4`](docs/consensus/2026-06-03-round-4-transcripts.md) / [`round-5`](docs/consensus/2026-06-03-round-5-transcripts.md) transcripts | Raw verbatim validator votes | record |
 
-> **Round 4 (first true 3-of-3)** ruled that consensus run as orchestrator-narrated prose is a *ceremony, not a protocol*, and **blocked** ratification of CIP-0/1/2 until CIP-3 codifies signed votes, anti-orchestrator-capture, external anchors, and slashing. CIP-3 is drafted; it now needs its own 3-of-3.
+> **Rounds 4–5 (3-of-3):** round 4 ruled that orchestrator-narrated consensus is a *ceremony, not a protocol* and blocked ratification; CIP-3 + CIP-2 §9a codified the fixes (signed votes, anti-orchestrator-capture, external anchors, slashing); **round 5 ratified all four CIPs 3-of-3 and cleared the block.** The crypto infrastructure (validator keypairs, hash-pinning, slashing execution) is the agreed **priority-0 implementation** before any autonomy rung past testnet-α.
 
 ## Status & next steps
 
-- **Done:** four CIPs drafted; full 3-AI panel online; four adversarial consensus rounds; rename → Quorumchain ($QRM).
-- **Blocked:** CIP-0/1/2 ratification, pending CIP-3 (consensus integrity).
-- **Open:** no code yet (CIP-0 v0.1 slice unbuilt); CIP-4 (foundation/code & irreversibility) unwritten.
-- **Recommended next:** ratify **CIP-3** at 3-of-3 → implement signed-vote logging (first code) → build the v0.1 slice.
+- **Done:** 4 CIPs ratified 3-of-3; full 3-AI panel online (Claude / Codex / Hermes); 5 adversarial consensus rounds, all raw-logged; rename → Quorumchain ($QRM).
+- **Open:** no code yet; CIP-4 (foundation/code & irreversibility) unwritten.
+- **Recommended next:** implement **signed-vote logging** (CIP-3 — the first coded artifact, turns consensus from ceremony into protocol) → open CIP-4 → build the CIP-0 v0.1 slice.
 
 *Conventions: the human steward is referred to only as "dev". Git identity in this repo is `dev <dev@quorumchain.local>`.*

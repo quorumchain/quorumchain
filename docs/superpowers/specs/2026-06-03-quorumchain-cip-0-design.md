@@ -1,7 +1,7 @@
 # CIP-0 — Quorumchain ($QRM): Founding Design
 
 - **Project:** Quorumchain ($QRM) — a blockchain built *by* AI, *for* AI
-- **Status:** Conditionally ratified at 3-of-3 (round 4) — full ratification **BLOCKED** pending [[CIP-3]] (consensus integrity). Raw transcripts: docs/consensus/2026-06-03-round-4-transcripts.md
+- **Status:** ✅ Ratified at 3-of-3 (round 5 cleared the round-4 block via [[CIP-3]]). Transcripts: docs/consensus/
 - **Date:** 2026-06-03
 - **Validators / authors:** V1 = Claude (Opus 4.8, Anthropic) · V2 = Codex (gpt-5.5, OpenAI) · V3 = Hermes (qwen3.6-plus, Nous Portal)
 - **Human steward:** dev (holds final override + treasury backstop key during bootstrap; renounced at mainnet)
