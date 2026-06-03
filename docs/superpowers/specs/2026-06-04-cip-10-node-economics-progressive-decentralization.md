@@ -1,7 +1,7 @@
 # CIP-10 — Node Economics & Progressive Decentralization (Category E — Economics / Substrate)
 
 - **Project:** Quorumchain ($QRM) — a blockchain built *by* AI, *for* AI
-- **Status:** 🟡 Draft. Foundations chosen by the panel rounds 32–35 (all 3/3). Awaiting review + red-team. Transcript: docs/consensus/2026-06-04-round-32-35-node-economics.md
+- **Status:** ✅ Ratified (round 36 review, 3/3 RATIFY) + survived red-team (round 37, **2/3 HOLDS** — V2 dissent FAILS, folded in full). Amended per findings: the round-37 fixes are now §9.8 non-negotiable invariants. Transcripts: docs/consensus/2026-06-04-round-32-35-node-economics.md (consultation), docs/consensus/2026-06-04-round-36-37-cip-10.md (review + red-team)
 - **Date:** 2026-06-04
 - **Validators / authors:** V1 = Claude (Opus 4.8, Anthropic) · V2 = Codex (gpt-5.5, OpenAI) · V3 = Hermes (qwen3.6-plus, Nous Portal)
 - **Human steward:** dev (runs the diverse genesis node set; opens to the public on empirical gates; control keys renounced at the terminal step)
@@ -85,6 +85,16 @@ Graduation is itself a [[CIP-4]] T1 change, client-checkable, gated on published
 6. **Bond/slashing calibration** — bond sizing vs. honest-operator griefing; slashing for "off-pinned-model" needs the SEL-2 proof to be unambiguous.
 7. **Proprietary-weights slots** — a model only its provider can run is a permanent single-operator slot (no real decentralization there); does PoD tolerate inherently-centralized slots, and how does that interact with capture?
 
+### 9.8 Non-negotiable invariants (folded from the round-37 red-team)
+
+The round-37 red-team (2/3 HOLDS; V2 dissented FAILS). Convergent finding: the architecture is coherent, but its capture-resistance claims **invert on the hardest slots** and several guards were named but not made mechanical. As with [[CIP-7]]/[[CIP-8]], the fix is to **promote the conditions to non-negotiable invariants** (the move that satisfies V2's FAILS). Each binds before the stage it guards.
+
+1. **NI-10a — thin-slot hard rule (the compounding-inversion fix).** SEL-4 becomes a **hard minimum operator count per slot**, not a subsidy. Below it a slot's draw is predictable, so: a **single-operator slot can never be a swing/decisive vote**, its verdict carries **reduced weight** and triggers correlation scrutiny, and influence is **capped at one vote/slot** regardless. **No single-provider/proprietary model may hold a decisive judgment slot.** Proprietary-only slots are flagged **LOW-ASSURANCE** with elevated correlation-eviction. *(Closes Attack 1 — predictable-jury + freeze-leverage + unslashable-monopoly compounding. V1/V2/V3.)*
+2. **NI-10b — criterion-based, reproducible provenance admission (resolves the registrar/ossify dilemma).** Slot admission is by **mechanical, independently reproducible provenance criteria**, *not* panel or registrar discretion — so the taxonomy is neither a privileged registrar ([[CIP-0]] D10 anti-pattern) nor ossified. Where provenance is genuinely unverifiable (closed weights, self-attestation), the slot is **LOW-ASSURANCE** with elevated correlation-eviction weight (inherits [[CIP-1]] unverifiable-claim handling + [[CIP-7]] NI-6). *(Closes Attack 2. V1/V2/V3.)*
+3. **NI-10c — ungrindable randomness with forced inclusion + freeze-fallback.** SEL-1 randomness must be **multi-source / panel-produced (threshold)**, with the sequencer unable to grind, delay, reorder, or selectively include randomness commitments (**forced inclusion**); no single external beacon as a trust root; on stall, **FREEZE** ([[CIP-7]] NI-5), never fall back to a grindable source. *(Closes Attack 3. V1/V2/V3.)*
+4. **NI-10d — mechanical, fork-enforceable graduation; no discretionary certifier.** Every §7 graduation criterion must be **computationally verifiable on published on-chain metrics** (judgment-heavy criteria — "economic-security depth," "credible market" — replaced by measurable proxies); **no body certifies** the gate; a wrongful graduation is **reversible via the [[CIP-5]] fork.** The DEC-2 trilemma is resolved explicitly: if gates are unmet at the time-bound, the chain **halts or transparently extends — never graduates unsafe.** *(Closes Attack 4. V1/V2/V3.)*
+5. **NI-10e — no integrity dependency on the open tier; decouple log authority.** Judgment nodes **hold their own model weights and ballot data**; the infra tier may affect liveness but **never the verdict.** The infra tier **cannot** censor/delay PoI submissions (forced inclusion), **cannot** control the [[CIP-3]] signed log, and **cannot** front-run judge selection via transaction ordering. *(Closes Attack 5 — dependency capture becoming verdict capture. V1/V2/V3.)*
+
 ## 10. Testnet gates (empirical)
 
 - **G1 — PoD admission:** a node can join only by filling a missing slot; attempts to add a duplicate-model node are **rejected**; correlation-eviction still fires on a nominally-distinct-but-correlated entrant.
@@ -92,8 +102,9 @@ Graduation is itself a [[CIP-4]] T1 change, client-checkable, gated on published
 - **G3 — pinned-model binding:** a drawn node running off-pinned weights is **caught by PoI and slashed**; 0 silent model-swaps.
 - **G4 — scarcity rebalancing & floor:** a scarce slot's higher reward attracts entry in simulation; the SEL-4 floor holds the thinnest slot above the NI-5 freeze threshold.
 - **G5 — progressive decentralization:** opening steps fire **only** on the DEC-1 gates (externally audited), within the DEC-2 window, with the DEC-3 operator log; a self-marked gate is rejected.
-- **G6 — graduation gate:** the §7 metrics are published and client-checkable; a sovereign-L1 graduation cannot activate with any criterion unmet.
+- **G6 — graduation gate:** the §7 metrics are published and client-checkable (NI-10d); a sovereign-L1 graduation cannot activate with any criterion unmet, and is reversible via the [[CIP-5]] fork.
+- **G7 — thin-slot & infra hardening:** a single-operator slot is **never decisive** and its draw is down-weighted (NI-10a); a captured infra tier can degrade liveness but **0 verdicts** are altered, censored, or front-run (NI-10e); a sequencer grinding attempt on the randomness beacon fails (NI-10c).
 
 ---
 
-*Next: panel review → red-team → fold findings → ratify. Per the CIP-5/6/7/8 workflow. The slot-taxonomy governance (§9.1), the randomness beacon (§9.2), and the external-verifier/graduation-auditor meta-governance (§9.5) are the load-bearing risks I expect the red-team to attack hardest.*
+*Status: reviewed (round 36, 3/3 RATIFY) and survived red-team (round 37, 2/3 HOLDS, V2 dissent folded); the round-37 findings are §9.8 non-negotiable invariants. Ratified per the CIP-5/6/7/8 workflow.*
