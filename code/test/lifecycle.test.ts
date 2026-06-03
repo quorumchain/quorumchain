@@ -113,6 +113,23 @@ test('G1 sunset: overlap-handoff never breaches the floor and the replacement is
   assert.ok(!done.panel.validators.some((x) => x.id === 'D'));
 });
 
+test('overlap handoff: completeRotation refuses to retire while the replacement is still in probation (V2 review finding)', () => {
+  // 5 standing families, so dropping one would NOT breach the >=4 floor on its own
+  let p = seedPanel([v('A', 'corpus-A'), v('B', 'corpus-B'), v('C', 'corpus-C'), v('D', 'corpus-D'), v('F', 'corpus-F')]);
+  // begin a rotation for D — the replacement E is admitted but still in PROBATION
+  p = beginRotation(p, 'D', { version: 'E@v1', calibration: 0.85, provenance: { corpusFamily: 'corpus-E', teacher: null, weightDerivation: 'corpus-E-base', provider: 'E', servingStack: 'E-stack' }, fingerprintIndependent: true }).panel;
+  // retiring D now would drop the handoff replacement on the floor — the protocol must refuse
+  const premature = completeRotation(p, 'D');
+  assert.equal(premature.ok, false);
+  assert.match(premature.reason!, /probation|graduate|handoff/i);
+  assert.ok(premature.panel.validators.some((x) => x.id === 'D')); // D not dropped
+  // once E graduates, the rotation completes
+  p = graduate(p, 'E@v1', { predecessorCalibration: 0 }).panel;
+  const done = completeRotation(p, 'D');
+  assert.equal(done.ok, true);
+  assert.ok(!done.panel.validators.some((x) => x.id === 'D'));
+});
+
 test('G4 double-sunset: an undersized standby pool FREEZES rather than breach the floor (NI-5)', () => {
   const p = basePanel(); // exactly at floor (4), no standby graduated
   // retire two with no graduated diverse replacement available to hold the floor

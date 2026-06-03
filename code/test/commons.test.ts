@@ -55,13 +55,15 @@ test('G1 pluralism: a 2/1 split preserves the dissenting stance as CREDIBLE_MINO
   assert.deepEqual(minority.validators, ['V2']); // the dissent is named, not flattened
 });
 
-test('G5 honest unknown: an INDETERMINATE resolution carries no fabricated confidence', () => {
+test('G5 honest unknown: an INDETERMINATE resolution is UNRANKED, not ranked CONSENSUS (NI-9c)', () => {
   const idx = buildClaimIndex(fullPanel(), keyring, 2);
   const c = queryClaim(idx, BH_INDET)!;
   assert.equal(c.status, 'INDETERMINATE');
   assert.equal(c.verdict, 'INDETERMINATE');
-  // the dissenting NO stance is still preserved
-  assert.ok(c.stances.some((s) => s.position === 'NO' && s.standing === 'CREDIBLE_MINORITY'));
+  // the dissenting NO stance is still preserved...
+  assert.ok(c.stances.some((s) => s.position === 'NO'));
+  // ...but on the unverifiable class NOTHING is ranked CONSENSUS (consistent with reputation.ts / NI-9c)
+  assert.ok(c.stances.every((s) => s.standing === 'UNRANKED'));
 });
 
 test('no quorum becomes a CONTESTED claim with no CONSENSUS stance', () => {

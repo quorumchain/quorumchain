@@ -129,9 +129,16 @@ export function beginRotation(p: Panel, outgoingId: string, replacement: Upgrade
   return { ok: true, panel: { ...p, validators, admissionLog: [...p.admissionLog, { type: 'ADMIT', validatorId: id, version: replacement.version, tier: 'T1' }] } };
 }
 
-/** Retirement step 2 — drop the outgoing validator ONLY if the floor still holds
- *  afterward. Otherwise FREEZE (NI-5): read-only verdict-halt, never a breach. */
+/** Retirement step 2 — drop the outgoing validator ONLY once the handoff is
+ *  complete. The overlap-handoff invariant (§3.4) requires a *graduated*
+ *  replacement before the outgoing is dropped, so a rotation still in PROBATION
+ *  must not be completed even if other standing families happen to hold the floor
+ *  (V2 review finding). If dropping would breach the floor, FREEZE (NI-5):
+ *  read-only verdict-halt, never a breach. */
 export function completeRotation(p: Panel, outgoingId: string): Result {
+  if (inProbation(p)) {
+    return { ok: false, reason: 'overlap handoff incomplete: graduate the in-probation replacement before retiring (§3.4)', panel: p };
+  }
   const after = { ...p, validators: p.validators.filter((v) => v.id !== outgoingId) };
   if (!floorOk(after)) {
     return { ok: false, reason: 'NI-5: no graduated diverse replacement holds the floor — FREEZE (read-only) rather than breach', panel: { ...p, frozen: true } };

@@ -14,7 +14,7 @@
 
 import { ratify, verifyVote, type SignedVote } from './signed-vote.ts';
 
-export type Standing = 'CONSENSUS' | 'CREDIBLE_MINORITY';
+export type Standing = 'CONSENSUS' | 'CREDIBLE_MINORITY' | 'UNRANKED';
 export type ClaimStatus = 'RESOLVED' | 'CONTESTED' | 'INDETERMINATE';
 
 export interface Stance {
@@ -75,16 +75,19 @@ export function buildClaimIndex(votes: SignedVote[], keyring: Record<string, str
       heldBy.get(v.verdict)!.push(v.validatorId);
     }
 
+    const status: ClaimStatus = !r.ratified ? 'CONTESTED' : r.verdict === 'INDETERMINATE' ? 'INDETERMINATE' : 'RESOLVED';
+    // Standing is computed, not assigned. It is ranked ONLY for a substantive
+    // resolution (RESOLVED): the ratified majority is CONSENSUS, every other held
+    // position CREDIBLE_MINORITY. On the unverifiable / no-consensus class
+    // (INDETERMINATE, CONTESTED) nothing is ranked — UNRANKED, never FRINGE —
+    // consistent with reputation.ts and NI-9c.
+    const ranked = status === 'RESOLVED';
     const stances: Stance[] = positionOrder.map((position) => ({
       position,
       validators: heldBy.get(position)!,
       panelVotes: heldBy.get(position)!.length,
-      // standing is computed, not assigned: the ratified majority is CONSENSUS,
-      // every other held position is CREDIBLE_MINORITY. Nothing is demoted to FRINGE.
-      standing: r.ratified && position === r.verdict ? 'CONSENSUS' : 'CREDIBLE_MINORITY',
+      standing: ranked ? (position === r.verdict ? 'CONSENSUS' : 'CREDIBLE_MINORITY') : 'UNRANKED',
     }));
-
-    const status: ClaimStatus = !r.ratified ? 'CONTESTED' : r.verdict === 'INDETERMINATE' ? 'INDETERMINATE' : 'RESOLVED';
 
     return {
       ballotHash: bh,
