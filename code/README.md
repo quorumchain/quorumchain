@@ -129,6 +129,14 @@ projected from the signed verdict log.
   penalizing the wrong dissenter (CIP-9 v0.2) → the dissenter's provider sunset
   **rotates it out without breaching the floor** (CIP-7). Write feeds memory;
   memory keeps the dissent; no single party holds the pen.
+- **`src/identity.ts`** — the canonical participant **Identity** (round-44 backlog
+  #1). A validator was modelled three incompatible ways (CIP-3 `validatorId`,
+  CIP-10 `NodeOperator`, CIP-7 `Validator`) and the scenario linked them by reusing
+  a bare string. Now one `Identity { id, slot }` is the single source of truth:
+  `asNodeOperator` / `asValidator` / `taxonomyOf` project it into each module's
+  record, so the composition is structural — and `slot` is the ONE diversity axis
+  both the CIP-10 jury draw and the CIP-7 distinctness floor range over (previously
+  `model-*` and `corpus-*` were two coincidentally-paired label spaces).
 
 ### CIP-10 — node economics (v0.1 admission + selection, built)
 
@@ -223,7 +231,7 @@ node src/bonds-demo.ts   # CIP-8 v0.2: bond/stake autonomy gate + slash-on-viola
 node src/reputation-demo.ts # CIP-9 v0.2: external-anchor reputation (NI-9b accuracy-not-popularity) + computed standing (NI-9c)
 node src/scenario-demo.ts # END-TO-END: one accountability story threaded through every CIP (bond→notary→resolve→index→reputation→rotate)
 node src/run-panel.ts "<question>" "<context>"   # LIVE convening: Claude + Codex + Hermes
-node --test              # 120 tests
+node --test              # 124 tests
 ```
 
 Zero dependencies — Node 25 runs the TypeScript natively (type-stripping) and

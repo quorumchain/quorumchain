@@ -16,10 +16,16 @@ import { replayBallot, tamperDelta } from './replay.ts';
 import { buildClaimIndex, queryClaim } from './commons.ts';
 import { scoreSources, type Claim as RepClaim } from './reputation.ts';
 import { reimburse, type Benchmark, type CostReport } from './cost-oracle.ts';
-import { seedPanel, beginRotation, graduate, completeRotation, floorOk, type Validator } from './lifecycle.ts';
+import { seedPanel, beginRotation, graduate, completeRotation, floorOk } from './lifecycle.ts';
+import { asNodeOperator, asValidator, taxonomyOf, type Identity } from './identity.ts';
 
 const h = (s: string) => createHash('sha256').update(s, 'utf8').digest('hex');
 const JURORS = ['A', 'B', 'C', 'D'] as const;
+// One canonical participant set. Every module record below is PROJECTED from this
+// (CIP-10 operator, CIP-7 validator, CIP-3 keyed by id) — so the cross-module
+// linkage is structural, and `slot` is the single diversity axis both the jury
+// draw and the lifecycle floor range over (round-44 backlog #1).
+const IDENTITIES: Identity[] = JURORS.map((j) => ({ id: j, slot: `corpus-${j}` }));
 const BENCH: Benchmark = { frontier: 100 };
 
 export interface ScenarioOpts {
@@ -32,9 +38,9 @@ export function runScenario(opts: ScenarioOpts) {
   const seed = opts.seed ?? 'ballot-seed';
 
   // --- CIP-10: build a diverse judgment tier by Proof-of-Diversity admission ---
-  let registry: NodeRegistry = { taxonomy: JURORS.map((j) => `model-${j}`), operators: [] };
-  for (const j of JURORS) {
-    registry = admitNode(registry, { id: j, model: `model-${j}`, assurance: 'STANDARD' }).registry;
+  let registry: NodeRegistry = { taxonomy: taxonomyOf(IDENTITIES), operators: [] };
+  for (const idn of IDENTITIES) {
+    registry = admitNode(registry, asNodeOperator(idn)).registry;
   }
   const jury = drawJury(registry, seed); // one seat per slot — the ephemeral per-ballot jury
 
@@ -106,8 +112,9 @@ export function runScenario(opts: ScenarioOpts) {
   const dissenter = 'D';
 
   // --- CIP-7: D's provider sunsets → overlap-handoff rotation, floor preserved ---
-  const panel = seedPanel(JURORS.map((j) => ({ id: j, version: `${j}@v1`, status: 'STANDING', calibration: 0.8, provenance: { corpusFamily: `corpus-${j}`, teacher: null, weightDerivation: `corpus-${j}-base`, provider: j, servingStack: `${j}-stack` } } as Validator)));
-  const begun = beginRotation(panel, 'D', { version: 'E@v1', calibration: 0.85, provenance: { corpusFamily: 'corpus-E', teacher: null, weightDerivation: 'corpus-E-base', provider: 'E', servingStack: 'E-stack' }, fingerprintIndependent: true });
+  const panel = seedPanel(IDENTITIES.map((idn) => asValidator(idn, { version: `${idn.id}@v1`, calibration: 0.8 })));
+  const eReplacement = asValidator({ id: 'E', slot: 'corpus-E' }, { version: 'E@v1', calibration: 0.85 });
+  const begun = beginRotation(panel, 'D', { version: eReplacement.version, calibration: eReplacement.calibration, provenance: eReplacement.provenance, fingerprintIndependent: true });
   const graduated = graduate(begun.panel, 'E@v1', { predecessorCalibration: 0 }).panel;
   const rotated = completeRotation(graduated, 'D');
   const rotation = {

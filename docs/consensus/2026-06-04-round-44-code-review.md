@@ -49,7 +49,7 @@ Suite: **120 tests, all green.**
 
 ## Backlog (the remaining REVISE items, none fatal, none change a ratified design)
 
-1. A single canonical **Identity/Slot type** referenced by CIP-3/7/10 (turns `scenario.ts` wiring from string-matching into type-level composition) — *highest priority.*
+1. ~~A single canonical **Identity/Slot type** referenced by CIP-3/7/10 (turns `scenario.ts` wiring from string-matching into type-level composition) — *highest priority.*~~ **Done (2026-06-04):** `code/src/identity.ts` — one `Identity { id, slot }` with `asNodeOperator`/`asValidator`/`taxonomyOf` adapters; `scenario.ts` now derives all three module records from one participant set, and `slot` is the single diversity axis the CIP-10 jury draw and CIP-7 floor both range over (was `model-*` vs `corpus-*`). 4 new tests; suite 124 green.
 2. **Independent validator key custody** (V2 #1) — the per-validator signer isolated from the orchestrator; the standing CIP-3 trust-root gap.
 3. **NI-1 full provenance vector** in lifecycle distinctness (corpus + teacher + weight-derivation + provider + serving).
 4. **NI-10a hard rule** — a thin slot structurally cannot be the pivotal vote, not merely down-weighted.
