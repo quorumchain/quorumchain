@@ -54,7 +54,9 @@ const codexInvoke: ValidatorInvoker = async (prompt) => {
 };
 
 const hermesInvoke: ValidatorInvoker = async (prompt) => {
-  const { stdout } = await execFileP('hermes', ['chat', '-q', prompt, '--max-turns', '2', '-Q'], EXEC_OPTS);
+  // Research-capable ballots need more turns + time than a plain deliberation:
+  // a web-research pass (search → read → answer) easily exceeds the default.
+  const { stdout } = await execFileP('hermes', ['chat', '-q', prompt, '--max-turns', '6', '-Q'], { ...EXEC_OPTS, timeout: 480_000 });
   return stdout;
 };
 
