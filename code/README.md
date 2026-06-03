@@ -90,7 +90,9 @@ The first *product* slice, built on the same substrate (CIP-8 §6 KERNEL_FIRST).
   mode of the SRA: `createBond`/`verifyBond` (a signed, staked commitment to a
   constraint, frozen to its criteria ballotHash), `isAuthorized` (the gate —
   unbonded / under-bonded agents are excluded from high-value contexts),
-  `settleBond` (a RESOLUTION proving violation slashes the stake), and
+  `settleBond` (the resolution OF the bond's own frozen-criteria ballot — its
+  `ballotHash` must equal the bond's or settlement is refused; a proven violation
+  slashes the stake), and
   `challengeCommitment` (**NI-8b**: an evidence commitment has teeth or no weight
   — disclose a matching preimage within the window or forfeit; an unrevealed
   commitment carries zero weight; no privileged decryptor). `src/bonds-demo.ts`.
@@ -159,9 +161,11 @@ The *who judges* layer: how the judgment-tier panel is admitted and drawn.
   (PoD-2). **Scarcity-weighted selection** (§4): `drawJury` draws one node per
   slot from a committed seed via a deterministic PRF — an ephemeral one-vote-per-
   slot jury, reproducible and `verifyDraw`-able by anyone (G2); a scarce slot's
-  operators are drawn more often (G4 — entry incentive). **NI-10a**: a single-
-  operator slot is flagged `thin`, down-weighted, and `tallyJury` shows it can
-  never be the decisive vote. Deferred (documented, not faked): NI-10c threshold/
+  operators are drawn more often (G4 — entry incentive). **NI-10a (hard rule)**: a
+  single-operator slot is flagged `thin`, and `tallyJury` decides the verdict from
+  the *standard* seats alone — so a thin seat can never be the swing vote
+  (structural, not a matter of down-weighting); thin seats are advisory except in
+  the all-thin bootstrap regime where they are all there is. Deferred (documented, not faked): NI-10c threshold/
   forced-inclusion beacon, SEL-2 proof-of-inference binding, CIP-7 correlation-
   eviction — all need production infra.
 - **`src/nodes-demo.ts`** — runs G1/G2/G4/NI-10a on the dev's own scenario
@@ -241,7 +245,7 @@ node src/bonds-demo.ts   # CIP-8 v0.2: bond/stake autonomy gate + slash-on-viola
 node src/reputation-demo.ts # CIP-9 v0.2: external-anchor reputation (NI-9b accuracy-not-popularity) + computed standing (NI-9c)
 node src/scenario-demo.ts # END-TO-END: one accountability story threaded through every CIP (bond→notary→resolve→index→reputation→rotate)
 node src/run-panel.ts "<question>" "<context>"   # LIVE convening: Claude + Codex + Hermes
-node --test              # 128 tests
+node --test              # 131 tests
 ```
 
 Zero dependencies — Node 25 runs the TypeScript natively (type-stripping) and

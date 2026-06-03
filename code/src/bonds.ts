@@ -80,8 +80,16 @@ export function isAuthorized(reg: BondRegistry, subject: string, requiredStake: 
 }
 
 /** Settlement against a RESOLUTION verdict: a proven violation slashes the full
- *  stake; otherwise the bond is released. */
-export function settleBond(bond: Bond, resolution: { violated: boolean }): Bond {
+ *  stake; otherwise the bond is released. The resolution MUST be of the bond's own
+ *  frozen-criteria ballot — its `ballotHash` is checked against the bond's, so a
+ *  bond can only be settled by the resolution OF its committed criteria, never by
+ *  a resolution of some other question (the link is by hash, not by convention). */
+export function settleBond(bond: Bond, resolution: { ballotHash: string; violated: boolean }): Bond {
+  if (resolution.ballotHash !== bond.ballotHash) {
+    throw new Error(
+      `refusing to settle: resolution ballotHash ${resolution.ballotHash.slice(0, 12)}… is not the bonded criteria ballotHash ${bond.ballotHash.slice(0, 12)}… — a bond is settled only by the resolution of its own frozen criteria`,
+    );
+  }
   return resolution.violated
     ? { ...bond, status: 'SLASHED', slashed: bond.stake }
     : { ...bond, status: 'RELEASED', slashed: 0 };

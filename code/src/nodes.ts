@@ -116,9 +116,15 @@ export interface TallyResult {
   decisiveSlots: string[]; // slots whose removal would change the verdict
 }
 
-/** Weighted tally of one jury's votes. A thin slot's reduced weight is why it
- *  cannot be the decisive vote (NI-10a): decisiveSlots lists only seats whose
- *  removal would flip the outcome. */
+/** Weighted tally of one jury's votes with the HARD NI-10a guarantee: a thin slot
+ *  can never be the decisive (swing) vote. This is structural, not a matter of
+ *  down-weighting: the verdict is a function of the STANDARD seats alone, so no
+ *  thin seat can ever appear in `decisiveSlots`. Thin seats are advisory — they
+ *  are recorded but cannot change a verdict the standard seats determine. The one
+ *  exception is the bootstrap regime where EVERY slot is thin (no standard seat to
+ *  defer to): then the thin seats are all there is, and they decide. The thin
+ *  seat's reduced `weight` still matters for compensation/scarcity (CIP-10 §4); it
+ *  is simply no longer the lever that decides an outcome. */
 export function tallyJury(jury: Jury, votesBySlot: Record<string, string>): TallyResult {
   const weigh = (seats: JurySeat[]): Record<string, number> => {
     const t: Record<string, number> = {};
@@ -136,10 +142,15 @@ export function tallyJury(jury: Jury, votesBySlot: Record<string, string>): Tall
     return best;
   };
 
-  const weighted = weigh(jury.seats);
+  // The deciding set: standard seats govern. Only when there are none (every slot
+  // thin) do thin seats decide — so a thin seat is structurally never a swing vote.
+  const standardSeats = jury.seats.filter((s) => !s.thin);
+  const deciding = standardSeats.length > 0 ? standardSeats : jury.seats;
+
+  const weighted = weigh(deciding);
   const verdict = winnerOf(weighted);
-  const decisiveSlots = jury.seats
-    .filter((s) => winnerOf(weigh(jury.seats.filter((x) => x.slot !== s.slot))) !== verdict)
+  const decisiveSlots = deciding
+    .filter((s) => winnerOf(weigh(deciding.filter((x) => x.slot !== s.slot))) !== verdict)
     .map((s) => s.slot);
 
   return { verdict, weighted, decisiveSlots };

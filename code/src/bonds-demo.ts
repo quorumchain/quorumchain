@@ -24,10 +24,16 @@ console.log(`  bonded $1000, $1000 context → authorized: ${isAuthorized(reg, a
 
 console.log('\n=== slash-on-violation (settled against a RESOLUTION) ===');
 const b = mkBond(1000);
-const sl = settleBond(b, { violated: true });
-const ok = settleBond(b, { violated: false });
+// the resolution must be of the bond's OWN frozen-criteria ballot (hash-bound)
+const sl = settleBond(b, { ballotHash: b.ballotHash, violated: true });
+const ok = settleBond(b, { ballotHash: b.ballotHash, violated: false });
 console.log(`  RESOLUTION: constraint violated → status ${sl.status}, slashed ${sl.slashed} of ${b.stake}`);
 console.log(`  RESOLUTION: no violation        → status ${ok.status}, slashed ${ok.slashed}`);
+try {
+  settleBond(b, { ballotHash: 'a'.repeat(64), violated: true });
+} catch (e) {
+  console.log(`  RESOLUTION of a DIFFERENT ballot → refused (${(e as Error).message.split('—')[0].trim()})`);
+}
 
 console.log('\n=== NI-8b — evidence commitments have teeth or no weight ===');
 const evidence = 'tool-call-log: order #4471 $42,300 + approval token 0x9af';

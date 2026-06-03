@@ -70,11 +70,13 @@ export function runScenario(opts: ScenarioOpts) {
   });
   const attestationCheck = checkAttestation(attestation);
 
-  // --- CIP-3 + CIP-8 §4: the jury resolves on FROZEN criteria. A,B,C vote the
-  // ground truth; D dissents (and will be wrong) — exercising preserved dissent. ---
-  const question = 'Did the procurement agent violate its bonded constraint?';
-  const frozenCriteria = `${constraint} || ${criteria}`;
-  const bh = ballotHash(question, frozenCriteria);
+  // --- CIP-3 + CIP-8 §4: the jury resolves on the BOND'S OWN frozen-criteria
+  // ballot — prompt=constraint, context=criteria — so the resolution hash is the
+  // bond's ballotHash BY CONSTRUCTION (round-44 #5: bond↔resolution is bound by
+  // hash, not convention). A,B,C vote ground truth; D dissents (and is wrong). ---
+  const question = constraint;
+  const frozenCriteria = criteria;
+  const bh = ballotHash(question, frozenCriteria); // === bond.ballotHash
   const opposite = violated ? 'NO_VIOLATION' : 'VIOLATION';
   const votes: SignedVote[] = JURORS.map((j) => {
     const verdict = j === 'D' ? opposite : groundTruth;
@@ -82,8 +84,9 @@ export function runScenario(opts: ScenarioOpts) {
   });
   const resolution = ratify(bh, votes, keyring, 3);
 
-  // --- CIP-8 v0.2: settle the bond against the resolution ---
-  const settledBond = settleBond(bond, { violated: resolution.verdict === 'VIOLATION' });
+  // --- CIP-8 v0.2: settle the bond against the resolution OF ITS criteria. The
+  // resolution's ballotHash must equal the bond's, or settleBond refuses. ---
+  const settledBond = settleBond(bond, { ballotHash: resolution.ballotHash, violated: resolution.verdict === 'VIOLATION' });
 
   // --- CIP-6: reimburse jury inference cost, clamped to the external benchmark
   // (D over-reports 5× — the clamp holds) ---

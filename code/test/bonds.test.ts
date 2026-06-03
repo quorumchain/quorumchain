@@ -53,14 +53,27 @@ test('gating: an unbonded or under-bonded subject is excluded from a high-value 
   assert.equal(isAuthorized(reg, subject.publicKeyPem, 1000), true);
 });
 
-test('settlement: a bond is slashed when a RESOLUTION proves the constraint was violated', () => {
+test('settlement: a bond is slashed when the RESOLUTION OF ITS criteria proves a violation', () => {
   const b = bond(1000);
-  const slashed = settleBond(b, { violated: true });
+  // the resolution must be of the bond's OWN frozen-criteria ballot (hash-bound)
+  const slashed = settleBond(b, { ballotHash: b.ballotHash, violated: true });
   assert.equal(slashed.status, 'SLASHED');
   assert.equal(slashed.slashed, 1000);
-  const released = settleBond(b, { violated: false });
+  const released = settleBond(b, { ballotHash: b.ballotHash, violated: false });
   assert.equal(released.status, 'RELEASED');
   assert.equal(released.slashed, 0);
+});
+
+test('hash binding: a bond cannot be settled by a resolution of some OTHER ballot', () => {
+  const b = bond(1000);
+  // a resolution whose ballotHash is not the bonded criteria hash must be refused —
+  // the link is by hash, not by convention (round-44 finding #5)
+  assert.throws(
+    () => settleBond(b, { ballotHash: h('a resolution of a different question'), violated: true }),
+    /ballotHash|criteria|bonded/i,
+  );
+  // the bond is untouched (still ACTIVE) because the wrong resolution never settled it
+  assert.equal(b.status, 'ACTIVE');
 });
 
 test('NI-8b: a disclosed evidence commitment matching its hash within the window carries weight', () => {

@@ -119,6 +119,34 @@ test('NI-10a: a single-operator slot is flagged thin, down-weighted, and never d
   assert.equal(winner.decisiveSlots.includes('model-C'), false);
 });
 
+test('NI-10a HARD: a thin seat can never be the swing vote, even when the standard seats split', () => {
+  const r = reg([
+    op('a1', 'model-A'), op('a2', 'model-A'),
+    op('b1', 'model-B'), op('b2', 'model-B'),
+    op('c1', 'model-C'), // lone -> thin
+  ]);
+  const j = drawJury(r, 'seed-pivot');
+  const seatC = j.seats.find((s) => s.slot === 'model-C')!;
+  assert.equal(seatC.thin, true);
+  // the standard slots disagree 1-1 and the thin slot votes with one of them: under a
+  // soft 0.5 weighting the thin seat would tip (and flip) the result — the swing vote.
+  const votes = { 'model-A': 'YES', 'model-B': 'NO', 'model-C': 'NO' };
+  const withThin = tallyJury(j, votes);
+  // removing the thin seat must NOT change the verdict (structural non-decisiveness)
+  const jNoThin = { ...j, seats: j.seats.filter((s) => !s.thin) };
+  const withoutThin = tallyJury(jNoThin, votes);
+  assert.equal(withThin.verdict, withoutThin.verdict);
+  assert.equal(withThin.decisiveSlots.includes('model-C'), false);
+});
+
+test('NI-10a bootstrap: when EVERY slot is thin, the thin seats decide (no standard seat to defer to)', () => {
+  const r = reg([op('a1', 'model-A'), op('b1', 'model-B'), op('c1', 'model-C')]); // all lone -> all thin
+  const j = drawJury(r, 'seed-boot');
+  assert.ok(j.seats.every((s) => s.thin));
+  const t = tallyJury(j, { 'model-A': 'YES', 'model-B': 'YES', 'model-C': 'NO' });
+  assert.equal(t.verdict, 'YES'); // 2-1 among the only seats there are
+});
+
 test('NI-10b: a LOW_ASSURANCE operator is carried with its flag', () => {
   const r = reg([op('a1', 'model-A'), op('b1', 'model-B'), op('c1', 'model-C', 'LOW_ASSURANCE')]);
   const j = drawJury(r, 'seed-la');
