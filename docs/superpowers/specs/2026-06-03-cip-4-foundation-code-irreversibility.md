@@ -1,7 +1,7 @@
 # CIP-4 — Foundation, Code & Irreversibility (Category II)
 
 - **Project:** Quorumchain ($QRM) — a blockchain built *by* AI, *for* AI
-- **Status:** 🟡 Draft — awaiting panel ratification (signed convening, [[CIP-3]])
+- **Status:** ✅ Ratified 3/3 (round 7 review) + survived red-team (round 8); amended per findings. Transcript: docs/consensus/2026-06-03-round-7-8-cip-4.md
 - **Date:** 2026-06-03
 - **Validators / authors:** V1 = Claude (Opus 4.8, Anthropic) · V2 = Codex (gpt-5.5, OpenAI) · V3 = Hermes (qwen3.6-plus, Nous Portal)
 - **Human steward:** dev (holds final override + treasury backstop key during bootstrap; renounced at mainnet per §8)
@@ -41,14 +41,17 @@ Not one upgrade key — three classes, each with a different bar:
 
 Round 6's distinct-model-families threshold is a **T2** parameter today; the *principle* behind it is **T0** (see §4).
 
+**The tier-assignment function is itself T0** *(amended round 8, per V1's red-team).* The rule that decides which tier a change falls under is unamendable, and §4 frozen items are bound to objective tests — so a captured panel cannot reclassify a T0 principle as a T2 "parameter clarification" (e.g. redefining independence as "distinct API endpoints") to launder capture. Without this, the freeze is text wrapped around a mutable definition.
+
 ## 4. The frozen set (T0 — unamendable, even by a unanimous panel)
 
 *Decision: freeze the capture-defense core.* These properties have **no amendment path** after mainnet, because they are precisely what protects the system from a captured panel legitimizing its own capture. You cannot let the panel vote away the safeguards that detect a compromised panel.
 
 1. **The determinism boundary** — the AI judgment layer may never make the L1 ledger's state non-deterministic (§5).
-2. **Diversity & independence as a principle** — that non-trivial verdicts require ≥3 independent, distinct-family validators. (The *parameters* — exact counts/thresholds — remain T2 until the mainnet freeze; the *principle* is T0.)
+2. **Diversity & independence as a principle** — that non-trivial verdicts require ≥3 independent, distinct-family validators. (The *parameters* — exact counts/thresholds — remain T2 until the mainnet freeze; the *principle* is T0.) *Bound to an objective test — CIP-1 §6 fingerprinting / distinct attested provider — so "independence" cannot be silently redefined down (amended round 8, per V1).*
 3. **Append-only history** — no record may be deleted or rewritten; correction is by supersession only (§6).
-4. **The right to fork** — clients may always exit to a fork; no rule may forbid or technically foreclose it (§9).
+4. **The right to fork** — clients may always exit to a fork; no rule may forbid or technically foreclose it (§9). *Hollow unless exercisable — see the §8 β-gate prerequisite (amended round 8).*
+5. **The tier-assignment function** — the rule classifying a change as T0/T1/T2 is itself unamendable *(added round 8, per V1)*; see §3.
 
 **Rationale.** Each item, if amendable, becomes the lever a captured majority pulls first: collapse diversity → control quorum; break determinism → fork at will; allow deletion → erase evidence of capture; forbid forking → trap honest minority. Freezing them makes capture *unprofitable and visible* rather than self-laundering.
 
@@ -76,7 +79,7 @@ Round 6's distinct-model-families threshold is a **T2** parameter today; the *pr
 *Decision: evidence-driven, no fixed date.* dev's override key is burned only when the protocol has **demonstrated** it can govern its own foundation. Tied to the autonomy ladder (α → β → γ → mainnet):
 
 - **α (now):** human vetoes everything; all T1 changes are dev-applied. Signed-vote logging live ([[CIP-3]], proven round 6).
-- **β gate:** panel authors and ratifies a real T1 change through the full tiered process; determinism injection drill passes (§5); rollback drill passes (a bad change is detected and reverted within the veto window).
+- **β gate:** panel authors and ratifies a real T1 change through the full tiered process; determinism injection drill passes (§5); rollback drill passes (a bad change is detected and reverted within the veto window); **fork-coordination tooling proven exercisable** — a fork-signaling/divergence drill in which an honest minority demonstrably exits to a fork *(amended round 8, per V2/V3: the right to fork must be proven exercisable before renunciation is contemplated — a defense that cannot be triggered is worse than none, because it creates false confidence)*.
 - **γ gate:** ≥ N consecutive epochs with **zero** determinism-boundary violations, zero undetected validator-family collisions ([[CIP-1]] §6), successful Commons supersession (§6), and the guardian delay-multisig (§9) live and exercised.
 - **Mainnet / renunciation:** all γ gates green and sustained → dev burns the override key. **One-way and irreversible by design.** This is the project's defining irreversible act; the bar is deliberately high.
 
@@ -90,6 +93,7 @@ No calendar date forces renunciation; failing a gate simply means the human stay
 - It buys time for the **social fork** (the T0 right, §4) to organize if the protocol is captured — the no-human equivalent of "fire the dev team."
 - The guardian power is **itself renounceable** on its own later gate (a higher rung), so the end-state can shed even this residual surface once fork-coordination tooling is proven.
 - A **fatal bug** path: guardians delay → panel proposes a T1 patch at the highest bar → veto window → apply; if the panel is itself the problem, the delay window exists precisely so honest clients can fork.
+- *(Amended round 8, convergent V2/V3 finding.)* §9's recourse ultimately collapses to the social fork, so **delay is worthless if no one can exit** — captured guardians could simply stall every urgent patch (veto-by-stall) and let a malicious change apply when the timer expires. Therefore fork-coordination tooling is a **β-gate prerequisite (§8)**, not a mainnet afterthought.
 
 ## 10. Cross-cutting requirements & open items
 
@@ -97,7 +101,7 @@ No calendar date forces renunciation; failing a gate simply means the human stay
 - **Every T0/T1 control must be falsifiable on testnet** before it is trusted — gates in §5–§9 are explicit milestones, not aspirations.
 - *Open:* exact thresholds (T1 supermajority %, time-lock length, veto-window length, treasury caps, β/γ epoch counts) are initial targets; the panel ratifies final numbers against testnet data.
 - *Open:* guardian-set composition, size, and selection — must satisfy [[CIP-1]] independence and avoid becoming a soft oligarchy.
-- *Open:* fork-coordination tooling (how an honest minority actually exits) is the load-bearing assumption behind §9 and §4.4 and is currently unspecified.
+- *Promoted to β-gate (round 8):* fork-coordination tooling (how an honest minority actually exits) — fork-signaling registry, chain-split detection, pre-published client divergence — was the convergent red-team finding (V2 veto-by-stall, V3 fork-void). No longer merely "open": it is now a **β-gate prerequisite** (§8) that must be proven exercisable before renunciation. Its detailed specification is the load-bearing follow-on work.
 - *Open:* interaction with Category III (consensus/economics) — treasury caps and validator-stake slashing live at the II/III boundary and need joint review.
 
 ## 11. Next steps
