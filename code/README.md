@@ -98,14 +98,35 @@ projected from the signed verdict log.
   (Ukraine, NO 2/1 — V2's YES preserved) and 43 (Barron, INDETERMINATE 2/1 —
   V3's NO preserved).
 
+### CIP-10 — node economics (v0.1 admission + selection, built)
+
+The *who judges* layer: how the judgment-tier panel is admitted and drawn.
+
+- **`src/nodes.ts`** — two mechanics, both verifiable without live inference.
+  **Proof-of-Diversity admission** (§3): `admitNode` lets a judgment node join
+  *only* by filling a currently-missing model slot, so **monoculture is
+  un-enterable** (G1); the slot taxonomy is frozen — operators can't invent slots
+  (PoD-2). **Scarcity-weighted selection** (§4): `drawJury` draws one node per
+  slot from a committed seed via a deterministic PRF — an ephemeral one-vote-per-
+  slot jury, reproducible and `verifyDraw`-able by anyone (G2); a scarce slot's
+  operators are drawn more often (G4 — entry incentive). **NI-10a**: a single-
+  operator slot is flagged `thin`, down-weighted, and `tallyJury` shows it can
+  never be the decisive vote. Deferred (documented, not faked): NI-10c threshold/
+  forced-inclusion beacon, SEL-2 proof-of-inference binding, CIP-7 correlation-
+  eviction — all need production infra.
+- **`src/nodes-demo.ts`** — runs G1/G2/G4/NI-10a on the dev's own scenario
+  (10×A, 10×B, 4×C): the scarce model-C operators are drawn **2.5×** as often
+  (= 10/4), the exact rebalancing pressure the design predicts.
+
 ## Run it
 
 ```bash
 node src/demo.ts         # 3-validator panel signs, logs, ratifies, self-verifies (synthetic)
 node src/notary-demo.ts  # CIP-8 v0.1: notary kernel (G3) + frozen-ballot integrity (G1) + round-29 replay (G2)
 node src/commons-demo.ts # CIP-9 v0.1: project the verdict log into a claim graph (G1 pluralism, G2 projection)
+node src/nodes-demo.ts   # CIP-10 v0.1: PoD admission (G1) + scarcity-weighted verifiable selection (G2/G4/NI-10a)
 node src/run-panel.ts "<question>" "<context>"   # LIVE convening: Claude + Codex + Hermes
-node --test              # 63 tests
+node --test              # 73 tests
 ```
 
 Zero dependencies — Node 25 runs the TypeScript natively (type-stripping) and
