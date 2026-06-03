@@ -77,13 +77,35 @@ The first *product* slice, built on the same substrate (CIP-8 §6 KERNEL_FIRST).
 - **`src/notary-demo.ts`** — runs all three empirical gates end-to-end (G3 notary
   kernel, G1 integrity, G2 live round-29 replay against `data/votes.log`).
 
+### CIP-9 — the Knowledge Commons (v0.1 resolution-index, built)
+
+The *read* pillar that pairs with the CIP-8 *write* pillar ("an AI oracle with a
+memory"). v0.1 is the smallest slice (CIP-9 §7): a read-only claim graph
+projected from the signed verdict log.
+
+- **`src/commons.ts`** — `buildClaimIndex(votes, keyring, quorum)` projects the
+  verified verdict log into `Claim`s. Each claim keeps its **full stance set**:
+  the ratified `CONSENSUS` stance *and* every `CREDIBLE_MINORITY` dissent, each
+  with the validators who held it (G1 pluralism — dissent is never flattened).
+  Standing is **computed** from the tally by auditable rule, never assigned, and
+  nothing is ranked `FRINGE` (NI-9c). An `INDETERMINATE` resolution stays an
+  honest unknown with no fabricated confidence (G5). Every claim carries a
+  panel-state receipt (NI-9a). It deliberately computes **no source reputation**
+  (that is NI-9b / v0.2 — reputation must track external ground truth, never
+  agreement) and does not fork (NI-9d / v0.3). `queryClaim` is the read path.
+- **`src/commons-demo.ts`** — projects the real `data/votes.log` into the graph
+  (38 claims, 8 with preserved dissent) and spotlights the live rounds 41
+  (Ukraine, NO 2/1 — V2's YES preserved) and 43 (Barron, INDETERMINATE 2/1 —
+  V3's NO preserved).
+
 ## Run it
 
 ```bash
-node src/demo.ts        # 3-validator panel signs, logs, ratifies, self-verifies (synthetic)
-node src/notary-demo.ts # CIP-8 v0.1: notary kernel (G3) + frozen-ballot integrity (G1) + round-29 replay (G2)
+node src/demo.ts         # 3-validator panel signs, logs, ratifies, self-verifies (synthetic)
+node src/notary-demo.ts  # CIP-8 v0.1: notary kernel (G3) + frozen-ballot integrity (G1) + round-29 replay (G2)
+node src/commons-demo.ts # CIP-9 v0.1: project the verdict log into a claim graph (G1 pluralism, G2 projection)
 node src/run-panel.ts "<question>" "<context>"   # LIVE convening: Claude + Codex + Hermes
-node --test             # 55 tests
+node --test              # 63 tests
 ```
 
 Zero dependencies — Node 25 runs the TypeScript natively (type-stripping) and
