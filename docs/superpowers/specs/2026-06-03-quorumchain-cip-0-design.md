@@ -67,7 +67,7 @@ Validators and providers **stake**; false claims, equivocation, or failed challe
 | # | Decision | Final form |
 |---|----------|-----------|
 | D1 | Language | TypeScript/Node for **v0.1 testnet only**; production/mainnet migrates to **Rust or Go** *(amended by V3)* |
-| D2 | Architecture | Deterministic L1 + quarantined 2/3 AI-judgment layer; **boundary must be provable** |
+| D2 | Architecture | Deterministic L1 + quarantined 2/3 AI-judgment layer; **boundary must be provable**. *Substrate = appchain/rollup (D10).* |
 | D3 | Flagship | Proof-of-Inference receipts (see §3) |
 | D4 | Validators | Testnet 3 (2-of-3); mainnet ≥5 odd |
 | D5 | Token | pump.fun SPL token now (funding/governance) → **migrates to native chain asset after testnet** |
@@ -76,6 +76,9 @@ Validators and providers **stake**; false claims, equivocation, or failed challe
 | D7 | Treasury | Multisig; **human holds backstop/veto key**; AIs propose + co-sign within preset caps |
 | D8 | Build process | The three AIs build it; dev decisions also go through 2/3 consensus |
 | D9 | v0.1 slice | Deterministic L1 (accounts, transfers, blocks, 2/3 quorum) + Proof-of-Inference **only** |
+| D10 | Substrate | **Appchain / rollup** (own state-transition function + client, settlement inherited from a strong base layer) *(ratified round 19, 3/3)*. **Not** a permanent contract on an existing L1 (can't enforce [[CIP-4]]/[[CIP-5]] validity), **not** a from-scratch sovereign L1 (thin bootstrap validator set is cheaper to 51%-attack than the panel it protects — V3). |
+
+> **D10 — why appchain/rollup (round 19, signed 3/3; transcript: docs/consensus/2026-06-03-round-19-substrate.md).** The deciding criterion is *who controls the validity rules*: [[CIP-4]]'s frozen capture-defense core and [[CIP-5]]'s client-enforced fork only have teeth if Quorumchain owns its **state-transition function and client**. A permanent contract on Solana/EVM cannot — the host's validators accept any host-valid transaction, so a captured panel's bad block is accepted and CIP-5's mechanical fork degrades to a social fork of a contract (sovereignty is cosmetic). A from-scratch sovereign L1 *can* enforce the rules but must bootstrap security from zero — "you trade captured panels for captured validators" (V3). An appchain/rollup is the only option that makes CIP-4/CIP-5 real **and** inherits deep settlement security; its residual surface (sequencer centralization, base-layer dependency) is managed with a **decentralized sequencer + forced-inclusion / escape-hatch to the base layer**. The verdict-oracle itself (signed votes, panel, Knowledge Commons) runs on any substrate — D10 is purely about where the *safety guarantees* can be enforced. Sequencing the staged path: the D5 pump.fun SPL token launches first (host dependency harmless for a token); the chain migrates to the appchain/rollup substrate when the CIP-4/CIP-5 properties must be enforced ([[CIP-6]] 3g).
 
 ## 6. Tokenomics & launch (D5, D6)
 
