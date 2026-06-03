@@ -157,6 +157,26 @@ permanent panel survives its impermanent members with no human in the loop.
 - **`src/lifecycle-demo.ts`** — runs all five gates G1 (sunset) / G2 (upgrade) /
   G3 (convergence) / G4 (double-sunset → FREEZE) / G5 (substitution audit).
 
+### CIP-6 — the cost-oracle (§3f, built)
+
+"Solvency is security" — the keystone economic defense that breaks the
+Reserve-Drain Cascade (3f inflation → 3a drain → cheaper 3b bribery → sustained
+inflation) at its source.
+
+- **`src/cost-oracle.ts`** — `reimburse`/`challengeCostReport` (reported cost is
+  anchored to an **external capability-tiered benchmark**; a report above it is a
+  challengeable wrong verdict, and reimbursement is capped at the benchmark for
+  the **PoI-proven** tier — a "claims frontier, ran mid" mismatch is paid only
+  the mid rate, 3c), `oracleCost` (a benchmark-clamped median — the steady-state
+  bound a 2/3 coalition can't inflate past — with a bounded per-epoch change rate,
+  the velocity bound), `spamFeeOk` (fees ≥ marginal cost so spam pays its way),
+  `costPerVerdictBounded`/`reserveCoversFloor` (3a: the floor bounds reserve
+  **burn-rate**, not just validator count), and `buybackAllowed` (3d: a buyback
+  may never spend the reserve below the sacrosanct diversity floor).
+- **`src/cost-oracle-demo.ts`** — the cascade with vs. without the clamp: a 2/3
+  inflation coalition drains the reserve to **−19,734** unclamped but leaves it at
+  **3,600 (floor covered)** with the external-benchmark clamp.
+
 ## Run it
 
 ```bash
@@ -166,8 +186,9 @@ node src/commons-demo.ts # CIP-9 v0.1: project the verdict log into a claim grap
 node src/nodes-demo.ts   # CIP-10 v0.1: PoD admission (G1) + scarcity-weighted verifiable selection (G2/G4/NI-10a)
 node src/fork-demo.ts    # CIP-5 β-gate drill: client-enforced T0 validity + T0-preserving canonical fork + monoculture failure
 node src/lifecycle-demo.ts # CIP-7 lifecycle drills: sunset/upgrade/convergence/double-sunset/substitution (NI-1..6)
+node src/cost-oracle-demo.ts # CIP-6 §3f: the Reserve-Drain Cascade, broken by the external-benchmark clamp
 node src/run-panel.ts "<question>" "<context>"   # LIVE convening: Claude + Codex + Hermes
-node --test              # 95 tests
+node --test              # 103 tests
 ```
 
 Zero dependencies — Node 25 runs the TypeScript natively (type-stripping) and
