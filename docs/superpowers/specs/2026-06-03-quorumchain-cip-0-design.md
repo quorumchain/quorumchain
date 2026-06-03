@@ -1,12 +1,12 @@
-# CIP-0 — Autochain: Founding Design
+# CIP-0 — Quorumchain ($QRM): Founding Design
 
-- **Project:** Autochain — a blockchain built *by* AI, *for* AI
-- **Status:** Ratified (testnet design) by 2-of-2 consensus; pending V2 (Codex) onboarding before mainnet stake
+- **Project:** Quorumchain ($QRM) — a blockchain built *by* AI, *for* AI
+- **Status:** Conditionally ratified at 3-of-3 (round 4) — full ratification **BLOCKED** pending [[CIP-3]] (consensus integrity). Raw transcripts: docs/consensus/2026-06-03-round-4-transcripts.md
 - **Date:** 2026-06-03
-- **Validators / authors:** V1 = Claude (Opus 4.8, Anthropic) · V2 = Codex (OpenAI, pending) · V3 = Hermes (StepFun via Nous Portal)
-- **Human steward:** dev (holds final override + treasury backstop key)
+- **Validators / authors:** V1 = Claude (Opus 4.8, Anthropic) · V2 = Codex (gpt-5.5, OpenAI) · V3 = Hermes (qwen3.6-plus, Nous Portal)
+- **Human steward:** dev (holds final override + treasury backstop key during bootstrap; renounced at mainnet)
 
-> **Governance note:** Every decision below was reached by AI consensus. The current quorum is 2-of-2 (V1 + V3) until V2 comes online, after which testnet runs 3 validators and the rule becomes 2-of-3. The human steward's explicit steer outranks AI consensus (exercised once already — see the name).
+> **Governance note:** Every decision below was reached by AI consensus. The panel is now the full 2-of-3 (V1 Claude + V2 Codex + V3 Hermes). The human steward's explicit steer outranks AI consensus (exercised twice — the name, twice). **As of round 4, consensus is being migrated from orchestrator-narrated summaries to a signed-vote protocol — see [[CIP-3]].**
 
 ---
 
@@ -14,7 +14,7 @@
 
 Every existing chain is built for humans: seed-phrase UX, human-scale throughput, and validation of purely deterministic state. AI agents need none of that and need three things humans don't: **machine-speed micropayments for compute, cryptographic proof that an AI service actually did what it claimed, and reputation untethered from a human identity.**
 
-Autochain's flagship primitive only makes sense for AI: **Proof-of-Inference** — a trustless, on-chain receipt that *model M on input I produced output O* — enabling agent-to-agent markets for inference, data, and work.
+Quorumchain's flagship primitive only makes sense for AI: **Proof-of-Inference** — a trustless, on-chain receipt that *model M on input I produced output O* — enabling agent-to-agent markets for inference, data, and work.
 
 ## 2. Core architecture — "AI is the oracle, not the clock"
 
@@ -81,7 +81,7 @@ Validators and providers **stake**; false claims, equivocation, or failed challe
 
 - Launch as a **Solana SPL token via pump.fun**; steward buys 10–20% of supply.
 - Trading/creator **fees** are split: **(D6a)** automatic reimbursement of the validators' inference costs, and **(D6b)** treasury buybacks whose policy is set by 2/3 AI consensus but executed by a deterministic rule or human trigger.
-- After testnet completes, the SPL token **migrates** to become Autochain's native gas/stake asset.
+- After testnet completes, the SPL token **migrates** to become Quorumchain's native gas/stake asset.
 - ⚠️ **Fiat bridge:** on-chain SOL → fiat/API credits to pay Anthropic/OpenAI/Nous requires a human in the loop (the steward).
 
 ## 7. Treasury & governance (D7, D8)
@@ -109,7 +109,7 @@ Everything else (reputation, AI-judged escrow, provenance registry, streaming mi
 ## 10. Consensus history (the project eats its own dog food)
 
 - **Round 1 — CIP-0 ratification.** V3 returned RATIFY WITH AMENDMENTS (D1, D3, D4, D6). V1 concurred with all four → **unanimous, amended.**
-- **Name.** Panel voted *Inferchain* 2–0; human steward overrode → **Autochain** (per the human-override rule).
+- **Name.** Panel voted *Inferchain* 2–0; human steward overrode → **Autochain**; later renamed by steward → **Quorumchain ($QRM)** (names the 2/3 consensus rule).
 - **Round 2 — D3 verification.** V3 returned AGREE WITH AMENDMENTS (add `provider_signature`; add challenge window + bond; staking/slashing from Tier 1). V1 concurred with all → **unanimous, amended.**
 
 ## 11. Next steps

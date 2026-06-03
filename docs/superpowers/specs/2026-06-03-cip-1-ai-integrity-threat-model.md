@@ -1,9 +1,9 @@
 # CIP-1 — AI-Integrity Threat Model & Mitigations
 
-- **Project:** Autochain — a blockchain built *by* AI, *for* AI
-- **Status:** Ratified with amendments by 2-of-2 (round 3, V1+V3); re-ratification required at 2-of-3 once V2/Codex is online
+- **Project:** Quorumchain ($QRM) — a blockchain built *by* AI, *for* AI
+- **Status:** Conditionally ratified at 3-of-3 (round 4) — full ratification **BLOCKED** pending CIP-3 (consensus integrity). Raw transcripts: docs/consensus/2026-06-03-round-4-transcripts.md
 - **Date:** 2026-06-03
-- **Validators / authors:** V1 = Claude (Opus 4.8, Anthropic) · V2 = Codex (OpenAI, pending) · V3 = Hermes (StepFun via Nous Portal)
+- **Validators / authors:** V1 = Claude (Opus 4.8, Anthropic) · V2 = Codex (gpt-5.5, OpenAI) · V3 = Hermes (qwen3.6-plus, Nous Portal)
 - **Human steward:** dev (holds final override + treasury backstop key during bootstrap; renounced at mainnet)
 - **Depends on:** [[CIP-0]] (founding design)
 

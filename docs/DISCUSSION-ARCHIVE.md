@@ -139,13 +139,14 @@ Plain-language description: **"an AI oracle + knowledge chain"** is accurate and
 - Panel (round 1) voted **Inferchain** 2–0 ("names the core primitive"). Steward **overrode → Autochain** (per the human-override rule).
 - Later revisited after the autonomy pivot: **Autochain aged into the right name** — "auto" = autonomous/self-running, now the central thesis. If ever rebranding toward the judgment identity, **Synodchain** (a *synod* = a deliberating council that rules) was the top alternative; *Quorumchain* / *Logoschain* runners-up.
 - **Caveat:** "Autochain" is a common word with likely collisions — vet token/handle/domain before the pump.fun launch.
+- **Renamed (steward, post round-4): Autochain → Quorumchain, ticker $QRM** — names the 2/3 consensus rule itself (fitting, since round 4 found the consensus layer was the weak point); also resolves the collision caveat above.
 
 ---
 
 ## 11. Consensus history (the project eats its own dog food)
 
 - **Round 1** — CIP-0 ratification. V3 RATIFY WITH AMENDMENTS (D1 lang→Rust/Go for prod; D3 receipt schema; D4 ≥5 odd; D6 split inference vs buyback). V1 concurred → unanimous.
-- **Name** — panel Inferchain 2–0; human override → Autochain.
+- **Name** — panel Inferchain 2–0; human override → Autochain; later renamed → Quorumchain ($QRM).
 - **Round 2** — D3 Proof-of-Inference verification. V3 amendments: add `provider_signature`, add challenge window + bond, staking/slashing from Tier 1. V1 concurred → unanimous.
 - **Round 3** — CIP-1 + CIP-2 (adversarial). V3 found: (a) 2-validator collusion on unverifiable claims, weakest = immutable diversity rule; (b) source-trust "domain arbitrage" + fact/framing gaming, weakest gate = G2.4. Amendments applied to both CIPs. RATIFY WITH AMENDMENTS.
 

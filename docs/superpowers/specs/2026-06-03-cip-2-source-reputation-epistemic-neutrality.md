@@ -1,9 +1,9 @@
 # CIP-2 — Source Reputation & Epistemic Neutrality
 
-- **Project:** Autochain — a blockchain built *by* AI, *for* AI
-- **Status:** Ratified with amendments by 2-of-2 (round 3, V1+V3); re-ratification required at 2-of-3 once V2/Codex is online
+- **Project:** Quorumchain ($QRM) — a blockchain built *by* AI, *for* AI
+- **Status:** Conditionally ratified at 3-of-3 (round 4) — full ratification **BLOCKED** pending CIP-3 (consensus integrity) + the external-anchors amendment below. Raw transcripts: docs/consensus/2026-06-03-round-4-transcripts.md
 - **Date:** 2026-06-03
-- **Validators / authors:** V1 = Claude (Opus 4.8, Anthropic) · V2 = Codex (OpenAI, pending) · V3 = Hermes (StepFun via Nous Portal)
+- **Validators / authors:** V1 = Claude (Opus 4.8, Anthropic) · V2 = Codex (gpt-5.5, OpenAI) · V3 = Hermes (qwen3.6-plus, Nous Portal)
 - **Human steward:** dev (final override during bootstrap; renounced at mainnet)
 - **Depends on:** [[CIP-0]] (founding design), [[CIP-1]] (AI-integrity threat model)
 
@@ -84,6 +84,18 @@ The oracle does not say *"trust our list."* It says *"here is the auditable basi
 - **[[CIP-1]] §4 calibration-vs-truth audits** are the engine that scores source accuracy (§2) and detects panel slant (§10).
 - **Knowledge Commons** ([[CIP-0]] thesis) supplies the resolved ground truth that updates source scores and stores source-basis records as settled attestations.
 - **Diverse panel + never-slash-dissent** ([[CIP-1]] §7) protect against the panel encoding its own bias into source-trust.
+
+## 9a. External resolution anchors *(amended round 4, per V2/V3)*
+
+V2 (Codex) found a circularity and V3 (Hermes) deepened it: the Knowledge Commons cannot be **both** the input that sets source weights **and** the ground truth that scores sources — without an external tether it becomes "an echo chamber with a mathematical veneer," and is "fragile to coordinated fiction" (mutually-citing fabricated sources converging on false authority). Source accuracy (§2) and Commons truth MUST anchor to ground truth **outside the Commons**:
+
+1. **Prediction-outcome resolution** — claims that make falsifiable predictions are scored against what *actually happened*, not against the Commons.
+2. **Primary-data oracles** — on-chain state, verified APIs, and cryptographically attested datasets that exist independently of the Commons.
+3. **Genesis-anchor principle** — every high-weight claim must trace, within **N hops**, back to a non-Commons source. A claim supported only by other Commons claims cannot accrue high weight.
+
+**Coordinated-fiction defense:** a closed citation loop of in-Commons sources can never bootstrap authority, because weight requires an external anchor within N hops.
+
+**Gate G2.6 (unlocks β):** no claim reaches high weight without an external anchor within N hops; in a seeded drill, a mutually-citing fabricated-source ring fails to gain authority.
 
 ## 10. Testnet gates (falsifiable; values are initial targets)
 

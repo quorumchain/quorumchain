@@ -4,6 +4,7 @@
 - **Subject:** Re-ratification of CIP-0 / CIP-1 / CIP-2 at full panel
 - **Panel:** V1 Claude (Opus 4.8) · V2 Codex (gpt-5.5) · V3 Hermes (qwen3.6-plus, Nous Portal)
 - **Result:** 3-of-3 RATIFY WITH AMENDMENTS — **full ratification BLOCKED by V3 pending codification of 4 amendments**
+- **Naming:** the chain was renamed Autochain → **Quorumchain ($QRM)** by steward decision after this round; the verbatim text below predates the rename and is preserved unedited.
 
 > **Why this file exists.** In round 4, V2 (Codex) and V3 (Hermes) ruled that "AI consensus" run as orchestrator-summarized prose is a *ceremony, not a protocol*. This file is the first remediation: the **verbatim, unedited** validator outputs, committed to the repo so they can be independently checked against any summary. Prompts used: `/tmp/codex_ratify.txt` (V2) and `/tmp/hermes_round4.txt` (V3). **Limitation (disclosed):** rounds 1–3 were summarized, not raw-logged — that gap is exactly the flaw being fixed; signed-vote logging is mandated going forward.
 
