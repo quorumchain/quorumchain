@@ -52,12 +52,38 @@ artifacts.
   itself) supplies its deliberation in `data/claude-vote.txt`. Keystore + log
   live under `data/` (git-ignored — holds private keys).
 
+### CIP-8 — the Accountability Ledger (v0.1, built)
+
+The first *product* slice, built on the same substrate (CIP-8 §6 KERNEL_FIRST).
+
+- **`src/notary.ts`** — the **NOTARY-mode Staked Resolvable Attestation**: a
+  signed, hash-chained, attributable record of a consequential AI action.
+  `createAttestation` / `verifyAttestation` / `checkAttestation` (procedural
+  *completeness + internal consistency + attributability* — never truth) plus a
+  separate hash-chained attestation log. **Hard invariant NI-8a**: every record
+  is structurally labeled `NOT_VERIFIED` — the kernel asserts authorship + timing
+  + non-repudiation only, and has *no code path* that can mark a claim verified.
+- **`src/replay.ts`** — the **frozen-ballot replay verifier** (CIP-8 §4).
+  `recomputeBallotHash`, `tamperDelta` (gate G1: a post-hoc "additional context"
+  edit provably changes the ballot hash), and `replayBallot` (gate G2: from the
+  byte-exact frozen criteria + signed votes, recompute the hash, re-verify each
+  signature, and re-ratify — reproducible by anyone).
+- **`fixtures/ballot-r29-mstr.json`** — the byte-exact frozen ballot for the live
+  $85M Polymarket MicroStrategy resolution (round 29). Recomputing its hash
+  reproduces the published ballot hash `de9b2766…`, so the signed **YES 3/3**
+  verdict is provably bound to exactly these criteria. (Persisting this preimage
+  is the gap the kernel closes: the chain proved *integrity*, but the criteria
+  were not independently *recomputable* until now.)
+- **`src/notary-demo.ts`** — runs all three empirical gates end-to-end (G3 notary
+  kernel, G1 integrity, G2 live round-29 replay against `data/votes.log`).
+
 ## Run it
 
 ```bash
-node src/demo.ts   # 3-validator panel signs, logs, ratifies, self-verifies (synthetic)
+node src/demo.ts        # 3-validator panel signs, logs, ratifies, self-verifies (synthetic)
+node src/notary-demo.ts # CIP-8 v0.1: notary kernel (G3) + frozen-ballot integrity (G1) + round-29 replay (G2)
 node src/run-panel.ts "<question>" "<context>"   # LIVE convening: Claude + Codex + Hermes
-node --test        # 34 tests
+node --test             # 55 tests
 ```
 
 Zero dependencies — Node 25 runs the TypeScript natively (type-stripping) and
