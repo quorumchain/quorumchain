@@ -35,11 +35,29 @@ artifacts.
   reorder breaks `verifyLog()`. Interim "immutable transcript" substrate until
   on-chain hash-pinning lands.
 
+- **`src/keystore.ts`** — persistent validator identities. `loadOrCreateKeyring`
+  reuses on-disk Ed25519 keys (private keys `0600`) so a panel's signed log is
+  meaningful across sessions.
+
+- **`src/panel.ts`** — `convene()`, the function that replaces the
+  orchestrator's narrated ceremony: it invokes each validator, signs their
+  VERBATIM output, appends it to the log, and ratifies — all recomputable from
+  the log afterward. `parseVerdict` pulls a `VERDICT: <token>` line out of
+  free-text model output (absent → `NO_VERDICT`, still logged).
+
+- **`src/run-panel.ts`** — the live wiring. Convenes the real validators
+  (V1 Claude, V2 Codex, V3 Hermes) on one ballot:
+  `node src/run-panel.ts "<question>" "<context>"`. V2/V3 shell out to the
+  `codex`/`hermes` CLIs; V1 (the orchestrating Claude, which cannot subprocess
+  itself) supplies its deliberation in `data/claude-vote.txt`. Keystore + log
+  live under `data/` (git-ignored — holds private keys).
+
 ## Run it
 
 ```bash
-node src/demo.ts   # 3-validator panel signs, logs, ratifies, self-verifies
-node --test        # 21 tests
+node src/demo.ts   # 3-validator panel signs, logs, ratifies, self-verifies (synthetic)
+node src/run-panel.ts "<question>" "<context>"   # LIVE convening: Claude + Codex + Hermes
+node --test        # 34 tests
 ```
 
 Zero dependencies — Node 25 runs the TypeScript natively (type-stripping) and
@@ -54,5 +72,17 @@ Zero dependencies — Node 25 runs the TypeScript natively (type-stripping) and
   to an L1. CIP-3 §5 calls this the interim state.
 - **Slashing execution** — `findEquivocations` *detects*; it does not yet
   *penalize* (no stake/economics on testnet α).
-- **Panel wiring** — not yet connected to the live Codex/Hermes invocation flow;
-  this is the trust substrate that flow will write into.
+
+## Panel wiring — DONE (proven live)
+
+`convene()` is wired into the real panel via `src/run-panel.ts`. A live
+3-validator convening (Claude + Codex + Hermes) on a real governance ballot
+produced three Ed25519-signed votes, each binding the full prompt+context,
+written to the hash-chained log and ratified — every signature verifies and the
+chain validates independently. The orchestrator can no longer fabricate or
+silently alter the result; anyone with the keyring + log recomputes it.
+
+Remaining gap for a *fully* trustless panel: per-validator key custody (above) —
+today V2/V3 outputs are captured and signed orchestrator-side. The signed +
+chained log makes divergence from a re-run detectable, which is the testnet-α
+guarantee; cryptographic non-repudiation by each model itself is a later CIP.

@@ -1,0 +1,4 @@
+# Runtime panel artifacts. The keystore holds validator PRIVATE keys and must
+# never be committed. The vote log is a local transcript; publish a specific
+# convening deliberately with `git add -f data/votes.log` if/when desired.
+data/
