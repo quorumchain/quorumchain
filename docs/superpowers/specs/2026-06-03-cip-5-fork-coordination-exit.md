@@ -76,6 +76,8 @@ A scheduled adversarial drill on testnet, repeated until green:
 
 Renunciation ([[CIP-4]] §8) may not be contemplated until this drill is green and sustained.
 
+**v0.1 built (2026-06-04).** The drill harness and both mechanisms are now code — `code/src/fork.ts` (`checkT0` Mechanism A: the four T0 validity checks + the round-12 T0-check-definition lock; `selectCanonicalFork` Mechanism B: T0-preserving-then-heaviest; `runForkDrill` §9) + the demo `code/src/fork-demo.ts`. Verified: all four T0 violations and the salami-slice (a T1 edit to a T0-check definition) are rejected; a **10× heavier captured fork loses to a lighter honest fork** (weight never launders a violation, §4); the drill is **green** when ≥N independent clients 100% auto-reject an injection (§9 step 2); and a **client monoculture** sharing a bug fails to reject → drill **RED** with no split visible — the §7 β-gate failure made mechanical (`node --test`, 11 CIP-5 tests within 84 total; `node code/src/fork-demo.ts`). Deliberately deferred to live testnet (per §9–§10, not faked here): real re-convergence-window timing (step 3), verifiable split-detection beacons (step 4), the "zero honest nodes stranded" measurement (step 5), and the concrete supply-chain client-independence criterion (§7/§10) — this v0.1 proves the *validity-rule and canonical-fork logic* and the *monoculture-failure* property; multi-implementation independence and network timing are testnet milestones.
+
 ## 10. Open items
 
 - Target re-convergence window (drill step 3) and minimum independent-client count `N` (§7) — initial values, panel to ratify against testnet data.

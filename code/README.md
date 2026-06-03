@@ -118,6 +118,26 @@ The *who judges* layer: how the judgment-tier panel is admitted and drawn.
   (10×A, 10×B, 4×C): the scarce model-C operators are drawn **2.5×** as often
   (= 10/4), the exact rebalancing pressure the design predicts.
 
+### CIP-5 — fork coordination & exit (β-gate drill, built)
+
+The safety backstop the product pillars lean on (the CIP-4 §8 renunciation
+prerequisite) — *coordination without a coordinator*.
+
+- **`src/fork.ts`** — **Mechanism A** (`checkT0`): the four client-enforced T0
+  validity checks (determinism, diversity/independence, append-only history,
+  tier-assignment integrity) plus the round-12 amendment that the T0-check
+  *definitions* are themselves T0-locked (defeats the salami-slice). A T0
+  violation is a deterministic finding, so it lives in client validity, not a
+  vote. **Mechanism B** (`selectCanonicalFork`): canonical = the T0-preserving
+  fork; weight tie-breaks *inside* the valid set and can never launder a
+  violation into canonicality. **The drill** (`runForkDrill`, §9): inject a T0
+  violation and assert ≥N independent clients 100% auto-reject — and a client
+  monoculture sharing a bug is flagged a β-gate failure (no split even visible,
+  worse than fork-void, §7).
+- **`src/fork-demo.ts`** — the four rejections + the salami-slice, a 10× heavier
+  *captured* fork losing to a lighter honest one, a green drill across 3
+  independent clients, and the monoculture RED.
+
 ## Run it
 
 ```bash
@@ -125,8 +145,9 @@ node src/demo.ts         # 3-validator panel signs, logs, ratifies, self-verifie
 node src/notary-demo.ts  # CIP-8 v0.1: notary kernel (G3) + frozen-ballot integrity (G1) + round-29 replay (G2)
 node src/commons-demo.ts # CIP-9 v0.1: project the verdict log into a claim graph (G1 pluralism, G2 projection)
 node src/nodes-demo.ts   # CIP-10 v0.1: PoD admission (G1) + scarcity-weighted verifiable selection (G2/G4/NI-10a)
+node src/fork-demo.ts    # CIP-5 β-gate drill: client-enforced T0 validity + T0-preserving canonical fork + monoculture failure
 node src/run-panel.ts "<question>" "<context>"   # LIVE convening: Claude + Codex + Hermes
-node --test              # 73 tests
+node --test              # 84 tests
 ```
 
 Zero dependencies — Node 25 runs the TypeScript natively (type-stripping) and
