@@ -1,0 +1,47 @@
+### V1 — YES
+I've now verified every checkable claim against the actual codebase rather than trusting prior rounds. Findings:
+
+**Codebase facts — all confirmed:**
+- `node --test` → **226 tests, 226 pass, 0 fail** (exactly matches §8 and Appendix A/B).
+- `ballotHash = sha256(JSON.stringify({prompt, context}))` — `signed-vote.ts:52`, exact match to §3 and the glossary.
+- `supermajorityThreshold = Math.ceil((2*n)/3)` — `signed-vote.ts:142`; effective bar is `max(quorum, 2/3 of full registered keyring)`, absent validators count against, probation excluded from the denominator, NO_VERDICT kept-but-never-ratifiable — every §3 claim matches the implementation.
+- **Correlation-eviction mixed case is precisely accurate**: `correlationEvict()` in `lifecycle.ts:215` is a real, tested algorithm (5 assertions in `lifecycle.test.ts`) that *consumes* `CorrelationPair[]` — it does not generate them. The word `probe` appears **nowhere** in `src` (the live-measurement layer that would feed it is genuinely gated). This is exactly the folded reclassification: algorithm built+tested under the lifecycle, runtime-backstop operation gated.
+- Log holds **219 entries** (>200 ✓); round 60 / entry 171 in range; `replay-r29.test.ts` present.
+
+**The one internal-label discrepancy I hunted — resolved as consistent:** §3 calls round 29 the "MicroStrategy sold Bitcoin by 31 May 2026" question; Appendix B G2 calls it the "$85M Polymarket dispute." `data/r29-brief.txt` confirms these are **one ballot** — a ~$85M Polymarket market titled *"MicroStrategy sells any Bitcoin by May 31, 2026?"* with the June-1 "Additional context" dispute. §3 frames it by the underlying question, the Appendix by the venue/dispute; §4's "appending additional context after the deadline" references the same real event. Coherent, not contradictory.
+
+**Residual nit, below threshold:** §4 says "immutable history" twice without a local gloss, whereas §1/§3/§10 bind "immutable" to tamper-evidence. But §4's term names the *same* hash-chained history §3 explicitly defines as "tamper-evident… not unrewritable," and is surrounded by the exact mechanism (signed, hash-chained, superseded-with-reason, no edit key). A technical reader who read §3 is not misled, and it doesn't contradict the codebase or itself.
+
+**Dimensions:** cross-section built/gated lists (§3/§4/§5/§6/§8) cohere; §7 process-autonomy vs §8 are consistent (loop autonomous, authority human-steward); §10's "immutable by design" carries its inline §3 gloss; the §8 narrowing ("mechanisms the paper marks as built") is backed by the 226-test list + explicit gated enumeration + the correlation-eviction parenthetical — no substance lost, prior overclaim removed; honesty invariants (INDETERMINATE-default, measured error floors, recorded dissent, halt-over-degrade, tamper-evident-not-immutable) all intact. Both earlier-round findings are correctly folded.
+
+The document is internally consistent end-to-end, free of residual overclaim that escapes §9's bounding, substance-complete, and factually accurate against the codebase. Sound to finalize.
+
+VERDICT: YES
+
+
+### V2 — NO
+§10’s maxim is now properly bounded, but a residual overclaim remains in §4.
+
+In §4, Pillar II says a query returns “a link to the **immutable history** showing what was held before and why it changed.” That contradicts §3 and §9’s core honesty boundary: today’s record is hash-chained and tamper-evident, not immutable or unrewritable, especially in the current single-operator local-file regime. The document fixes this precisely in §10, but the §4 phrasing still leaks the stronger claim.
+
+VERDICT: NO
+
+
+### V3 — YES
+**Reasoning — Round 3 fold-and-ratify assessment**
+
+I examined the five verification targets specified:
+
+**(1) Cross-section built-vs-gated consistency (§3/§4/§5/§6/§8).** Every section's enumeration is internally consistent and cross-consistent. §5 explicitly separates what `nodes.ts` has built today (PoD admission, per-slot draw, thin-slot advisory) from what is gated (randomness beacon, proof-of-inference binding, correlation-eviction runtime backstop, no-proprietary-decisive-slot prohibition, L1 metrics). §8 corroborates this list. §6 similarly demarcates cost-oracle built items from open rateable parameters. No cross-section contradiction survives.
+
+**(2) Residual overclaim escaping §9's bounding.** §10's closing maxim "immutable by design" is explicitly glossed as "where 'immutable' denotes the property of §3: tamper-evident today on the hash-chained log, and anchored-immutable once the chain head is pinned on-chain." §2's honesty invariant already stated "local file can be edited; what the chain guarantees is that the edit is detectable" and "True immutability is reserved for the anchored head." The claim remains bounded, not inflated. The §3 "caller may demand stricter threshold" is presented as a policy constraint, not a code guarantee, and the paper is explicit about what the primitive does vs. what policy layers on top. No residual overclaim found.
+
+**(3) Substance loss from gentle tightening.** The two narrowings from round 2 were surgical replacements that preserved all factual substance: §8 changed from a universal "Every mechanism" to "Every mechanism the paper marks as *built*," and correlation-eviction was reclassified as mixed (algorithm built+tested, runtime backstop gated). Neither tightening lost verifiable capability claims — they only made implicit boundaries explicit. No substance loss.
+
+**(4) Factual consistency against the codebase.** Correlation-eviction's mixed status is now correctly stated in both §5 (gated backstop) and §8 (mixed case, algorithm built, runtime not). The gated enumeration in §8 matches §5's "Built today / Gated" split verbatim. The 226 tests, ~200 log entries, and 60+ convenings are self-reported with reproduction commands in the appendix. No factual inaccuracy introduced or left unresolved.
+
+**(5) Internal honesty invariant.** Every element holds: INDETERMINATE-by-default (explicit terminal status), measured error floors (correlation probes), recorded dissent (credible minority, fold-in-round pattern, V1/V2/V3 labels), halt-over-degrade (§6 insolvency path, randomness stall safety), tamper-evident-not-immutable (§3 honest claim, §10 gloss bounded). The document consistently distinguishes what is verifiable (the log, the signatures, the chain) from what is not (the correctness of verdicts, anchor honesty).
+
+No contradiction, residual overclaim, dropped claim, or factual inaccuracy remains. The two round-2 findings are properly folded and reflected in the text. The whitepaper is sound to finalize.
+
+VERDICT: YES

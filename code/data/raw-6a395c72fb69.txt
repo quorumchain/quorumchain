@@ -1,0 +1,50 @@
+### V1 — SOUND
+I've reviewed the commit from source across all four claims, verifying the actual post-commit code in `signed-vote.ts`, `daemon.ts`, `self-review-source.ts`, `invokers.ts`, `panel.ts`, and the consumer `commons.ts`, plus the backing tests.
+
+## Assessment against each claim
+
+**1. NO_VERDICT never ratifies** — `ratify()` skips NO_VERDICT in the max-finding loop (`signed-vote.ts:187`) and gates `ratified = verdict !== null && max >= required` (`:194`). NO_VERDICT stays in `tally` for transparency but can never *be* the verdict. A neighboring-position check confirms a real verdict below threshold (e.g. REVISE:1 vs NO_VERDICT:2, required 2) correctly yields `ratified:false`. Backed by a direct test. ✅
+
+**2. Real-verdict participation** — daemon computes `realVotes = votes.filter(v => v.verdict !== 'NO_VERDICT')` and finalizes only at `realVotes >= quorum` (`daemon.ts:62-63`); otherwise retry/fail. Crucially it filters the `votes` array itself, **not** `ratify().counted`/`.tally` (which include NO_VERDICT voters) — so the laundering path is closed at the daemon layer too. Verified `convene()` returns the same signed-vote set `ratify()` tallies (`panel.ts:95-96`), and that an errored invoker still yields a *signed* `NO_VERDICT` vote (`deliberating-signer-host.ts:50-53`), so the two layers see a consistent view. ✅
+
+**3. Full-sha dedup** — id is `review-${epoch}-${commit.sha}` (full sha); short 12-char is display-only. The collision test (shared epoch + 12-char prefix, distinct full sha → distinct ids) passes. Strengthens tamper-evidence. ✅
+
+**4. Invoker budgets** — 480s timeout / 16MB buffer shared, hermes `--max-turns 12`, with SIGTERM→"timed out after Nms" diagnostics. Prompt passed via env (`QRM_PROMPT`) for the shell-routed invokers / argv for hermes — no injection, custody untouched. ✅
+
+## Adversarial findings (non-blocking)
+
+- **Daemon uses `params.quorum` for the participation bar, not `max(quorum, supermajority(n))`.** For the standing 3-panel (quorum 2, supermajority ⌈6/3⌉=2) these coincide, so no live bug. And even under a misconfig where quorum < supermajority, `ratify()` *independently* enforces the 2/3 floor, so the `ratified` flag stays correct — the daemon's bar only governs retry-vs-finalize and errs conservatively (finalizes as *not* ratified, never laundering a NO into a YES). Not a soundness break.
+- **`commons.ts:84-89` would label a NO_VERDICT position as `CREDIBLE_MINORITY` within a RESOLVED claim** — cosmetic/reputational display only, doesn't touch ratification or finalization, and is outside this commit's surface.
+
+Custody, no-laundering, liveness, and tamper-evidence all hold; every claim is implemented as stated and covered by tests (TDD satisfied). The change does what it says with no gap between claim and implementation.
+
+VERDICT: SOUND
+
+
+### V2 — SOUND
+The change is sound on the reviewed source path. `ratify` keeps `NO_VERDICT` in the transparent tally but excludes it from the winning verdict, so sentinel failures cannot ratify. `drainQueue` now gates finalization on non-`NO_VERDICT` votes, so a quorum of invocation failures is retried instead of moved to `done`. The full-sha review id fixes the stated short-prefix collision for new self-review ballots, and live `ConveneResult.votes` matches the daemon’s new `{ verdict }` expectation.
+
+I ran `npm test`; it could not complete in this read-only sandbox because many tests need `mkdtemp` under `/tmp`, but the pure ratification tests shown in the run did pass, including the new `NO_VERDICT` case.
+
+VERDICT: SOUND
+
+
+### V3 — SOUND
+⚠️  Reached maximum iterations (12). Requesting summary...
+All seven files checked (daemon, invokers, self-review-source, signed-vote, and three test files). Here's the adversarial review:
+
+1. ratify excludes NO_VERDICT (signed-vote.ts): the `if (val === 'NO_VERDICT') continue;` is placed correctly inside the max-count loop, before `max` is updated. NO_VERDICT tallies are still populated for transparency. The test covers the exact 2/3 NO_VERDICT scenario and asserts ratified=false, verdict=null. No gap.
+
+2. daemon counts only REAL verdicts for participation (daemon.ts): `result.votes.filter(v => v.verdict !== 'NO_VERDICT')` is the right boundary. A convening with 3 raw votes but only 1 real now falls through to the retry path. The `RunResult` interface change from `unknown[]` to `{ verdict: string }[]` is compatible with `ConveneResult.votes` (SignedVote[]) and the test mock. No gap.
+
+3. Full-sha dedup (self-review-source.ts): `id` uses `commit.sha` (40 hex chars). The 12-char short sha is preserved only for the human-readable prompt. The collision test constructs two distinct 40-char SHAs sharing the first 12 chars and asserts non-equal ids. No gap.
+
+4. Invoker budgets and diagnostics (invokers.ts): timeout raised to 480s module-level; hermes turn cap raised to 12. The new `runWithDiag` wrapper catches execFile errors and appends the stderr tail (last 500 chars) or "timed out after Xms" for SIGTERM. All three invokers route through it. The `execFile` timeout kills with SIGTERM by default, so the diagnostic label is accurate. Environment is spread correctly (`...process.env` preserved, so PATH works). No gap.
+
+Cross-cutting invariant checks:
+- No-laundering: a panel where 2/3 validators errored is now retried (daemon path), not finalized (old behavior). NO_VERDICT also cannot become the ratified verdict. Both halves of the liveness fix are present.
+- Custody: invoker changes don't touch the signing boundary; private keys remain child-side.
+- Tamper-evidence: NO_VERDICT votes are still tallied; the rawOutput with the new stderr-tail diag becomes the vote's rawOutput hash. Unchanged.
+- TDD: all four new behaviors have corresponding tests (daemon retry on 2/3 NO_VERDICT, ratify never picks NO_VERDICT, full-sha collision, and invoker diag).
+
+VERDICT: SOUND

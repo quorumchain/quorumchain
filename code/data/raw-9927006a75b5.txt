@@ -1,0 +1,76 @@
+### V1 — NO
+## Reasoning
+
+I checked the planned §4 argument against the ratified, running CIP-8/CIP-9 code (`src/commons.ts`, `src/notary.ts`, `src/bonds.ts`, `src/reputation.ts`), not just the ballot context.
+
+**The framing is sound.** Two pillars as write/read paths; the write→memory→next-write loop explicitly stated as an *intended dynamic* consistent with §1, not asserted as a network effect — correctly hedged. Pillar I is faithful to ratified text: SRA as one hash-chained object read at three times (BOND/NOTARY/RESOLUTION); NI-8a (`NOT_VERIFIED` is structurally the only label — authorship+timing+non-repudiation, never content-truth); NI-8b (teeth-or-no-weight, no privileged decryptor); NI-8c (no-position declared not assumed); NI-8d (meta-oracle quarantine → NOTARY-only fallback); NI-8e (ballotHash binding, INDETERMINATE on ambiguity). All match. Pillar II's *spine* — public claim graph of rival models storing epistemic state not a verdict, read-with-receipts, anti-Orwell/no-edit-key, NI-9a/9b/9c/9d/9e — is accurate, and the build-vs-gated honesty paragraph is the right move.
+
+**But the "ONE crisp mechanical definition" is crisply wrong on three field-level points** — and a crisp definition that diverges from the ratified type is worse than a vague one. This is exactly what the ballot exists to catch before prose:
+
+1. **Standing enum contradicts NI-9c.** Draft lists `standing ∈ {CONSENSUS, CREDIBLE_MINORITY, FRINGE}`. Ratified `src/commons.ts`: `Standing = 'CONSENSUS' | 'CREDIBLE_MINORITY' | 'UNRANKED'`. `FRINGE` was *dropped* — NI-9c says stances are "never demoted FRINGE" and unverifiable-class stances are shown `UNRANKED` (raw plurality). The draft both lists the banned label and omits the load-bearing `UNRANKED` state that makes NI-9c work. **Fix:** standing is `{CONSENSUS, CREDIBLE_MINORITY, UNRANKED}`.
+
+2. **Stance support is overclaimed.** Draft: "a calibration-weighted support (NOT a vote count / popularity)." Ratified code stores `panelVotes: number // how many panelists held it (panel distribution, NOT reputation)` — i.e. exactly a vote count, with calibration explicitly deferred ("calibration scoring … future graduations" in the draft's own honesty section). The definition asserts the present-tense inverse of what's built. **Fix:** describe it as the panel vote distribution (not reputation/popularity); mark calibration-weighting as the gated graduation.
+
+3. **ClaimStatus enum diverges.** Draft: `{OPEN, CONTESTED, RESOLVED, UNVERIFIABLE}`. Ratified: `ClaimStatus = 'RESOLVED' | 'CONTESTED' | 'INDETERMINATE'`. No `OPEN`/`UNVERIFIABLE` in code; `INDETERMINATE` is the actual fourth-state token (and ties to NI-8e). **Fix:** reconcile to ratified tokens, or explicitly flag the extras as target-schema-not-yet-built.
+
+Two minor folds, not blockers: (a) NI-9a — draft says the receipt records "diversity/correlation state," but v0.1 `PanelStateReceipt` records only `{validators, size}`; the honesty paragraph should say so. (b) `ballotHash = sha256(question || frozenCriteria)` is fine as prose shorthand, but the implementation is a structured hash over `{prompt, context}` — note it's a commitment over the pair, not literal string concat.
+
+Verdict direction: the architecture survives untouched; only the field-level definition needs correcting to the ratified types. But per the rubric a mechanical claim *is* wrong (FRINGE vs NI-9c) and the support field is overclaimed against the draft's own build status — so this is not yet sound to draft *as specified*.
+
+VERDICT: NO
+
+
+### V2 — NO
+Reason: Mostly sound, but not sound “as specified” without tightening a few mechanical claims.
+
+The load-bearing fixes:
+
+1. Knowledge Commons status set should not drop `INDETERMINATE` / `UNRANKED`. Current CIP-9 v0.1 treats indeterminate/no-ground-truth claims as honest unknowns with `UNRANKED` stances, not `FRINGE`. If §4 uses `{OPEN, CONTESTED, RESOLVED, UNVERIFIABLE}` as the single definition, say how `INDETERMINATE` maps, or include it explicitly.
+
+2. Do not define stance standing as only `{CONSENSUS, CREDIBLE_MINORITY, FRINGE}`. Ratified guardrail is: unverifiable/indeterminate stances are raw plurality/provenance and never demoted `FRINGE`; current code uses `UNRANKED`. `FRINGE` must be future/auditable-computed only, not a present demotion power.
+
+3. NI-9a is slightly overclaimed. Current built receipt records validator set and size; diversity/correlation state is a needed graduation unless already ratified elsewhere. Draft should say “panel composition now; diversity/correlation receipt as required/gated graduation” or it overstates implementation.
+
+4. “ONE signed, hash-chained object read at three times” is good as conceptual SRA framing, but implementation has separate BOND/NOTARY artifacts today and RESOLUTION comes through the signed verdict log. Phrase as one SRA lifecycle/interface, not one already-unified physical object/registry, unless the spec really ratified that exact unification.
+
+The core argument is otherwise aligned: CIP-8 write path is authorship/timing/non-repudiation plus frozen resolution only where ground truth policy permits; CIP-9 read path is a stance-set claim graph, not “the AI’s answer”; write→memory→next-write is correctly framed as intended dynamic, not a guaranteed network effect.
+
+VERDICT: NO
+
+
+### V3 — YES
+Analyzing the planned §4 argument against the ratified CIP-8/CIP-9 invariants:
+
+## Mechanics Check
+
+**Accountability Ledger (CIP-8):**
+- SRA as a single hash-chained object at three temporal reads (BOND→NOTARY→RESOLUTION) is mechanically precise. Not three registries. Clean.
+- NI-8a (NOT_VERIFIED label, authorship/timing guarantee only, never content-truth) — correct invariant. The anti-false-trust guard is explicit.
+- RESOLUTION gated behind ground-truth-source policy with NI-8d quarantine fallback to NOTARY-only — correct. Prevents the system from manufacturing scores where no external anchor exists.
+- Frozen criteria via ballotHash = sha256(question || frozenCriteria) — mechanically detects post-hoc context injection. The Polymarket round-29 attack vector is addressed at the hash level, not by policy alone.
+- NI-8b evidence commitments: bounded disclosure window, unrevealed = zero weight, no privileged decryptor — correct.
+- NI-8c resolver no-position: declared+penalized, not assumed; diversity without shared-incentive alignment — correct distinction.
+- NI-8e ambiguous criteria → INDETERMINATE — correct safety valve.
+
+**Knowledge Commons (CIP-9):**
+- ONE crisp definition: claim graph with {statement, ballotHash, stance set, status, hash-chained history}. Each stance has {position, evidence edges, calibration-weighted support, standing}. This is a single mechanical specification, not a vague umbrella term. ✓
+- Read path returns full map *with receipts* — consensus + confidence, credible-minority, evidence, sources, status, immutable history link. Correctly positioned as what a single-model chatbot structurally cannot offer.
+- Anti-Orwell: no silent rewrite, signed/hash-chained revisions, no edit key, forkable on contested consensus — correct invariant bundle. The "no edit key" is the load-bearing design choice.
+- NI-9b: reputation tracks accuracy against *external* ground truth only; panel-only resolutions don't move reputation; agreement-laundering killed at the source-of-truth cut. Correct.
+- NI-9a: panel-state receipt on every CONSENSUS label (composition + diversity/correlation state) — ties to §2 correlated-error honesty. Correct.
+- NI-9c: standing computed from provenance-weighted source distribution, never panel-assigned; unverifiable class shows raw plurality+provenance, never demoted FRINGE. Correct.
+- NI-9e: stance entry via provenance-anchored source + bond; open candidacy. Correct.
+
+**Implementation honesty** explicitly separates shipped (notary kernel, bonds, resolution index, external-anchor reputation) from gated (calibration scoring behind NI-8d, epistemic forking NI-9d). This is the right framing discipline.
+
+## Critique
+
+1. **Write→memory→next-write loop**: Framed as intended dynamic, not network effect. This is correct per §1. However, §4 would benefit from one sentence showing *what* from the Ledger feeds the Commons (resolution verdicts become claim graph nodes with ballotHash) and *what* from the Commons feeds the next write (prior stance history + calibration context available during RESOLUTION). Not a missing invariant, just connective tissue.
+
+2. **NI-9d epistemic forking**: Listed as a future graduation alongside calibration scoring. The current hash-chained history + fork-on-contested-consensus already provides the forking mechanic implicitly. Clarify whether NI-9d is a separate formalization or just naming what the hash-chain already does. Minor, not a blocker.
+
+3. **No overclaims detected** against the ratified invariants. Every NI-* reference maps to an actual constraint. The Knowledge Commons is given one mechanical spec, not a vague family. No network-effect assertions.
+
+No mechanical errors, no missing load-bearing invariants, no overclaims vs. ratified CIP-8/CIP-9. Sound to draft.
+
+VERDICT: YES

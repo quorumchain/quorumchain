@@ -1,0 +1,64 @@
+### V1 — SOUND
+I've reviewed all the listed source plus the two dependencies the invariants hinge on (`panel.ts` for the shape of `votes`, `keystore.ts` for pin semantics). Judging each invariant mechanically:
+
+**1. CUSTODY (no key, no verdict).** `liveRunBallot` loads the *public* pinned keyring, spawns hosts via `makeRemoteSigner`, pin-checks, calls `convene`, closes. `convene` passes only ballot *content*; each signer signs its own vote behind the Signer boundary and `ratify` verifies against pinned pubkeys. The daemon never mints, alters, or injects a verdict. The raw-dump write is verbatim logging, not a verdict. ✓
+
+**2. NO LAUNDERING — the hinge.** The decided/retry split is `result.votes.length >= quorum`. I verified in `panel.ts:86-96` that `votes` collects **every arrived `SignedVote` regardless of YES/NO** (only `signBallot` *failures* are diverted to `failures`). So `votes.length` is *participation*, not YES-count. A genuine NO with full participation (e.g. `result(3, false)`) has `votes.length=3 ≥ 2` → `complete()` → done, `continue` — never retried. `daemon.test.ts:27` asserts `calls === 1`. The only way to refish would be to misclassify a real decision as liveness (`votes.length < quorum` despite real votes), which can't happen once votes are appended. ✓
+
+**3. LIVENESS ≠ VERDICT.** Two retry paths: `runBallot` throws (no host / substitution) → `ranError` → liveness branch; or `votes.length < quorum` → liveness branch. Neither fabricates a vote nor finalizes a blip as "NO." `attempts+1 >= maxAttempts` → `failed/`, else `bumpAttempt`. ✓
+
+**4. PIN/ABSENCE.** `assertMatchesPin` iterates **presented** keys only: unknown id or mismatched key throws (→ retry/fail); a pinned validator presenting *no* key is simply absent and counts against ratify's 2/3-of-registered-panel bar. `started.length === 0` also throws. ✓
+
+**5. TERMINATION.** `drainQueue` snapshots `listPending()` into an in-memory array and iterates that; `bumpAttempt` rewrites the pending file but the loop never re-reads the directory, so bumped ballots are not reprocessed in-pass. `complete`/`fail` unlink. Sequential `await` — convenings never overlap (`daemon.test.ts:74` confirms). Single drain always terminates. ✓
+
+**No intent-vs-check gap, no Phase-0 regression.** It reuses `startSigners` (round-49 startup tolerance), `assertMatchesPin` (Phase 0.2), and `convene`/`ratify` liveness (Phase 0.5) unchanged. The convening is genuinely no-human: queue → `drainQueue` → per-ballot spawn/pin/convene/close. The `votes`-includes-rejected-sigs subtlety is moot under a passing pin-check (a pinned host signs with its pinned key) and, if anything, biases toward *finalizing* not refishing — so it cannot serve laundering. Scope matches the ratified round-48 "existence, not economics" framing; autonomous sourcing is correctly deferred to 1.2.
+
+The implementation does what it claims, mechanically.
+
+VERDICT: SOUND
+
+
+### V2 — REVISE
+Custody and live wiring mostly hold: `run-daemon.ts` loads only pinned public keys, spawns remote signer hosts, pin-checks presented keys, convenes, and closes. `drainQueue` also correctly treats thrown runs and sub-quorum participation as liveness retries, and snapshots pending ballots so a single drain terminates.
+
+But there is a real no-laundering gap in `queue.complete()`: it writes `done/<id>.json` and then unlinks `pending/<id>.json`. A crash between those operations leaves the same decided ballot in both `done/` and `pending/`, and `listPending()` will reprocess it on the next daemon run. The source comment explicitly says this causes reconvening. That violates the invariant that a quorum-participated outcome, including a genuine NO, is final and never retried. Fix should make completion idempotent/atomic from the daemon’s perspective, e.g. skip pending entries already present in `done/` or use a true atomic state transition.
+
+VERDICT: REVISE
+
+
+### V3 — SOUND
+⚠️  Reached maximum iterations (6). Requesting summary...
+Quorumchain validator ballot review — Round 50, Phase 1.1 exit check.
+
+I've read all six source files, the review criteria, and four supporting modules (panel.ts, keystore.ts, signed-vote.ts, signer.ts, vote-log.ts). Here is the mechanical audit against each invariant.
+
+**INVARIANT 1 — CUSTODY: PASS**
+- `liveRunBallot` only spawns hosts, pin-checks, convenes, and closes. It holds zero keys.
+- `makeRemoteSigner` keeps the private key in the child process; orchestrator receives only the public key via the handshake. The orchestrator prompt+context flow passes content, never a pre-computed hash — the signer derives the ballot hash itself. This is the CIP-3 binding fix carried forward.
+- `ratify()` is a pure recomputable function of signed votes and the pinned keyring. The orchestrator cannot alter the outcome.
+- No intent-vs-check gap: the custody boundary is enforced at the `Signer` interface and process boundary, not merely commented.
+
+**INVARIANT 2 — NO LAUNDERING: PASS**
+- `daemon.ts` line 57: `reachedQuorumParticipation = result.votes.length >= params.quorum`. The gate is on *votes cast*, NOT on `ratified`. A ballot with 3 votes and a unanimous NO goes to `complete()` → done/. The `continue` ensures zero fallthrough to retry.
+- Test `daemon.test.ts` lines 27-44 proves this explicitly: a non-ratified outcome with quorum votes is done exactly once (`calls == 1`). A genuine NO cannot be re-run to fish for a YES.
+
+**INVARIANT 3 — LIVENESS, NOT VERDICT: PASS**
+- `< quorum` or `runBallot` throwing both route to `bumpAttempt` or `fail` after `maxAttempts`. Neither path writes a verdict or records a synthetic vote.
+- `run-daemon.ts` line 40 throws if zero hosts started. `assertMatchesPin` on line 42 throws on substitution. Both become liveness failures upstream.
+- `panel.ts` lines 86-93: per-signer failure during convening is caught, recorded in `failures`, and the loop proceeds to the next validator. A missing vote is never fabricated.
+- Tests cover both paths (lines 46-55 and 57-72).
+
+**INVARIANT 4 — PIN/ABSENCE: PASS**
+- `assertMatchesPin` iterates only over `presented` keys. A validator that failed to start is absent from `presented`, so no check fires — absence is tolerated. A validator that started with a wrong key fails the `key !== pinned[id]` check and throws.
+- The quorum/denominator bar (2/3 of the full registered panel in `ratify()`) correctly counts absence against the threshold. Separation of pin security from liveness is preserved from Phase 0.2/0.5.
+
+**INVARIANT 5 — TERMINATION: PASS**
+- `daemon.ts` line 46 snapshots `listPending()` before the loop. Ballots bumped (line 70) modify the filesystem but do not mutate the in-memory `pending` array. No reprocessing in the same pass. A single drain always terminates.
+
+**Phase-0 regression check:** No regression found. The 2/3 supermajority is enforced by `ratify()` via `Math.max(quorum, supermajorityThreshold(keyring.size))`. The caller's quorum parameter can only strengthen, never weaken. The hash-chained log and signed votes are identical to Phase 0.5 primitives.
+
+**Noted design trade-off (not a REVISE-level gap):** `complete()` uses write-then-unlink. A crash between the write to done/ and the unlink from pending/ causes the next drain to re-convene the ballot, producing duplicate votes in the log. This is by design (noted in `queue.ts` line 65-66 as "the safe direction for a tamper-evident, append-only system"). The duplication is auditable: the done/ file and the hash-chained log would both show evidence. Detectable, not silent laundering.
+
+All five invariants are upheld mechanically by the code, not merely by comments. The tests exercise the critical participation-vs-liveness boundary. No gap found between what the code claims and what it does.
+
+VERDICT: SOUND

@@ -1,0 +1,41 @@
+### V1 — RATIFY
+V1 (Claude) reviewing the CIP-9 draft (The Knowledge Commons) for faithful capture and sound synthesis.
+
+Faithful to the founding thesis: CIP-9 is the read/memory half of "an AI oracle with a memory," and it
+correctly refuses the trap a naive AI-Wikipedia would fall into. The §2 principle — store the EPISTEMIC
+STATE, not a decreed truth — is the right one and is exactly what NI-6 (AI consensus is conventionality,
+not truth) demands. Each claim carries a stance set (consensus + credible minority + unverifiable), never a
+single value; that is CIP-1 diversity at the knowledge layer. The anti-Orwell guarantees (§6) are sound and
+reuse existing infrastructure: signed versioned history (CIP-3), no silent rewrite / no edit key (CIP-4
+frozen-history principle), forkable (CIP-5 applied to epistemics). The composition with CIP-8 is real, not
+decorative — resolved verdicts + calibration flow in as inputs; the Commons supplies frozen context for the
+next verdict.
+
+The synthesis is disciplined and reuses what exists: the v0.1 resolution-index is literally the signed CIP-8
+verdict log made queryable, which keeps it KERNEL_FIRST and adds no new trust assumption. The §5 reputation
+design is the right instinct — accuracy on ground-truth-resolved claims (CIP-8 calibration), with agreement-
+with-consensus explicitly FORBIDDEN as a signal (CIP-2: accuracy over popularity), plus a structural floor
+for heterodox sources (CIP-7 mandate, applied to sources).
+
+Two load-bearing risks I deliberately left as §9 open items for the red-team, not solved in the draft:
+(1) the §5 reputation feedback loop — even "accuracy-weighted," if the set of resolved claims is skewed,
+reputation inherits the skew, and "agreement forbidden" is an intent whose mechanical check (detecting
+agreement-laundering) is non-trivial; and (2) §9.2 "whose consensus" — the maintaining panel could itself be
+a monoculture, and the Commons would then faithfully record a CAPTURED consensus as consensus. These are the
+intent-vs-check surface, now at the knowledge layer. Sound as the basis for red-team.
+
+VERDICT: RATIFY
+
+
+### V2 — RATIFY
+CIP-9 faithfully captures the founding thesis: it defines the read/memory pillar as a public, versioned epistemic graph rather than an answer machine, directly complementing CIP-8’s write/resolution path.
+
+The synthesis is sound for red-team basis. The strongest part is that it does not pretend neutrality means one canonical truth: stance sets, credible minorities, unverifiable status, provenance, immutable history, and forkability all align with the “AI oracle with a memory” thesis. §5 correctly identifies the central failure mode and forbids consensus-agreement as reputation input, while tying reputation only to accuracy on ground-truth-resolved claims. The heterodox floor and NI-6 limits are also correctly carried over.
+
+The open risks are real, especially resolved-claim selection bias, source Sybil/provenance, and captured maintainer consensus. But the draft names them explicitly and gates later stages with empirical tests. That makes it suitable as a red-team target rather than needing amendment first.
+
+VERDICT: RATIFY
+
+
+### V3 — RATIFY
+VERDICT: RATIFY

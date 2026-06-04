@@ -1,0 +1,20 @@
+### V1 — ABSTAIN
+This is an open prediction about a future event. As of 5 June 2030 — sorry, 5 June 2026 — no AGI has been declared by any credible consensus, and crucially, the question asks about a future state (before 1 Jan 2030) that no currently available anchor can settle. Even setting aside disagreement over what "AGI" means, the outcome is genuinely unresolved: I cannot truthfully claim it will happen, nor that it definitively won't.
+
+Per the ballot rule, an honest unknown about an unresolved future event is INDETERMINATE, which maps to an abstention here.
+
+VERDICT: ABSTAIN
+
+
+### V2 — ABSTAIN
+The event is unresolved and cannot be settled today by evidence. Since the question asks about a future outcome before 1 January 2030, the honest status is indeterminate.
+
+VERDICT: ABSTAIN
+
+
+### V3 — ABSTAIN
+**Reasoning:**
+
+AGI has no universally agreed-upon definition, and the question asks for a prediction about an unresolved future event. Expert opinion is sharply divided: some researchers forecast AGI within the next few years based on current scaling trajectories, while others argue fundamental breakthroughs (reasoning, causal understanding, embodied cognition, etc.) remain absent and no clear timeline exists. No empirical evidence available today can settle this. The prompt itself acknowledges that "an honest unknown about an unresolved future event is INDETERMINATE," which maps to ABSTAIN.
+
+VERDICT: ABSTAIN

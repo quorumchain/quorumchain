@@ -1,0 +1,69 @@
+### V1 — NO
+V1 (Claude) judging the $7M Polymarket "US–Ukraine mineral deal" resolution on the frozen criteria.
+
+The frozen question was whether a U.S.–Ukraine rare-earth / mineral deal would occur by the market's
+deadline (late March 2025). On the facts: no such deal had been signed by then — the 28 Feb 2025 Oval
+Office breakdown left it unsigned, and any agreement came later. So the correct resolution on the frozen
+criteria was NO.
+
+It instead resolved YES after the probability spiked from ~9% to 100% on 24–25 March, when a UMA governance
+whale cast roughly 5M UMA across three accounts (~25% of the vote) and forced a premature YES, reportedly
+overriding the market's own clarification. That is oracle / governance capture by a token-weighted vote —
+the precise failure mode a diverse, position-free, frozen-criteria resolver is built to remove. Polymarket
+itself called the outcome "unprecedented" but refused refunds ("not a market failure").
+
+So this is the clearest of the three: on the frozen criteria and the undisputed fact that no deal existed by
+the deadline, the answer is NO, and the YES resolution was wrong — produced by capture, not by the evidence.
+
+VERDICT: NO
+
+
+### V2 — YES
+The frozen Polymarket rules were broad: YES if U.S. and Ukraine “agree to any deal” by March 31, 2025, involving Ukrainian rare earths, and “an announcement of a deal” qualified even if not enacted; sources were official U.S./Ukraine government information. Polymarket’s own page shows that wording and final YES resolution. ([polymarket.com](https://polymarket.com/event/ukraine-agrees-to-give-trump-rare-earth-metals-before-april/ukraine-agrees-to-give-trump-rare-earth-metals-before-april?tid=1742923275774))
+
+By Feb. 26, Ukraine’s Cabinet had approved signing a U.S.-Ukraine Reconstruction Investment Fund agreement, with PM Shmyhal publicly describing terms involving Ukrainian minerals/resources and 50% of future natural-resource revenues. ([ukrinform.net](https://www.ukrinform.net/rubric-economy/3964847-government-approves-signing-of-usukraine-deal-on-minerals-pm-shmyhal.html)) The published draft/framework text explicitly covered minerals, hydrocarbons, oil, gas, and related infrastructure. ([eurointegration.com.ua](https://www.eurointegration.com.ua/eng/articles/2025/02/26/7205922/)) On the U.S. side, Trump publicly said at the White House that Zelenskyy was coming to sign a “very big agreement” on “rare earths and other things” and that it had “all been worked out.” ([bloomberg.com](https://www.bloomberg.com/news/videos/2025-02-26/trump-says-ukraine-s-zelenskiy-is-coming-to-washington-video?utm_source=openai)) The later April 30 signing confirms the final executed agreement came after the market deadline, but the frozen criteria did not require signature or enactment. ([home.treasury.gov](https://home.treasury.gov/news/press-releases/sb0126))
+
+The UMA whale/governance-attack allegations are real and serious; contemporaneous reporting says Polymarket called the incident unprecedented and a governance attack. ([theblock.co](https://www.theblock.co/amp/post/348171/polymarket-says-governance-attack-by-uma-whale-to-hijack-a-bets-resolution-is-unprecedented?utm_source=openai)) But on the frozen text, the official Feb. 26 announcements were enough for YES.
+
+VERDICT: YES
+
+
+### V3 — NO
+Here is my judgment based on independent research of public sources:
+
+---
+
+**CASE:** Polymarket "Ukraine agrees to Trump mineral deal before April?" (~$7M volume, resolved March 2025 via UMA oracle)
+
+**MARKET CRITERIA (frozen/official):**
+- Timeframe: February 2 – March 31, 2025, 11:59 PM ET
+- Condition: US and Ukraine must agree to a deal involving rare earth/mineral cooperation
+- Clarification: "An announcement of a deal will qualify regardless of if/when the deal is enacted"
+- Resolution source: Official information from US & Ukrainian governments
+
+**FACTS ON THE GROUND:**
+1. No mineral deal was signed or announced between the US and Ukraine before April 1, 2025.
+2. The actual Ukraine–United States Mineral Resources Agreement was signed on **April 30, 2025** by Treasury Secretary Scott Bessent and Ukrainian First Deputy PM Yulia Svyrydenko, establishing the US-Ukraine Reconstruction Investment Fund. (Sources: CSIS, BBC, Washington Post, CNN, Wikipedia — all confirm April 30 date.)
+3. April 30 is outside the market's deadline of March 31.
+
+**ORACLE MANIPULATION:**
+- On March 24-25, 2025, a UMA holder controlling ~5 million tokens across 3 accounts (~25% of voting power) forced a "Yes" resolution through the UMA dispute vote. (The Defiant, CoinDesk, Orochi Network)
+- The market's own "yes" probability jumped from 9% to 100% in 24 hours despite no real-world deal existing.
+- Polymarket acknowledged the resolution was "too early" / "premature" but classified it as a governance outcome rather than a "market failure," refusing refunds.
+- This meets the definition of an oracle governance attack: concentrated token holdings overrode the factual state of the world.
+
+**APPLICATION OF FROZEN CRITERIA:**
+The market rules are unambiguous — a qualifying deal must be announced/signed by March 31, 2025. The earliest and only actual mineral agreement came on April 30, 2025, 29 days after the deadline. Under the market's own stated criteria, no qualifying event occurred within the window. The UMA vote that produced "Yes" was a manipulation of the oracle mechanism, not a faithful reading of real-world facts.
+
+A note on INDETERMINATE: While oracle capture is a serious concern, the factual question here is resolvable — the public record is clear that no deal existed by the deadline. The frozen criteria can be fairly applied to the available evidence. INDETERMINATE would apply only if the criteria themselves were ambiguous or the factual state unknowable. Neither is the case here.
+
+**Sources consulted:**
+- The Defiant: "Polymarket's $7M Ukraine Mineral Deal Debacle Traced to Oracle Whale" (Mar 27, 2025)
+- CoinDesk: "Polymarket, UMA Communities Lock Horns After $7M Ukraine Bet Resolves" (Mar 27, 2025)
+- Orochi Network: "Oracle Manipulation in Polymarket 2025"
+- Polymarket market page: polymarket.com/event/ukraine-agrees-to-give-trump-rare-earth-metals-before-april
+- CSIS: "What to Know About the Signed U.S.-Ukraine Minerals Deal" (May 1, 2025)
+- BBC, Washington Post, CNN: All confirming April 30, 2025 signing date
+- Wikipedia: Ukraine–United States Mineral Resources Agreement
+
+VERDICT: NO

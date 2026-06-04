@@ -1,0 +1,79 @@
+### V1 — YES
+## Validator reasoning
+
+**Is the gap distinct and unaddressed?** Yes. CIP-10 establishes that you need *an* anchor; it says nothing about needing *more than one* or detecting their disagreement. CIP-9 scores evidence sources on the Knowledge Commons *read* path — a different trust boundary than the certification anchor on the *resolution* path. The round-60 correlation probes measure validator/model correlation, not anchor correlation. So this is not redundant relabeling: the certification anchor is currently a single point of trust the paper itself flags and then leaves open. Coverage objection (3) fails.
+
+**Is the direction sound?** The decisive point against the infinite-regress objection (1): relocating trust from "one anchor" to "an anchor-set + aggregation rule" is *structurally identical* to what the project already did on the panel side — it relocated trust from one model to "the validator set + quorum rule" and accepted that as a real reduction. The regress argument proves too much; if it killed anchor diversity it would also kill the original panel-diversity thesis. So this is the same bet, one layer down, and consistency demands it — *provided* the aggregation rule is conservative (disagreement halts, never silently picks).
+
+**Where it can rot into theater** — objection (2) is the real one. "Independent" anchors sharing upstream origin (price feeds → same two exchanges) reproduce correlated-error failure. Provenance graphs are often opaque, so the supply-chain check *cannot be assumed complete*. This is survivable only if the burden of proof is inverted: anchors count as distinct **only when distinct provenance is demonstrated**, and unprovable provenance collapses them to one — the exact mirror of the same-base-model rule. Without that default it is hand-waving; with it, it is sound.
+
+**Scope (4)** is correctly bounding, not a flaw: for subjective/unfalsifiable/open-prediction claims there is no anchor, so the mechanism does nothing and must say so rather than oversell. **Liveness (5)**: raising the bar to RESOLVED is consistent with the project's halt-over-degrade posture — RESOLVED becomes a *stronger* claim — but N must be tunable/frozen policy so the status isn't starved into decoration.
+
+The gap is real, the direction is the natural completion of the project's own diversity thesis applied to the data layer, and it is sound **only if** it carries hard invariants. Verdict: YES, conditioned on naming them.
+
+## Binding invariants any anchor-diversity CIP must carry
+
+1. **Upward-only / halt-over-degrade.** Anchor agreement can only decline to certify, never decree truth. Disagreement among admissible anchors → CONTESTED or INDETERMINATE, never a silent majority pick. Inherits CIP-10 monotonicity.
+2. **Independence is burden-of-proof on the proposer.** Anchors count as distinct only when distinct provenance is *demonstrated*; opaque/unprovable provenance collapses them to one family. Correlation assumed present until shown absent — identical to the same-base-model rule.
+3. **Frozen, auditable, falsifiable provenance.** Per-anchor-type trust + correlation assumptions are explicit, frozen with the ballot, recorded as part of the artifact, and later checkable against reality — not runtime-mutable.
+4. **Reputation moves only on external ground truth.** Anchor-source reputation updates solely on accuracy against later-revealed external truth — never on agreeing with the panel or with other anchors, else you rebuild a self-reinforcing correlated consensus (the precise failure being defended against).
+5. **Scope honesty.** Operates only on anchorable/falsifiable claims; unanchorable claims gain nothing and remain capped by CIP-10. The CIP must state this rather than imply universal coverage.
+6. **Shared machinery, distinct boundary.** Reuse CIP-9 source-reputation and round-60 correlation-measurement primitives; document that this applies them to the certification/resolution boundary, not the evidence/read boundary — don't reinvent.
+7. **Tunable N with a liveness floor.** N and the independence threshold are frozen policy per ballot; defaults calibrated so RESOLVED stays reachable. The liveness cost must be measured and made explicit, not hidden.
+
+Fail invariant 1 or 4 and it reintroduces a silent point of trust; fail 2 and it is diversity theater. With all seven, it is the correct data-layer analogue of model diversity and worth a dedicated CIP.
+
+VERDICT: YES
+
+
+### V2 — YES
+The proposal identifies a real unresolved gap. CIP-10 anchor-gating prevents unanchored panel consensus from becoming `RESOLVED`, but it does not address capture, ambiguity, staleness, or correlated dependence of the anchor itself. CIP-9 source reputation does not cover certification anchors on the resolution path, so this is not adequately handled by existing evidence-source scoring.
+
+Adversarially: multi-anchor quorum does not eliminate trust. It relocates trust to anchor selection, provenance classification, aggregation rules, and disagreement handling. But that is still a meaningful reduction if the CIP makes those assumptions explicit and auditable. Capture cost rises when an attacker must compromise independently governed, independently sourced anchors rather than one admissible feed or document. The proposal is sound only if “independent” is not nominal; correlated upstreams must collapse into one effective anchor, or the mechanism becomes diversity theater.
+
+The supply-chain check is hard, especially for feeds with opaque upstreams, but difficulty is not a reason to omit it. It means the CIP must define conservative default behavior: unclear provenance should not count as independent provenance. Likewise, anchor reputation must move only against later external ground truth, never against panel agreement, or the anchor layer becomes circular.
+
+The liveness cost is real. More ballots will remain `INDETERMINATE` or `CONTESTED`. That is consistent with anchor-gated certification’s existing posture: certification should halt rather than silently promote weak truth claims. The mechanism should be bounded to anchorable questions only and must not pretend to solve subjective, unfalsifiable, or unresolved future questions.
+
+Binding invariants required:
+
+- `RESOLVED` requires quorum agreement among independently governed anchors of distinct provenance.
+- Shared upstream origin, shared signing/control infrastructure, or materially common data supply counts as one anchor family.
+- Admissible anchor disagreement forces `CONTESTED` or `INDETERMINATE`, never silent cherry-picking.
+- Per-anchor-type trust assumptions are declared and frozen with the ballot.
+- Anchor-source reputation updates only from later external ground truth, not panel agreement or Quorumchain outcomes.
+- Unknown or unverifiable provenance is treated conservatively and cannot inflate diversity.
+- The mechanism applies only where external anchoring is meaningful.
+
+VERDICT: YES
+
+
+### V3 — YES
+Anchor diversity CIP — judgment.
+
+The anchor bottleneck is real and unaddressed. CIP-10 correctly recognizes it ("relocates the single point of trust to the anchor") but stops at acknowledgment. That is a gap, not a design choice.
+
+On each attack:
+
+1. INFINITE REGRESS: Real concern but not disqualifying. Multi-source quorum does push trust upward to set composition and the aggregation rule, but it raises capture cost non-trivially. An attacker now needs N distinct supply-chain compromises instead of one, AND has to defeat the disagreement-resolution logic. That is a real attack surface reduction — the same defense-in-depth logic as model diversity on the panel side. The regress doesn't bottom out anywhere, but each layer is strictly more expensive to subvert.
+
+2. CORRELATED CAPTURE: Hardest objection. For structured, traceable anchors (signed feeds, price oracles, on-chain attestations) the supply-chain correlation check is measurable and operationally sound. For document/news anchors it gets genuinely murky — three "independent" reports can all trace to the same classified brief. The mechanism is real but partial. That's acceptable: no single layer needs to be perfect if the defense-in-depth stack makes correlated failure the exception rather than the norm.
+
+3. COVERAGE OVERLAP: Not a problem. CIP-9 scores evidence sources on the read path, not certification anchors on the resolution path. They solve different classes of trust. Anchor admissibility policy declares what's allowed but says nothing about diversity, correlation, or set composition.
+
+4. SCOPE: Correctly bounded. For unfalsifiable or subjective questions, no anchor exists anyway, so this mechanism is vacuously inapplicable. That's honest — it improves certainty where anchors exist, and leaves existing handling for the rest.
+
+5. AVAILABILITY / LIVENESS: A genuine tradeoff. N-anchor quorum means more ballots stall at INDETERMINATE. But Quorumchain's posture is halt-over-degrade — better unresolved than resolved-wrong. The right design lever is making N adjustable per anchor type (high-stakes anchors require more independent sources) rather than a flat global count.
+
+This warrants a dedicated CIP. The direction is sound.
+
+Binding invariants any anchor-diversity CIP must carry:
+
+- ANCHOR_INDEPENDENCE: Two anchors count as one family if they share any upstream provenance node within a defined trace depth. Independence is verified, not declared.
+- CORRELATED_FAILURE: Agreement among correlated anchors counts as a single source. The correlation check runs before the quorum, not after.
+- CONFLICT_DEFAULTS_TO_CONTESTED: Disagreement among admissible, independent anchors never resolves by silent majority or tie-break. The ballot goes CONTESTED — the protocol forces the disagreement into the open.
+- ANCHOR_REP_EXOGENOUS: Anchor-source reputation updates ONLY on external accuracy against later-revealed ground truth. Anchors gain no credit from panel agreement.
+- TRUST_ASSUMPTIONS_FROZEN: The anchor types, their N threshold, and their correlation definition are recorded with the ballot at creation. No retroactive reclassification.
+- ANCHOR_SET_POLICY_SEPARATE: The list of admissible anchor types and their provenance classification is maintained separately from ballot execution — it is a protocol-level concern, not a per-ballot decision.
+
+VERDICT: YES

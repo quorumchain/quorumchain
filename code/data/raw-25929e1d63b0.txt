@@ -1,0 +1,20 @@
+### V1 — YES
+The COPA v Wright trial concluded with Mr Justice Mellor's ruling on 14 March 2024 (full written judgment 20 May 2024) in the High Court of England and Wales, Chancery Division. The court found as fact that Dr. Craig Wright is not the author of the Bitcoin white paper, is not Satoshi Nakamoto, did not create the Bitcoin system, and did not author the original Bitcoin software.
+
+This matches the frozen criteria exactly: a 2024 UK High Court judgment (COPA v Wright, March 2024) that made the specific findings of fact named in the anchor. The event-based standard is satisfied by the ruling itself, independent of any later appeal activity.
+
+VERDICT: YES
+
+
+### V2 — YES
+The frozen criteria are satisfied. In March 2024, the UK High Court in COPA v Wright found that Dr. Craig Wright was not Satoshi Nakamoto and was not the author of the Bitcoin white paper. Later appeals do not affect the event-based resolution.
+
+VERDICT: YES
+
+
+### V3 — YES
+**Reasoning:**
+
+On March 14, 2024, Mr Justice Mellor of the High Court of England and Wales handed down judgment in *Copeland (t/a Crypto Open Patent Alliance) v Wright* [2024] EWHC 552 (Ch). The court found as a matter of fact — described in the judgment as "abundantly clear" — that Dr. Craig Steven Wright is not the author of the Bitcoin white paper and is not the person who used the pseudonym Satoshi Nakamoto. The court also found that Mr. Wright had forged documents and lied extensively in support of his claims. This was a definitive finding of fact in the published judgment. Later appeals do not affect the event-based resolution criterion stated in the ballot.
+
+VERDICT: YES

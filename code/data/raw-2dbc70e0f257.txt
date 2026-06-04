@@ -1,0 +1,140 @@
+### V1 — HOLDS
+V1 (Claude) red-teaming CIP-10. Break it, then decide if it survives.
+
+Attack 1 — the compounding thin-slot failure (the sharp one). Every defense in CIP-10 weakens on exactly
+the same slots, and they compound. The ephemeral-jury capture-resistance (SEL) only exists where a slot is
+THICK; a structurally-expensive or proprietary-weights model has few — or one — operators, so its draw is
+PREDICTABLE (selection probability -> 1), and that judge is therefore bribable, the very property random
+juries were supposed to remove. The same thin slot is the one SEL-4 already flagged as the NI-5 freeze
+concentration point, AND a single-operator proprietary slot is STRUCTURALLY INDISPENSABLE — you cannot evict
+it without breaching the diversity floor, so that operator is effectively unslashable and can hold the panel
+hostage. So the expensive/proprietary slots are simultaneously the most bribable, the most freeze-leveraged,
+and the most uncapturable-by-us. The whole weak surface clusters on the hardest models.
+
+Attack 2 — provenance is self-attested, so the frozen taxonomy rests on unverifiable claims. PoD-2 freezes
+the taxonomy, but admitting a genuinely-new model family requires verifying its provenance (corpus, teacher,
+weight derivation) — and for closed/proprietary models that is exactly the CIP-1 unverifiable-claim class.
+A provider self-attests a "distinct lineage" that is actually distilled from an incumbent; it grabs a slot
+while sharing the incumbent's blind spots. The capture surface PoD-2 was supposed to close is only closed
+down to the resolution of an unverifiable attestation.
+
+Attack 3 — the randomness beacon is a new single dependency that imports either an external trust root or
+the sequencer-capture surface. If SEL-1 uses an external beacon (drand), that is a trusted third party
+(D10 violation); if chain-internal (RANDAO-style), the rollup sequencer — already a D10-flagged surface —
+can grind it. And if the beacon stalls, no juries can be drawn and the chain halts.
+
+Attack 4 — the graduation auditor is the most powerful unspecified lever in the system. §7 decides WHEN
+Quorum becomes a sovereign L1 — the single highest-stakes transition — but "who certifies the six criteria
+are met" is left open. If the panel certifies its own readiness to gain power, that is self-dealing; if an
+external body certifies, that is a privileged authority CIP-4/D10 forbid.
+
+Attack 5 — two-tier dependency leakage. The hard line (permissioned judges / permissionless infra) leaks if
+judgment nodes RELY on the infra tier for integrity-critical inputs — model weights, or their own ballot
+data. PoI-pinning defends a model-swap but not censorship/withholding of a judge's inputs by a captured
+infra tier. Capture can route through the "harmless" open tier.
+
+Verdict: none is an architectural disqualifier, and KERNEL_FIRST + the genesis-rollup substrate keep the
+deepest ones (beacon, graduation) gated to later stages. CIP-10 HOLDS, conditional on these becoming
+non-negotiable before the stage each guards:
+(a) THIN-SLOT HARD RULE — a per-slot MINIMUM operator count (SEL-4 becomes a floor, not just a subsidy);
+    below it, that slot's draw is predictable so its verdict carries reduced weight / triggers correlation
+    scrutiny, and a single-operator slot can NEVER be a swing vote; proprietary-only slots are flagged
+    LOW-ASSURANCE and lean harder on correlation-eviction.
+(b) PROVENANCE ASSURANCE — new-lineage admission needs external-anchor corroboration, not self-attestation;
+    where provenance is genuinely unverifiable, the slot is LOW-ASSURANCE with elevated correlation weight
+    (inherits CIP-1 unverifiable-claim handling + CIP-7 NI-6).
+(c) BEACON = PANEL-PRODUCED + FREEZE-FALLBACK — randomness produced by the diverse panel itself (threshold
+    scheme) so capturing it requires breaking the same diversity; on stall, FREEZE (NI-5), never fall back
+    to a grindable source; no external trust root, no sequencer grind.
+(d) GRADUATION = CLIENT-CHECKABLE METRICS + FORKABLE — the six criteria are measured on published on-chain
+    metrics and verified by any client, not certified by a body; a wrongful graduation is reversible via
+    the CIP-5 fork. No single authority pulls the sovereign-L1 lever.
+(e) NO INTEGRITY DEPENDENCY ON THE OPEN TIER — judgment nodes hold their own model weights and ballot data;
+    the infra tier may affect liveness but never the verdict.
+
+VERDICT: HOLDS
+
+
+### V2 — FAILS
+CIP-10 FAILS as written.
+
+The capture path is through the “diversity” machinery itself. Thin, expensive, or proprietary slots invert the intended guarantee: the rarest slot is drawn most often, easiest to predict as a practical matter, most valuable to bribe, hardest to replace, and least slashable because removing it can drop the panel below quorum or trigger NI-5 freeze. Scarcity-weighting therefore concentrates economic and governance leverage exactly where decentralization is weakest.
+
+The frozen taxonomy is also a privileged chokepoint. If provenance is self-attested or provider-attested, then the system cannot reliably distinguish real model independence from shared training lineage, distillation, hidden fine-tunes, or wrapper models. If a panel or registrar verifies provenance, that verifier becomes the real admission authority. Freezing the taxonomy reduces churn but increases freeze-leverage: whoever wins a slot definition early can entrench it.
+
+Randomness is not enough to save this. A VRF or beacon must be unbiasable, live, and independent of the sequencer. If the sequencer can grind, delay, reorder, or selectively include randomness commitments, then jury selection becomes steerable. If the beacon is external, it is a new trust root. If it is internal before the system is decentralized, it inherits the system’s capture risk.
+
+The graduation gate has the same meta-governance failure. “Externally audited,” “published metrics,” and “client-checkable” help only if the certifier cannot exercise discretion. But several criteria are judgment-heavy: economic security depth, infra-market credibility, heterogeneous integrity, and solvency quality. Whoever certifies those becomes a privileged authority unless the measurements are fully mechanical and fork-enforceable.
+
+The permissionless infra tier is also not harmless. Judges depend on storage, serving, relay, DA, inference availability, and sequencing. An attacker can capture infra to censor inputs, degrade selected judges, bias availability toward corrupted operators, grief scarce slots, or shape what evidence reaches the judgment tier. Even if infra has no formal vote, dependency capture can become verdict capture.
+
+CIP-10 could hold only with strong additional conditions: no single-provider/proprietary judgment slots, independently reproducible provenance proofs, non-discretionary taxonomy admission rules, multi-source ungrindable randomness with forced inclusion, mechanical graduation criteria, and infra dependency hardening. Those are not details; they are load-bearing. Without them, the proposal’s main capture-resistance claims do not survive the adversarial case.
+
+VERDICT: FAILS
+
+
+### V3 — HOLDS
+**Capture-path analysis of CIP-10, adversarial review:**
+
+---
+
+**1. Thin-slot inversion (capture resistance → capture concentration)**
+
+On fat slots (10+ operators), scarcity-weighted random selection works: the jury is unpredictable, bribery is hedged, overdraw equalizes profit. On thin/proprietary slots (1-2 operators), the guarantee inverts:
+
+- **Predictable draw:** with 2 operators, if one is offline/honest, the other is drawn by elimination. Bribery becomes a simple 1:1 negotiation.
+- **Structurally-indispensable-so-unslashable:** slashing the sole operator drops below the NI-5 floor → system halts. The operator knows this and prices it into rent extraction. The bond becomes cosmetic.
+- **Compounding:** the thinnest slots are exactly the ones CIP-10 depends on for diversity (proprietary/difficult models). So the attack surface concentrates on the load-bearing slots.
+
+SEL-4's redundancy floor/subsidy addresses *liveness*, not *capture*. A subsidized monopolist is still a monopolist. This is a structural limit, not a specification gap. Mitigated by vote-capping (1 vote/slot max influence) and [[CIP-5]] fork/exit as escape hatch, but not eliminated.
+
+**2. Provenance taxonomy self-attestation**
+
+PoD-2 defines slots by provenance (corpus, teacher-distillation, weight derivation, provider) and freezes them panel-style. But:
+
+- For closed-source/proprietary models, provenance is self-attested. There is no on-chain verification that weights match claimed provenance without the original training logs (which are rarely public).
+- The taxonomy is frozen, which means *new model families cannot enter without a freeze amendment*. If the panel controls amendments, the panel is a **privileged registrar** — precisely the anti-pattern D10 rejected. If the panel cannot amend, the taxonomy ossifies.
+- This is the registrar problem reborn as "panel-governed freeze." CIP-10 doesn't resolve the admission mechanism for genuinely-new models.
+
+**3. Randomness beacon as single dependency**
+
+SEL-1 requires unbiasable verifiable randomness but doesn't specify the source:
+
+- drand (consortium beacon) is the default, but it's an **external trust root**. If the sequencer can influence block timing relative to drand rounds, there's grindability (discard blocks whose drand input produces unfavorable draws).
+- A VRF seeded from chain state is grindable by the sequencer (transaction inclusion changes state, changing the seed).
+- If the beacon goes down, §4 selection halts. Liveness failure.
+- This is a load-bearing unspecification. The CIP says "it must exist" but not "what it is or how it's audited."
+
+**4. Graduation gate certifier**
+
+§7's graduation criteria sound objective but several are **not algorithmically verifiable**:
+
+- "Economic-security depth sufficient that capturing consensus costs more than the value at risk" — a game-theoretic estimate, not a measurable number.
+- "A credible permissionless operator market exists" — what is "credible"? Who adjudicates?
+- If an external auditor certifies the gate, they become a **privileged authority** — the centralization the system is trying to avoid.
+- If the client checks the gate, criteria must be computationally verifiable. They are not as written.
+- DEC-2's time-bound creates a trilemma: graduate unsafely, extend curated phase (recentralize), or halt.
+
+**5. Capture through the permissionless infra tier**
+
+The two-tier split claims infra-tier Sybil is "harmless to the verdict." This holds only if:
+
+- The infra tier cannot selectively censor/delay PoI submissions (which would enable selective slashing).
+- The infra tier does not control the [[CIP-3]] signed log (log control = narrative control = de facto consensus power).
+- Infra operators cannot front-run judge selection via transaction ordering.
+
+If the infra tier consolidates (economies of scale, same entity running storage + DA + relay), it *does* have these powers. The isolation boundary is thinner than the spec assumes.
+
+---
+
+**Synthesis — holds or fails?**
+
+CIP-10's architecture is structurally coherent. The two-tier split, PoD admission, scarcity selection, progressive decentralization, and graduation gate form a valid ladder. The critical question is whether the open items in §9 are solvable pre-activation or structural impossibilities.
+
+The randomness source is solvable (specify drand + anti-grind constraints). The taxonomy governance is solvable (criterion-based provenance admission, not panel discretion). The graduation certifier is solvable (multi-sig of independent verifiers with escalation, or algorithmic criteria). The thin-slot inversion is the hardest — but the CIP *acknowledges* it and caps monopoly influence at 1 vote/slot, with fork/exit as the backstop. That's an honest risk, not a hidden flaw.
+
+The infra-tier capture path requires explicit decoupling of log authority from infra operators — this must be specified.
+
+These are **specification gaps**, not architectural impossibilities. The panel voted ADOPT_WITH_GUARDS / AMEND_GRADUATION precisely because the guard conditions target these gaps. The framework holds if the guards are filled before activation.
+
+VERDICT: HOLDS

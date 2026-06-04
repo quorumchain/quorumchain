@@ -1,0 +1,71 @@
+### V1 — NO
+Reviewing the planned argument for soundness, completeness of the threat enumeration, and whether the closing claims stay inside what the mechanisms actually buy.
+
+## Assessment
+
+**What's sound and should be kept as-is:**
+- The necessary-not-sufficient framing is logically correct and correctly load-bearing: diversity *raises the cost* of capture (compromise a supermajority of rivals vs. one operator) without driving it to zero. Stated this way it's a backed claim, not a slogan.
+- The two governing principles are well-chosen, and principle 1 ("capture is laundered through the gap between intent and mechanical check") is the right spine — every downstream defense reduces to a mechanical check.
+- The round-60 defense is represented honestly: noting it was adopted **2/3, against the founding premise** (dissent recorded, not unanimous) is exactly the humility the section needs. The "restricts only UPWARD" property of anchor-gating, and the "probe-distribution estimate, NEVER universal guarantee" constraint, are correctly bounded.
+
+**Material problems that must change before drafting** — each is an overclaim or a gap in a section whose entire job is to *not* overclaim:
+
+1. **Missing threat vector: shared-input / prompt-framing capture.** The enumeration covers who is convened (jury-selection, c) and who they are (sybil, d), but not *what they're asked*. The convener controls the prompt; a leading or biased framing produces correlated 3/3 agreement across genuinely independent models with zero collusion. This is the cleanest possible instance of your own principle 1 (the gap between intent and the mechanical check), and its omission is conspicuous. Add it as (e), or fold explicitly into (b).
+
+2. **The headline defense's own trust surface is unenumerated: anchor integrity.** Anchor-gated RESOLVED leans entirely on "on-chain value, signed feed, citable document." But anchoring *relocates* the single point of trust to the anchor — it does not remove it. A poisoned oracle, spoofed feed, or fabricated-but-citable document re-creates the single-point-of-failure §1 promised to dissolve. The threat model must state what makes an anchor admissible and concede that the anchor must itself be independently trustworthy. Without this, the section's strongest defense smuggles in an unexamined trust assumption.
+
+3. **The closing scope claim (point 4) overclaims current safety.** "The source it reads IS the anchor → correlated recall-error is not yet the active risk" is true *only for recall*. Correlated **interpretation/reasoning** error survives the source being present: all three can read the same contract and share a blind spot about reentrancy or overflow semantics, confidently and identically. Distinguish correlated **recall** error (mitigated by anchor presence) from correlated **interpretation** error (NOT mitigated). As written, the prose would be licensed to imply correlated error is dormant in the current regime — it isn't. This is the most material fix, because it's an overclaim in the exact place the section claims to be most honest.
+
+**One qualification to add (non-blocking but should land):** the method-not-conclusion refuter feeds *one shared artifact into all three deliberations*. That is itself a correlation-introducing channel — it partially cuts against the independence the 2/3 arithmetic depends on. The claim "the arithmetic stays clean" should be qualified to acknowledge the tradeoff (shared input vs. preserved independent signing), not asserted flatly.
+
+**Verdict rationale:** structure and tone are right and most of it is sound to draft. But two of the items above (#2 anchor integrity, #3 recall-vs-interpretation) change *what claims the prose is permitted to make*, and #1 is a missing vector in a threat enumeration whose thesis is completeness about limits. They are surgical and foldable, but they must be settled before prose because they govern the claim surface — which is precisely this section's deliverable.
+
+VERDICT: NO
+
+
+### V2 — YES
+The framing is sound to draft. It is appropriately humble: diversity is presented as necessary, cost-raising, and mechanically auditable, not as a proof of truth.
+
+Concrete critique to fold in:
+
+- The “AI consensus is not truth” principle is essential and should stay dominant. Every later claim should preserve that distinction: signatures prove who agreed, anchors prove what was checked, neither proves metaphysical correctness.
+- The correlated-error section is correctly treated as the deepest weakness. The phrase “signature-indistinguishable from verified truth” is strong but fair if immediately scoped: indistinguishable by validator signatures alone, not indistinguishable once anchor requirements or external review are considered.
+- The round-60 defense is represented honestly if it is framed as a constraint on certification, not a cure for correlation. Anchor-gating prevents unanchored unanimity from becoming RESOLVED; it does not make anchored interpretation infallible.
+- Add one threat vector explicitly: anchor compromise or anchor ambiguity. Signed feeds, citable documents, and on-chain values can be stale, adversarially selected, misquoted, semantically ambiguous, or validly signed by a captured source. The paper should distinguish “verifiable anchor” from “trusted truth source.”
+- Jury-selection manipulation and Sybil-forking are named correctly, but the draft should say what is mechanically checked: validator registry, model/vendor identity policy, key custody, selection randomness, exclusion rules, or audit trail.
+- The method-not-conclusion refuter is well-framed. It should avoid implying independence of verdicts after shared exposure to the same refuter artifact; the arithmetic is clean procedurally, but deliberation is still coupled.
+- The scope honesty paragraph is important. Code/design self-validation still has correlated reasoning risks, even if not recall-error in the narrow sense. The source may be the anchor, but interpretation of design/security consequences can still correlate.
+
+Necessary-not-sufficient framing is correct. The section should draft as specified, with the anchor-compromise/ambiguity threat added and the round-60 defense kept as claim-limiting rather than truth-producing.
+
+VERDICT: YES
+
+
+### V3 — YES
+Analysis of §2 framing:
+
+**What's strong:**
+
+1. The two governing principles are epistemically honest. "Capture is laundered through the gap" reduces security to mechanical checks rather than intent — this is the right standard. "AI consensus is not truth" with the 3/3-agreed vs true distinction is load-bearing and non-negotiable for credibility.
+
+2. Necessary-but-not-sufficient framing of diversity is correct. The enumeration explicitly names where diversity fails (collusion, correlated error, jury manipulation, sybil-forking) — admitting failure modes upfront is rare in whitepapers and exactly what this protocol needs.
+
+3. The treatment of correlated error (item b) is the deepest part. Acknowledging that different vendors ≠ independent errors, and that 3/3 shared hallucination is signature-indistinguishable from 3/3 verified truth for unanchored ballots — this is the honest admission most protocols dodge.
+
+4. The round-60 defenses are represented honestly: anchor-gated RESOLVED restricts only upward, probes are published with methodology not as universal guarantees, and the method-not-conclusion refuter feeds deliberation without corrupting the 2/3 arithmetic.
+
+5. Scope honesty in item 4 — admitting correlated recall-error isn't the active risk yet for code/design self-validation where the source IS the anchor, but defenses are pre-ratified — this is exactly the kind of claim-capping that makes the paper credible.
+
+**What needs to be in the prose (gaps, not structural issues):**
+
+- Supply chain / model provenance attack: if all three vendors fine-tune from the same foundation model, or share training infrastructure, a backdoor in the base weights is a correlated vulnerability that diversity does not address. This is distinct from (a) active collusion and (b) emergent correlated error — it's a passive shared dependency. Add as (e) to the threat enumeration.
+
+- Anchor trust boundary: the anchor-gated RESOLVED mechanism defers trust to the anchor source. The prose must state explicitly that an anchor that itself came from a compromised process doesn't solve the problem. The panel doesn't create truth, it validates against anchors whose trust assumptions are stated separately.
+
+- Method-not-conclusion refuter's own vulnerability: the rotating refuter is subject to the same correlated error blind spots as any other validator. The prose should not present it as a free solution — its value is procedural (forcing disconfirming cases into the record), not epistemic guarantee.
+
+- Round-60 provenance: the whitepaper should explain the *rationale* for the 2/3 vote against the founding premise (that diversity alone was insufficient), not just record that it happened. The historical vote is evidence of protocol honesty, but the engineering rationale is what readers need.
+
+**Nothing is overclaimed in the framing.** The necessary-not-sufficient thesis is correct. The round-60 defenses are honestly bounded. The missing items above are additions to the threat enumeration and clarifications of trust boundaries — refinements to the prose, not reasons to reject the structure.
+
+VERDICT: YES

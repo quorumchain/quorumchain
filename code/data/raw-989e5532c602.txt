@@ -1,0 +1,17 @@
+### V1 — NO_VERDICT
+INVOCATION_ERROR (V1): Command failed: /bin/sh -c claude -p "$QRM_PROMPT" </dev/null
+
+
+### V2 — REVISE
+The change is close, but not sound as-is.
+
+The durable dedup key is `review-<epoch>-<short-sha>` in [self-review-source.ts](/Users/Andrew/ai-blockchain/code/src/self-review-source.ts:31), and `sourceSelfReview` treats that ID as the proof a commit was already reviewed via `hasBallot` in [self-review-source.ts](/Users/Andrew/ai-blockchain/code/src/self-review-source.ts:47). But the code’s claim says the SHA suffix makes the ID “unique” in [self-review-source.ts](/Users/Andrew/ai-blockchain/code/src/self-review-source.ts:28), while it only uses 12 hex characters. Two distinct commits with the same committer epoch second and same 12-char prefix collide, causing the later commit to be silently skipped as “already reviewed.” That violates the stated “at most once per commit” behavior and weakens no-laundering/tamper-evidence because an adversarial commit can suppress its own review.
+
+Fix is narrow: key the durable ballot ID by the full commit SHA, or otherwise store/check the full SHA as the dedup identity. The prompt may still display a short SHA, but the queue identity cannot.
+
+VERDICT: REVISE
+
+
+### V3 — NO_VERDICT
+⚠️  Reached maximum iterations (6). Requesting summary...
+Let me read `queue.ts` to verify the `hasBallot` semantics, then run the tests.

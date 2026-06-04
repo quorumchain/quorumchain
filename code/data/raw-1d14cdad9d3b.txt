@@ -1,0 +1,65 @@
+### V1 — YES
+All eight mechanical claims check out against the live code verbatim — hashing, the signed-payload field set, the `ceil(2n/3)`-of-registered-keyring bar, the linear hash chain with 64-zero genesis, the NO_VERDICT exclusion, and the orchestrator-not-trust-root boundary are all faithfully stated. The split, frozen criteria, and lifecycle are sound to draft. Round-29 is positioned correctly: a 3/3 (n=3 → bar=2) recomputable illustration, not the framing.
+
+But §3's own standard is "precisely and without overclaiming," and four points cross that line as currently specified. They're foldable, not fatal — but they must land in the prose:
+
+**A. "Equivocation … is a slashable offense" overclaims the mechanism.** The code *detects* equivocation (`findEquivocations`) and *rejects* that validator's votes from the tally (`reason: 'equivocation'`). There is no stake, penalty, or slashing implemented — "slashable" lives only in a CIP-3 comment. For a mechanical section, state it as **detected and excluded from ratification**; *defined as* a slashable offense at the protocol/normative level (penalty is future). Don't let the prose imply code slashes.
+
+**B. Replay-binding via nonce is conditional.** `votePayload` includes the nonce *only when present*; nonce-less (legacy) votes still verify, so they are replayable across convenings. The true guarantee is: `convene` now issues a fresh per-convening nonce (16 random bytes) and the orchestrator rejects nonce-mismatch votes. Draft it as "every **convened** vote is nonce-bound," and note the legacy exception — don't present replay-protection as unconditional over all log entries.
+
+**C. "the recorded reasoning cannot be altered after signing" — tighten.** The vote carries `rawOutputHash = sha256(rawOutput)`; the signature *commits to* the reasoning. Tamper-evidence applies to **retained** reasoning checked against its committed hash — the chain entry stores the hash, not a guarantee the prose itself is persisted. Say "commits to" / "any retained reasoning is verifiable against its hash," not "the reasoning cannot be altered."
+
+**D. The status ladder is three-state, and anchor-gating is judgment+norm, not a code check.** The enum is `RESOLVED | CONTESTED | INDETERMINATE`. §3 point 5 collapses **CONTESTED** (no quorum) into INDETERMINATE — a technical reader inspecting the log will see CONTESTED and find §3 silent on it. Also: the RESOLVED-vs-INDETERMINATE outcome is driven by *which verdict token the panel ratified* (`verdict === 'INDETERMINATE'`), plus the admissibility norm — the code does **not** mechanically test a question's anchorability. Draft so anchor-gating reads as protocol norm + panel judgment, not an automated answerability gate, and name all three terminal states.
+
+One free strengthening: the orchestrator boundary is actually *tighter* than stated — the signer **derives** `ballotHash` from `(prompt, context)` itself and never accepts a caller-supplied hash, closing the "orchestrator hands over a hash for a different ballot" attack. Worth one sentence; it's a real strength, not an overclaim.
+
+Net: the architecture and every load-bearing mechanic are accurate and sound to draft. The corrections above are overclaim-trims and one completeness add (CONTESTED), all consistent with the section's stated humble/mechanical tone — bind them to the draft rather than the spec.
+
+VERDICT: YES
+
+
+### V2 — NO
+The draft is close, but not mechanically sound as specified.
+
+Main fixes:
+
+1. “Ledger is rewritable by no one” overclaims. The live `vote-log.ts` is a SHA-256 hash chain: edits/deletions/reordering break verification, but the local file is not unrewritable until on-chain hash-pinning exists. Say “tamper-evident append-only transcript” and reserve immutability for the anchored head.
+
+2. Failure handling is overstated. A parse failure or child-side invocation error can become a signed `NO_VERDICT`, and `NO_VERDICT` is tallied but never ratified. But dead signer hosts, startup failures, timeout/replay nonce mismatches are recorded in `failures`, not appended as signed votes and not included in the tally. Absence still counts against the denominator via the full keyring.
+
+3. The admissible-question/anchor-gating paragraph is not enforced by `signed-vote.ts`, `vote-log.ts`, or `panel.ts`. Those files support frozen hashable ballots and fixed verdict sets, but they do not mechanically prevent subjective/unfalsifiable questions from being ratified as `RESOLVED`; that looks like a Commons/reputation/read-layer rule and should be cited or framed as protocol policy above the convening primitive.
+
+4. Add the standing-keyring precondition: ratification’s denominator is `|keyring|`, and the code documents that it must be the standing registered panel, excluding probation validators.
+
+Round 29 is positioned correctly as an illustration, not the paper’s framing.
+
+VERDICT: NO
+
+
+### V3 — YES
+I have reviewed all four source files (`signed-vote.ts`, `vote-log.ts`, `panel.ts`, `ballot-registry.ts`) plus the replay fixture. Here is my assessment:
+
+## Mechanism-by-mechanism verification against code
+
+**1. Ledger/panel split, orchestrator not trust root** — ACCURATE. Confirmed: `signer.ts:51` derives `ballotHash` inside the signer closure, never caller-supplied. `convene()` passes `(prompt, context)` content only. Orchestrator holds no key, supplies no hash.
+
+**2. Frozen criteria (ballotHash)** — ACCURATE. `signed-vote.ts:51-52`: `sha256hex(JSON.stringify({ prompt, context }))` matches the claim exactly. Ballot registry self-verifies (`ballot-registry.ts:18-19`).
+
+**3. Verdict lifecycle** — ACCURATE across all sub-points:
+- Signed payload: `{validatorId, ballotHash, verdict, rawOutputHash, nonce?}` — matches `votePayload()` at line 67-76.
+- Ratification: `Math.ceil(2n/3)` — confirmed at line 141-143. The `ratify()` function takes all four inputs and returns the computed result.
+- NO_VERDICT handling: lines 198-206 of `signed-vote.ts` skip it from being the ratified verdict.
+- Equivocation: `findEquivocations()` at lines 121-136 rejects conflicting verdicts per validator per ballot.
+- Absent validators count against: confirmed by the denominator being `Object.keys(keyring).length` (line 207).
+
+**4. Hash chain** — ACCURATE. `vote-log.ts:22-23`: `sha256hex(prevHash + JSON.stringify(vote))`. Genesis is `'0'.repeat(64)` (line 10). Not a Merkle tree — correctly named.
+
+**5. Admissible-question domain** — CONSISTENT with mechanism. The requirement for "frozen, hashable criteria" follows from the `ballotHash` construction. The anchor-gating distinction is §2 material, correctly referenced not re-stated here.
+
+**6. Round-29 example** — The fixture `ballot-r29-mstr.json` exists and the replay test verifies both G1 (tamper detection) and G2 (hash reproduction). Correctly positioned as illustration.
+
+## Verdict
+
+All mechanical claims are accurate against the live code. No misstatements found. No material omissions for a §3 that must state *how a verdict is produced and recorded*. The section correctly distinguishes mechanism from framing, and round-29 is properly scoped as illustration not architecture.
+
+VERDICT: YES

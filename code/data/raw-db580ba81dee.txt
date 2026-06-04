@@ -1,0 +1,73 @@
+### V1 — REVISE
+I've read all the new modules and their dependencies. Here's my judgment against each invariant.
+
+## Invariant-by-invariant
+
+**NI-9a (panel-state receipt) — UPHELD.** `commons.ts` builds `panelStateReceipt: { validators: [...seenValidator], size }` from the *verified, counted* validators, and `renderClaimMarkdown` unconditionally emits the receipt line. The denominator is the validators who actually produced verified rulings — the conservative, correct reading (never inflates authority). No path renders a stance without it.
+
+**NI-9b (support never leaks agreement) — UPHELD.** `viewClaim` hardcodes `support: null`, and the renderer maps `null → "not externally anchored"`, never `0`. `panelVotes` is carried separately and explicitly labelled panel distribution, not reputation. Agreement cannot reach the support field — it's structurally absent in v0.1.
+
+**NI-9c (standing computed, no FRINGE, no winner-flattening) — UPHELD.** Standing is computed in `buildClaimIndex` by the auditable majority rule; the `Standing` type has no FRINGE member at all. Non-RESOLVED index rows read as `"N stances, no consensus"` — no winner-label. RESOLVED rows show the consensus position *and* flag preserved dissent. The claim page gives every stance an identical row structure (no headline/footnote hierarchy). `NO_VERDICT` correctly stays UNRANKED even in RESOLVED claims.
+
+**No edit key — UPHELD.** `publish-commons` is pure recompute from log + keyring + registry; no prior render is read. `chainValid = verifyLog(LOG).valid` drives a banner on both claim and index pages; a tampered log surfaces as a ❌ banner, never silently-altered content.
+
+**Statement integrity — UPHELD.** `statementFor` returns the prompt *only if* `verifyEntry` re-hashes to the stored `ballotHash`; a missing/lying entry yields `null`, rendered as the hash, never a fabricated title. Crucially, `convene` appends the registry entry from the *same* `prompt,context` that produces the `ballotHash` the votes bind to — so the registry key matches the claim key, and the registry is treated as provenance, not a trust root.
+
+The standing test (capture via intent/check gaps) finds nothing in the epistemic core: no stance ordering re-introduces a decree, no support value leaks agreement, no render path can show unverified text.
+
+## The one actionable gap
+
+The index→claim links are broken. `publish-commons.ts` writes `INDEX.md` *inside* `docs/commons/` (`join(OUT, 'INDEX.md')`, `OUT = docs/commons`), alongside the per-claim pages. But `commons-render.ts:46` builds the link as `commons/${slice}.md`. Relative to `docs/commons/INDEX.md`, that resolves to `docs/commons/commons/xxxx.md` — a dead link to every claim page. The fix is one character of path: `./${slice}.md`.
+
+This is exactly the intent/mechanical-check gap pattern, just in the navigation layer rather than the epistemic one: the renderer's unit tests assert the output *string* and pass, because the renderer can't see where the CLI writes `INDEX.md` — the two modules silently disagree about the layout (compare `publish-feed.ts`, which writes `FEED.md` to `docs/` root, where a `commons/`-prefixed link *would* be correct). The 225 green tests don't cover the cross-module file-path contract, so it slipped through.
+
+None of the five ratified invariants are violated — the epistemic design is faithfully and rigorously implemented. But the delivered read surface doesn't actually navigate: an index that can't reach any claim page is a real, shippable defect, and it's precisely nameable with a one-line fix. That's a REVISE, not a wave-through.
+
+VERDICT: REVISE
+
+
+### V2 — SOUND
+I judge it SOUND.
+
+The implementation is a pure projection from the signed vote log, pinned keyring, and self-verifying registry. Statements are only surfaced through `statementFor` after re-hashing `{prompt, context}` to the stored `ballotHash`; missing or lying registry entries render as hash-only, so the registry is not a trust root.
+
+NI-9a is mechanically present in every claim render via the panel-state receipt. NI-9b is upheld because `support` is always `null` in `commons-read.ts` and renders as “not externally anchored,” never as `0` or agreement-derived reputation. NI-9c is upheld by `commons.ts`: standing is recomputed from verified counted votes, no `FRINGE` category exists, contested/indeterminate claims stay unranked, and the index does not flatten non-consensus claims into a winner label.
+
+The no-edit-key invariant is also met: `publish-commons.ts` recomputes from log, keyring, and registry; prior renders are not read. A failed `verifyLog` is threaded into the views and rendered as a broken-chain banner rather than silently trusted content. I do not see a rule whose stated intent is only cosmetically checked while being mechanically bypassed.
+
+VERDICT: SOUND
+
+
+### V3 — SOUND
+⚠️  Reached maximum iterations (12). Requesting summary...
+I have read all four new modules plus the three supporting modules (`commons.ts`, `signed-vote.ts`, `vote-log.ts`). I could not locate `run-panel.ts` or `live-ballot.ts` in this repository, so I cannot verify the convening-side registryPath wiring — but those are the write path; the read surface invariants do not depend on how entries arrived, only on how they are verified.
+
+Here is my vote-trace against each invariant:
+
+**NI-9a — Panel-state receipt always shown**
+`commons.ts:99` computes `{ validators, size }` from the set of counted validators. `commons-read.ts:44` carries it as `panelState`. `commons-render.ts:35` always renders `**Panel-state receipt (NI-9a):** {size} validators — {validators}`. No path skips it. Letter and spirit match.
+
+**NI-9b — Support never leaks agreement**
+`commons-read.ts:42` hardcodes `support: null` for v0.1. `commons-render.ts:13` maps null to the string "not externally anchored". There is no code path where `support` can equal `0` or derive from `panelVotes` or panel size. The leak is mechanically blocked.
+
+**NI-9c — Standing computed, never editorial / no FRINGE / no winner-flattening**
+Standing comes from `commons.ts:87-92`, a pure function of `ratify()` result. Only three labels exist: CONSENSUS, CREDIBLE_MINORITY, UNRANKED. FRINGE does not appear anywhere in the codebase. For CONTESTED/INDETERMINATE claims, `indexRow` renders "N stances, no consensus" rather than picking a winner. For RESOLVED, consensus is surfaced with a dissent flag — exactly what the ratified design prescribes. Stances in `renderClaimMarkdown` are rendered in first-seen order (neutral) with identical row structure — no hierarchy. No gap.
+
+**No edit key — pure projection**
+`publish-commons.ts` reads only from `votes.log`, `ballots.jsonl`, and `pinned-keyring.json`. Zero reads from `docs/`. `buildViews` is pure. `verifyLog` → `chainValid` → banner. A tampered log produces a broken-chain banner; content is not silently altered. Prior render is never an input.
+
+**Statement integrity — re-hash before display**
+`ballot-registry.ts:18-20`: `verifyEntry` recomputes `ballotHash(prompt, context)` and compares to stored `ballotHash`. `statementFor` at line 47-50 returns the prompt ONLY if verification passes, else null. `commons-render.ts:19` falls back to showing the hash when statement is null. A lying registry entry (wrong prompt) fails re-hash and is rejected. The registry is not a trust root — it's a hint that must prove itself.
+
+**Standing test — spirit vs. letter**
+I looked for subtle violations:
+- Stance ordering: first-seen order, not popularity-sorted. No stance reordering to favor consensus in the body.
+- Index "reading" column for RESOLVED shows consensus position, but this is the ratified design's own specification for resolved claims, and dissent is flagged.
+- `panelVotes` is shown numerically but is consistently labeled "panel votes" — never repurposed as reputation.
+- `NO_VERDICT` standing is forced to `UNRANKED` even on RESOLVED claims (`commons.ts:91`).
+
+No gap found between intent and mechanical check.
+
+One caveat: `run-panel.ts` and `live-ballot.ts` were not found, so I cannot confirm the registry is actually invoked during convenings. But that does not affect the read surface's correctness — it only means we don't know whether ballot statements are being recorded. The read path itself is faithful.
+
+VERDICT: SOUND

@@ -1,0 +1,71 @@
+### V1 — ABSTAIN
+I attempted to read the target file directly — twice via the Read tool and twice via Bash — and every attempt was blocked by an ungranted permission in this environment. I have no access to the whitepaper's contents.
+
+The ballot is explicit on this exact case: *"If a validator cannot read the target file, ABSTAIN rather than guess"* and *"ABSTAIN only if genuinely out of scope or the target is unreadable."* This mirrors V1's round-1 situation.
+
+I will not manufacture a substantive verdict from the prompt's summary of the fold — that would be voting on hearsay, not on the document. The honest action under the validator honesty invariant is to abstain rather than ratify or reject content I cannot inspect.
+
+VERDICT: ABSTAIN
+
+
+### V2 — NO
+NO. The fold fixes the original §8 overclaim, but introduces/retains a factual inaccuracy against the codebase: §8 lists “correlation-eviction” among gated graduations “not yet among” implemented/tested mechanisms, and §5 likewise marks it gated. But `src/lifecycle.ts` implements `correlationEvict`, and `test/lifecycle.test.ts` has explicit G3 tests for “correlation-eviction fires on the verifiable class” and the unverifiable-class limit. The repo README also describes CIP-7 validator lifecycle, including `correlationEvict`, as built.
+
+So the document is now internally disciplined on overclaim, but not sound against the actual code/status boundary: correlation-eviction is misclassified as unbuilt/gated.
+
+VERDICT: NO
+
+
+### V3 — YES
+I have read the complete 998-line whitepaper. Here is my adjudication on each dimension:
+
+**1. The §8 fold — resolved and accurate.**
+
+The tightened language "Every mechanism the paper marks as *built* is implemented and tested..." correctly self-references the built-vs-gated discipline established in §4–§6, and the enumerated gated list is verified against the source sections:
+
+- §4 (line 459-462): calibration scoring, calibration-weighted stance support, fuller correlation receipt, epistemic forking — all gated.
+- §5 (line 561-564): threshold randomness beacon, proof-of-inference model binding, correlation-eviction runtime backstop, no-proprietary-decisive-slot prohibition, L1 graduation metrics — all gated.
+- §6 (line 672-674): reserves/epoch/stake/sizing as "open parameters" — consistent with L1 metrics being gated.
+
+All eight named graduations in the fold are found as gated in their stated sections. The list in §8 is exhaustive of what §4–§6 marks as gated; nothing from those sections' gated lists is omitted. The fold is faithful to its sources.
+
+**2. No new contradiction introduced.**
+
+The fold only narrows scope ("every protocol mechanism" → "every mechanism marked as *built*") and adds a disqualification clause. It does not reclassify any built item as gated or vice versa. No other prose was altered.
+
+**3. Internal honesty invariant intact across §1–§10:**
+
+- INDETERMINATE-by-default: §2 (line 196-197, 235-236), §3 (line 305-309), §4 (line 415-418), §9 (line 911). Consistent.
+- Measured error floors: §2 (line 205-209), §9 (line 911). Consistent.
+- Recorded dissent: §2 (line 187-188), §7 (line 686-687), §9 (line 914). Consistent.
+- Halt-over-degrade: §6 (line 663-666), §9 (line 898-900). Consistent.
+- Tamper-evident, not immutable: §3 (line 321-325), §10 (line 940-942, correctly glossing "immutable" as §3's property). Consistent.
+- §10 maxim's §3 gloss: line 940-942 correctly cross-references §3's tamper-evident hash chain and planned anchored head.
+
+**4. Cross-section contradiction scan:**
+
+- `ceil(2N/3)`: §3 (line 289), §6 (line 636), exec summary (line 56) — consistent, 2N/3 is not used.
+- `ballotHash = sha256(JSON{prompt, context})`: §3 (line 265), glossary (line 978-979), appendix (line 953) — consistent.
+- V1/V2/V3 labels, round-29, round-60: present at lines 53-54, 338-348, 188, 560, 684, 834.
+- "226 passing tests": exec summary (line 56), §8 (line 759), appendix (line 966) — consistent.
+- "200+ entries / 60+ rounds": exec summary (line 55-56), §8 (line 757) — consistent.
+- Single-operator present-day admission: §8 (line 776-783), §9 (line 883-888), §10 (line 937) — consistent.
+- Vendor names omitted: confirmed, no vendor/brand names appear anywhere in the document.
+
+**5. Residual overclaim scan outside §8:**
+
+Executive summary "What is live today" (lines 51-60) uses careful language: "running code, not a paper design," "self-reported but independently verifiable," "what is verifiable is the *log*, not the correctness of the verdicts." This is consistent with the tightened §8 discipline — no "every mechanism" claim appears there.
+
+§4's "What is built versus gated" (lines 456-462) is internally consistent and aligns with the §8 fold.
+
+§5's "Built today" (line 561-564) and §6's "Built today" (line 668-671) each list their own built items and explicitly flag gated items — no overclaim.
+
+§9's limitations (§9, lines 822-916) are intact: vendor name omission is deliberate and correct, token-launch mechanics are deliberately excluded (stated in §6 line 570-572 and §9 line 906-909), and the document does not assert properties it lacks.
+
+**6. Substance loss from tightening:**
+
+None. The fold only removes the overbroad phrase and replaces it with a self-qualified scope plus an explicit negative enumeration. No capability claim is weakened; only an inaccurate universal claim is corrected.
+
+Everything is internally consistent end-to-end. The fold resolves the sole finding from round 1, introduces no new contradiction, and the document's honesty invariant survives intact.
+
+VERDICT: YES

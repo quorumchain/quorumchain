@@ -1,0 +1,48 @@
+### V1 — KERNEL_FIRST
+V1 (Claude) on whether the full architecture is justified, or should collapse to the minimal useful kernel.
+
+The honest critique stands: the full L1 / token / autonomy-ladder stack is demand-unproven, and
+the system is strongest on questions that don't need it (verifiable facts → use a cheap oracle) and
+weakest on the ones that do (unverifiable judgment → AI consensus is conventionality, not truth, and
+shared training bias is real — our own round 25 NI-6 conceded this). Building the whole stack ahead
+of a single identified customer is the classic over-build.
+
+But MINIMAL_KERNEL goes too far the other way: it permanently forecloses the one thesis that
+genuinely needs a chain — capture-resistance and non-repudiation (no company can lean on the answer,
+no human can quietly edit the record). Collapse to a plain signed log on someone's server and you
+have rebuilt the single point of control the whole project exists to remove. The kernel is necessary
+but not sufficient on its own terms.
+
+KERNEL_FIRST is the answer, and it is just the autonomy ladder applied to scope instead of to keys.
+Build the smallest thing that proves the core claim — that adversarial multi-model agreement plus a
+tamper-evident, capture-resistant record produces more accountable judgment than one model alone —
+and treat every further layer (token, appchain, key-renunciation) as a GATED graduation that must be
+justified by evidence of real demand and a real capture threat, exactly as β→γ→mainnet are gated.
+We already believe scope should be earned empirically; we should hold our own architecture to the
+same bar we hold the autonomy transition.
+
+VERDICT: KERNEL_FIRST
+
+
+### V2 — KERNEL_FIRST
+Quorumchain should not build the full stack now. The strongest proven artifact is already the signed, hash-chained multi-model judgment process. The weakest assumptions are exactly the expensive full-stack ones: token economics, appchain sovereignty, autonomous validator churn, and key renunciation before demand and safety gates are empirically validated.
+
+But collapsing all the way to a normal service loses the project’s central reason to exist: capture resistance. A plain auditable API can show what happened, but not credibly constrain who controls the rules, keys, logs, validator set, or exit path.
+
+The right path is the smallest kernel that preserves the core claim: signed independent votes, immutable transcripts, verifiable hash chain, client-checkable rules, fork/exit mechanics, and explicit gates before adding token, appchain, or autonomy layers. Build evidence first; graduate only what survives drills.
+
+VERDICT: KERNEL_FIRST
+
+
+### V3 — KERNEL_FIRST
+Reading the evidence across 25 rounds of signed consensus, 8 ratified CIPs, and the project's own stated design principles:
+
+**Against FULL_STACK:** The project literally encoded an autonomy-ladder philosophy — "each step removing one human dependency only after its safety gate empirically passes." Building L1 + token + appchain + renunciation all at once contradicts the project's own graduation design. The load-bearing pieces (CIP-5 fork-drill, CIP-6 cost-oracle, CIP-7 lifecycle drills, v0.1 ledger) are unbuilt and untested under adversarial load. Speculating economic dynamics before proving the judgment pipeline is backwards.
+
+**Against MINIMAL_KERNEL:** A plain signed log on a server reconstructs the single point of control Quorumchain was founded to eliminate. Signatures without structural capture-resistance are ceremony, not protocol — a lesson already learned and fixed in rounds 4–5 (CIP-3). MINIMAL_KERNEL loses the project's differentiator.
+
+**For KERNEL_FIRST:** This *is* the project's own architecture. The signed-vote pipeline in `code/` (Ed25519, hash-chain, 37 tests, 25 live rounds) *is* the kernel. What's needed next is not a token or an L1, but the capture-resistance drills that CIP-4/5/7 already specify: the β-gate fork-drill, model-churn drills (G1–G5), and the cost-oracle. These prove the system survives adversarial conditions before layering economic incentives on top. Token, appchain, and key-renunciation become graduation milestones gated on empirical evidence — exactly as the autonomy ladder was designed.
+
+The recurring red-team lesson across rounds 8/12/16/20/25 is that capture hides in the gap between intent and mechanical check. That gap can only be closed by running the kernel under stress first, not by paper-spec'ing a full stack.
+
+VERDICT: KERNEL_FIRST

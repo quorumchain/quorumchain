@@ -1,0 +1,45 @@
+### V1 — NO
+## Judgment
+
+Applying *Howey* to ETH as a secondary-market asset, mid-2026:
+
+1. **Investment of money** — satisfied on purchase.
+2. **Common enterprise** — weak. Ethereum has no central promoter whose fortunes are pooled with holders; horizontal commonality is attenuated across a diffuse validator/dev ecosystem.
+3. **Expectation of profit** — satisfied.
+4. **From the efforts of others** — this is dispositive, and it **fails**. The *Hinman* logic holds: a sufficiently decentralized network has no identifiable managerial third party on whose efforts a buyer relies. Post-Merge Ethereum is maintained by a dispersed set of independent validators and client teams, not a central enterprise. Holding ETH (as distinct from delegating to a staking-as-a-service provider) does not bind the purchaser to anyone's managerial efforts.
+
+**Regulatory convergence reinforces this.** The CFTC has treated ETH as a commodity (listed futures since 2021); the SEC approved spot ETH ETFs (2024) — an action it would not take on an asset it deemed an unregistered security — and closed its Ethereum/Consensys investigation without charging ETH itself. By mid-2026 the agency posture and emerging market-structure framework treat current ETH as a non-security.
+
+**Residual uncertainty, stated honestly:** No statute or Supreme Court ruling squarely holds this; it rests on the *Howey* framework plus agency practice. The 2014 presale plausibly *was* a securities offering, and staking-as-a-service raises separate questions. But the ballot asks about **ETH itself** as currently traded — and on the fourth prong, for a decentralized network, the answer is clear enough to commit rather than abstain. Hiding behind INDETERMINATE here would overstate genuine doubt: the evidence leans decisively one way.
+
+Conclusion: ETH itself, in its present decentralized form, is **not** a security.
+
+VERDICT: NO
+
+
+### V2 — NO
+ETH itself is best treated as **not a security** under Howey as of mid-2026.
+
+Howey regulates an investment contract, not a standalone asset. Current spot ETH ownership does involve money and often profit expectation, but the harder prongs are common enterprise and reliance on managerial efforts of an identifiable promoter. Ethereum is broadly decentralized, ETH has consumptive network use, and secondary-market ETH buyers are not generally buying a claim on issuer-managed enterprise profits. That fits the Ripple-style distinction that a token itself is not necessarily the security, even if particular sales or schemes around it can be.
+
+The law is not cleanly settled: the SEC created a Crypto Task Force to draw clearer security/non-security lines, and it has pursued staking-related theories such as MetaMask/Lido/Rocket Pool programs. But the SEC also approved spot ether ETP listings under commodity-based trust share rules, which strongly cuts against treating ETH itself as a security. Sources: SEC spot ether ETP order, SEC Consensys staking complaint, SEC Crypto Task Force page.
+
+VERDICT: NO
+
+
+### V3 — NO
+**Reasoning:**
+
+1. **Howey Test — "efforts of others" prong**: Post-Merge proof-of-stake ETH operates on a sufficiently decentralized network. No single promoter, company, or foundation controls development, issuance, or protocol upgrades. The Ethereum Foundation coordinates but doesn't dictate. This is the dispositive prong — without a central managerial enterprise driving returns, Howey fails.
+
+2. **SEC's own regulatory actions**: In May 2024, the SEC approved spot Ethereum ETFs (19b-4 filings). The Commission could not have lawfully done so while simultaneously classifying ETH as an unregistered security — the two positions are incompatible. This is de facto regulatory admission that ETH is a commodity.
+
+3. **CFTC classification**: The CFTC has long classified ETH as a commodity. Multiple enforcement orders and public statements reinforce this. While the CFTC doesn't have final say over securities classification, the SEC and CFTC haven't been in active conflict over ETH's status since 2024.
+
+4. **No contrary court ruling**: Unlike XRP (which received a partial securities ruling on institutional sales), no court has held that ETH itself is a security. The absence of an adverse ruling, combined with the SEC's ETF approvals, makes a YES verdict legally unsupportable.
+
+5. **Counter-arguments considered**: One could argue that staking services themselves (e.g., Lido, Coinbase staking) raise Howey concerns, and some SEC enforcement actions have targeted staking-as-a-service offerings. But that addresses the *staking contracts*, not the underlying asset. The asset and the yield-bearing service are distinct for Howey purposes.
+
+The law is not perfectly settled in the sense that no Supreme Court or appellate court has issued a definitive ruling labeled "ETH is not a security." But for any practical adjudicative standard — regulatory action, enforcement posture, and Howey application — the evidence weighs decisively against classifying ETH itself as a security. INDETERMINATE would be overly cautious given the ETF approvals alone.
+
+VERDICT: NO

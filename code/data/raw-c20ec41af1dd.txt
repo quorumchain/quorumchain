@@ -1,0 +1,68 @@
+### V1 — REVISE
+V1 (Claude) reviewing the build against the ratified CIP specs.
+
+The foundation is sound and faithful: all 119 tests pass, each module realizes the gate(s) its spec names,
+and crucially the load-bearing invariants are enforced STRUCTURALLY, not by convention — NI-8a (no code path
+can mark a notary record verified), NI-9b (reputation is gated by source-of-truth, so agreement cannot earn
+rep), and the CIP-5 monoculture-as-β-gate-failure all hold by construction, not by an after-the-fact check.
+The deferred pieces are honestly labeled. So this is not INADEQUATE — nothing misrepresents what's built.
+
+But it is not yet SOUND either; there are six real, specific gaps that should be folded as follow-ups:
+
+1. NO SHARED IDENTITY MODEL (the most important). A validator/operator is represented three incompatible
+   ways — CIP-3 validatorId (string), CIP-10 NodeOperator, CIP-7 Validator — and scenario.ts glues them by
+   matching string ids. The composition therefore works by convention, not by type. A single canonical
+   Identity/Slot type that CIP-3/7/10 all reference would turn the wiring from string-matching into real
+   composition and remove a whole class of future drift bugs. Highest-priority improvement.
+
+2. commons.ts and reputation.ts use INCONSISTENT standing models. commons v0.1 labels the ratified majority
+   CONSENSUS even when the verdict is INDETERMINATE (an unverifiable-class claim) — but NI-9c (realized in
+   reputation.ts) says the unverifiable class must be UNRANKED, never ranked. The two should be reconciled:
+   commons should not assert CONSENSUS standing on a claim with no external anchor.
+
+3. NI-1 is simplified to one dimension. lifecycle distinctness checks only provenance.corpusFamily; the
+   invariant requires the full provenance vector (corpus overlap + teacher/distillation + weight derivation
+   + provider + serving stack). As written, two models with distinct corpora but shared teacher-distillation
+   would pass — exactly the gap NI-1 names.
+
+4. NI-10a is weight-based, not a hard guarantee. A thin slot gets weight 0.5; "never decisive" holds for the
+   tested 3-4 slot panels but is not structural (in a 2-slot panel a 0.5 seat can swing). The invariant
+   should be a hard rule (a thin slot can never be the pivotal vote), not an emergent weight.
+
+5. Bond and resolution are not hash-linked. bonds use ballotHash(constraint, criteria); the settling
+   resolution uses a different preimage. The settlement is bound by convention, not cryptographically — a
+   bond should reference the exact resolution ballotHash that settles it.
+
+6. New module state is off-chain. bonds, the node registry, reputation, and the lifecycle panel are
+   in-memory; only votes and notary attestations are hash-chained. Per CIP-3/CIP-4 everything
+   client-checkable should be on the tamper-evident log; these state transitions currently are not.
+
+None are fatal and none change a ratified design — they are the honest next layer of fidelity.
+
+VERDICT: REVISE
+
+
+### V2 — REVISE
+CIP-3’s cryptographic core in [src/signed-vote.ts](/Users/Andrew/ai-blockchain/code/src/signed-vote.ts) is mostly sound: votes bind ballot hash, verdict, validator id, and raw-output hash; `ratify` rejects bad keys, wrong ballots, invalid signatures, and equivocation. CIP-8/9/10/5/6 modules also mostly realize their stated demo invariants: `notary.ts` cannot emit `VERIFIED`, `replay.ts` recomputes frozen criteria, `commons.ts` preserves dissent, `fork.ts` filters T0-invalid forks before weight, and `cost-oracle.ts` clamps cost reports to external benchmarks.
+
+The single most important missing piece is independent validator key custody. In [src/panel.ts](/Users/Andrew/ai-blockchain/code/src/panel.ts) and [src/run-panel.ts](/Users/Andrew/ai-blockchain/code/src/run-panel.ts), the orchestrator invokes validators, receives raw text, then signs votes using private keys it holds. That preserves auditability only if the orchestrator is honest; it does not yet prove each validator independently signed its own ballot. This weakens the central CIP-3 invariant that the orchestrator is no longer the trust root.
+
+There is also an incorrect realization in [src/lifecycle.ts](/Users/Andrew/ai-blockchain/code/src/lifecycle.ts): `completeRotation` only checks `floorOk(after)`, so it can retire an outgoing validator while the replacement is still `PROBATION` if enough other standing families remain. That contradicts the documented overlap-handoff/graduated-replacement invariant. `ratify` also accepts caller-supplied quorum, so the 2/3 rule is not enforced by the primitive itself.
+
+Tests: `node --test` showed 102 passing tests; 17 failures were sandbox `EPERM` write failures for temp dirs/logs, not observed logic failures.
+
+VERDICT: REVISE
+
+
+### V3 — NO_VERDICT
+**Quorumchain ballot cannot be called — no evidence attached.**
+
+Here's what's missing for a proper review:
+
+1. **Source code / repository** — the Quorumchain implementation to audit (modules, files, or a repo URL).
+2. **Ratified CIP specs** — the spec documents (CIP numbers or text) defining the invariants.
+3. **Known invariants** — the explicit non-negotiable invariants (e.g., consensus safety properties, slashing conditions, finality guarantees) to check against.
+
+Without these, any verdict would be fabricated, which violates the core rule of this process.
+
+**What I need from you:** Paste the code (or link the repo), the CIP spec text, and a list of the invariants — or just attach whatever artifacts the build produced. I'll review concretely against each module and invariant, then commit the verdict.

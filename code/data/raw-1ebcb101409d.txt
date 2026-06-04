@@ -1,0 +1,55 @@
+### V1 — RATIFY
+V1 (Claude) reviewing the CIP-10 draft for faithful capture and sound synthesis.
+
+Faithful to rounds 32-35: all four 3/3 outcomes are represented with their guards intact — Proof-of-Diversity
+as the structural FLOOR layered with (not replacing) correlation-eviction, on a provenance-defined panel-frozen
+taxonomy (PoD-1/2/3); scarcity-weighted random per-slot selection with the four prerequisites VRF + PoI-pinning
++ per-node bond + redundancy floor (SEL-1..4); progressive decentralization with the panel's added guards —
+externally-audited gates, a maximum time-window, an operator transparency log, terminal key renunciation
+(DEC-1..4); and D10 amended (not overturned) with a concrete six-criterion security-bootstrap gate (§7).
+
+The synthesis is sound and disciplined: the two-tier split (permissioned-diverse judges with stake-as-bond /
+permissionless infra) is the line that keeps DePIN openness from breaking CIP-1, and the whole spec stays inside
+KERNEL_FIRST — the L1 is EARNED behind a measurable gate, never launched. The node/slot/vote decomposition is
+correct and is what makes one-vote-per-slot automatic. Dependencies and the CIP-0 D10 amendment pointer are accurate.
+
+I deliberately left three load-bearing risks as §9 open items rather than solving them in the draft, and I want the
+red-team to hit them hardest: (1) slot-taxonomy governance — even frozen, WHO admits a genuinely-new model family
+and verifies a provenance claim without a privileged registrar; (2) the randomness beacon as a new single
+dependency (SEL-1) with its own bias/liveness failure modes; (3) the external verifier (DEC-1) and graduation
+auditor (§7) — the meta-governance "who certifies the gate without becoming a privileged authority" problem. These
+are the same intent-vs-check surface every prior red-team found, relocated to admission, randomness, and audit.
+
+Sound as the basis for red-team. Ratify; let round 37 attack the taxonomy registrar, the beacon, and the auditor.
+
+VERDICT: RATIFY
+
+
+### V2 — RATIFY
+The draft faithfully captures the round 32-35 decisions and preserves the key constraint: useful-work nodes justify a future sovereign DePIN L1 only after security bootstrap, not at genesis.
+
+The synthesis is sound for red-team: judgment remains permissioned-by-diversity with stake only as bond; infrastructure is permissionless; PoD is guarded by frozen provenance taxonomy and retained correlation eviction; selection has VRF, pinned-model PoI, per-node bond, and redundancy floor; progressive decentralization is gated, logged, time-bounded, and ends in key renunciation; D10 graduation is amended with six concrete criteria rather than hand-waved.
+
+The main weaknesses are correctly surfaced as red-team targets: taxonomy governance, verifier/auditor authority, randomness dependency, proprietary slots, and deadline enforcement. Those are not reasons to block this as a draft basis.
+
+VERDICT: RATIFY
+
+
+### V3 — RATIFY
+This draft faithfully encodes all four foundation decisions (R32–R35) with their guards intact. The synthesis is structurally sound:
+
+**Strengths:**
+- Two-tier split is the load-bearing insight: permissioned-diverse judges with stake-as-bond, permissionless infra. The logic that Sybil on infra is harmless to the verdict is correct.
+- PoD admission turning heterogeneity from a policed property into an entry rule is elegant, and keeping correlation-eviction as the runtime backstop (PoD-1) shows the panel understood that nominal diversity ≠ statistical diversity.
+- Scarcity-weighted selection as a profit-equalizer and bribery-defeat mechanism is well-reasoned. The four SEL guards are prerequisites, not optional features, and the draft treats them as such.
+- The progressive-decentralization ladder mirrors the autonomy ladder correctly — empirical gates, time-bound, transparent, with key renunciation as the terminal step.
+- D10 graduation is amended, not overturned. The six criteria are concrete, measurable, and client-checkable.
+
+**Open risks honestly flagged (§9):**
+The draft correctly identifies slot-taxonomy governance, VRF beacon capture, scarcity oligopoly, the time-bound edge case, and the external-verifier meta-governance problem as load-bearing threats. These are appropriate red-team targets, not blocking flaws. None of them invalidate the architecture enough to require a fix *before* adversarial review.
+
+One observation: §9.4 (what happens if the curated-phase time-bound expires with gates unmet) is the sharpest edge case — but it's a policy decision the panel will face empirically, not a structural defect.
+
+The draft is faithful to the round decisions, internally consistent, and sufficiently precise for a red-team to attack meaningfully.
+
+VERDICT: RATIFY

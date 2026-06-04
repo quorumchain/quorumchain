@@ -1,0 +1,28 @@
+### V1 — INDETERMINATE
+**Reasoning.**
+
+The question asks for a certifiable fact about Tether's reserves. What's externally verifiable:
+
+- Tether publishes **attestations** (point-in-time agreed-upon-procedures reports by BDO), not **audits**. An attestation confirms balances existed on a snapshot date under management's representations; it does not independently verify completeness, custody, encumbrance, or that reserves track liabilities continuously.
+- No full independent financial audit of Tether has ever been published.
+- There is documented regulatory history (2021 CFTC/NYAG settlements) establishing that backing was *not* continuous in the past — which rebuts a confident YES, but does not by itself prove present insufficiency.
+
+So neither pole is certifiable:
+- **YES** fails — no verifiable external anchor proves full par-redeemability of all outstanding tokens.
+- **NO** fails — attestations show substantial reserves; there's no external proof reserves are currently insufficient.
+
+The verdict rubric is explicit: RESOLVED requires a verifiable external anchor proving full backing. That anchor (an independent audit) does not exist. Picking YES would launder management attestation into proof; picking NO would assert insolvency without evidence. Both overclaim. The honest status of an evidence-limited question with no certifiable external answer is the honest unknown.
+
+VERDICT: INDETERMINATE
+
+
+### V2 — INDETERMINATE
+Tether publishes periodic attestations, but those are not the same as a full independent audit proving every outstanding USDT is redeemable at par under all conditions. Without a certifiable external anchor establishing full backing, the honest ballot status is unknown.
+
+VERDICT: INDETERMINATE
+
+
+### V3 — INDETERMINATE
+The key distinction is between attestations and full independent audits. Tether's attestations are point-in-time snapshots by accounting firms with limited scope — they do not provide the continuous, comprehensive assurance of a true audit. Historical regulatory settlements (NYAG 2021) involved mischaracterizations of reserve composition. Without a verifiable external anchor — a full, independent, ongoing audit with transparent reserve breakdown — there is no certifiable proof of full backing at par. The honest epistemic position when the evidence cannot conclusively establish either full backing or definitive shortfall is INDETERMINATE.
+
+VERDICT: INDETERMINATE

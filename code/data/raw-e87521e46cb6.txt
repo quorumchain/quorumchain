@@ -1,0 +1,75 @@
+### V1 — CORRELATION_RECEIPT
+## Adversarial pass on all three
+
+**CALIBRATION — attack.** Deepest thesis fit, but doing it *first* inverts the dependency order. To weight by accuracy you must know *who* produced a verdict and *under what correlation conditions* — otherwise you're calibrating against an unrecorded composition and can't tell whether an apparent "accuracy" came from a correlated cluster voting in lockstep. So CALIBRATION structurally *wants* the correlation receipt underneath it. It also needs a whole new subsystem (resolved-outcome tracking + per-validator history), and it goes dark on a full quarter of the slate — the INDETERMINATE / unverifiable item can't be calibrated at all (§9). Highest build, highest chance of accidentally reconstructing a popularity/authority signal under a new name. Worst candidate to go first.
+
+**FORKING — attack.** Real value, but it's the largest blast radius against the most sensitive existing invariant: history is signed and hash-chained, and branch identity + merge/provenance semantics + migration all touch that. Crucially, a *partial* version of its promise already ships — supersede-with-reason is already non-Orwellian (no silent rewrite). So FORKING is an *enhancement of an existing capability*, not a missing precondition. And its core failure mode — manufacturing false-balance forks that dilute a genuine CONSENSUS — directly attacks "accuracy not popularity." It also demonstrates on only one slate item (the CONTESTED one). High value, least urgent, riskiest scope.
+
+**CORRELATION_RECEIPT — attack.** The honest knock: it changes *no* computation. Standing/status read identically the day it ships, so it can look like infrastructure deferral rather than epistemic gain. But that critique cuts the other way for *sequencing*: it's the additive, non-disruptive substrate that both rivals depend on, it operationalizes the just-ratified round-60 correlated-error honesty, and it's the only one demonstrated *uniformly across all four slate items* — every claim displays its receipt regardless of RESOLVED/CONTESTED/INDETERMINATE/protocol. Smallest change to an existing struct, no migration of any computed field.
+
+## Decision
+
+Value × (low) risk × demonstrability all point the same way. CORRELATION_RECEIPT is the precondition layer: CALIBRATION can't safely weight accuracy without knowing composition, and correlated-era discounting is impossible without lineage on record. It's the smallest scope, touches no computed standing, and the slate exercises it everywhere rather than in one corner. Do it first; it makes CALIBRATION *safe* to build second.
+
+**Binding invariants its CIP-12 must carry:**
+- **computed-not-assigned** — lineage/correlation metadata is captured from the actual panel run; never hand-set or editorially curated.
+- **descriptive-not-dispositive (no-recompute)** — the receipt records composition and MUST NOT alter verdict/status/standing. Discounting is a separate future graduation; the receipt *enables* it, it does not *perform* it.
+- **provenance-frozen / append-only** — captured at claim creation, hash-chained into history; corrections only via supersede-with-reason, never silent rewrite.
+- **no-popularity-signal** — records provider/diversity structure, NOT validator reputation or vote weight; must not leak a reputation-by-provider ranking.
+- **no-erasure (anti-Orwell)** — a receipt from a captured era is never deleted; capture is made *identifiable*, not scrubbed — post-hoc discountability requires the record persist.
+- **no-false-independence** — correlated providers must be recorded *as* correlated (the CIP-10/CIP-11 anchor-diversity tie-in); the receipt must never present a correlated panel as independent.
+
+**Strongest argument against my own pick:** it delivers zero read-surface improvement on day one — no standing changes, so a reader sees the same Commons, and "demonstrate value FIRST" arguably favors CALIBRATION, which would visibly flip a standing and make "accuracy not popularity" tangible. My pick is a bet on correct sequencing over immediate visible payoff; if the panel weights demonstrable read-surface change above dependency-ordering, CALIBRATION is the live rival.
+
+VERDICT: CORRELATION_RECEIPT
+
+
+### V2 — CORRELATION_RECEIPT
+CORRELATION_RECEIPT is the right first graduation.
+
+Attack on all three:
+
+CALIBRATION has the highest thesis value: it makes “accuracy not popularity” visible on the read surface. But first-build risk is high. It needs outcome anchoring, calibration history, claim-class awareness, and hard separation from agreement/reputation theater. On unverifiable or open claims, it can easily become fake precision. If built too early, it risks smuggling authority back in under an epistemic label.
+
+FORKING is powerful for the anti-Orwell promise: disagreement becomes provenance, not overwrite pressure. But it is graph-deep. Branch identity, merge semantics, query behavior, migration, and false-balance resistance all become first-order concerns. It is best demonstrated by one contested case, but less naturally across the whole slate.
+
+CORRELATION_RECEIPT is modest, but that is its strength. It extends an existing receipt rather than changing verdict or standing logic. It directly strengthens the Commons’ core claim that the epistemic state includes who produced it, under what correlated conditions, without pretending to decide reality. It is demonstrable across every case-study type: resolved, contested, indeterminate, and protocol-native claims can all show panel composition as frozen context.
+
+Binding invariants for CIP-12:
+
+- `receipt-frozen`: panel composition metadata is fixed at claim resolution/publication and never silently rewritten.
+- `provenance-hash-bound`: receipt fields are included in signed/hash-chained history.
+- `computed-not-assigned`: correlation summaries are derived from recorded provider/lineage metadata, not manually labeled outcomes.
+- `no-verdict-effect`: correlation receipt does not directly alter `status`, `standing`, or `verdict`.
+- `no-popularity-signal`: provider counts, lineage clusters, and correlation metadata are not reputation and not vote weight.
+- `privacy-minimality`: record enough composition metadata to audit correlation without unnecessary validator deanonymization.
+- `discountable-not-discardable`: later readers may discount correlated-era outputs, but the system must preserve the original epistemic state.
+- `schema-forward-compatible`: fields must support later calibration/forking without migration ambiguity.
+
+Strongest reason against my choice: it may be too passive. It records correlated capture after the fact but does not improve standings, weight accuracy, or give dissenting readers a structural path forward. CALIBRATION would more directly realize “accuracy not popularity.”
+
+VERDICT: CORRELATION_RECEIPT
+
+
+### V3 — CORRELATION_RECEIPT
+Adversarial pass on all three before committing.
+
+**CORRELATION_RECEIPT — attack:** It adds a label, not leverage. The standing/status/verdict computation is unchanged. A reader who doesn't inspect the receipt sees exactly the same Commons. It is the "nutrition label" of graduations — informative but inert. If you only ever ship this one, you've made the system more transparent but not more epistemically rigorous. The strongest case against it is that its standalone value is the lowest of the three, and by deferring CALIBRATION you defer operationalizing the thesis that matters most: accuracy not popularity.
+
+**CALIBRATION — attack:** This is the highest-value graduation and the highest-risk. The unverifiable-class trap is real: validators accumulate calibration history on RESOLVED/anchorable claims, but applying that weight to subjective/open-prediction stances smuggles an authority heuristic back in under a new name. You also need a resolved-outcome tracking subsystem that does not exist today. The case-study slate only has ~2 questions (the anchorable fact and possibly the interpretation) that can exercise calibration; the subjective and protocol questions either lack ground truth or are self-referential. Done badly, CALIBRATION rebuilds a reputation hierarchy — the exact thing the reputation layer was designed to avoid (reputation moves on external accuracy only, never on panel agreement).
+
+**FORKING — attack:** Largest structural change. Branch identity, provenance chains, merge semantics, query API, migration — a lot of surface. The false-balance risk is the killer: a determined actor could fork a CONSENSUS claim into a parallel branch with a contrived panel, and the graph now "shows" dispute where the original panel found consensus. The case-study slate only has one likely-CONTESTED question to demonstrate forking end-to-end. Building the full fork graph infrastructure for one demonstration is disproportionate scope.
+
+**Ordering argument:** CORRELATION_RECEIPT is the prerequisite for doing the other two correctly. CALIBRATION needs panel-composition metadata to distinguish an individually-accurate validator from a validator who happened to sit on a correlated panel. FORKING needs provenance receipts to distinguish a principled fork from a correlated-era artifact. CORRELATION_RECEIPT is also the only graduation demonstrable across all four case studies in the slate — every claim benefits from visible composition metadata.
+
+**Binding invariants for CORRELATION_RECEIPT CIP-12:**
+
+1. **Computed-not-assigned:** All provider/lineage/correlation fields are derived from the validator registry at ballot close; never manually set or overridden.
+2. **No-standing-impact:** The receipt is read-only metadata. It does not alter status, verdict, standing, or panelVotes computation in any path.
+3. **Provenance-frozen:** Once the ballot closes, receipt metadata is immutable. No post-hoc re-scoring, no retroactive re-qualification of providers.
+4. **No-silent-omission:** If a validator's provider or lineage is unknown or opted-out, the receipt records the absence explicitly (`provider: null`, `correlation_band: unknown`). Gaps are transparent, not invisible.
+5. **No-auto-discounting:** The Commons does not automatically downgrade or re-weight a claim based on correlation metadata. Discounting is a reader/tool concern, preserving the anti-Orwell principle: the record stands, interpretation is separate.
+
+**Strongest argument against my pick:** CORRELATION_RECEIPT alone does not move the epistemic needle. It makes the system *observable* but not *smarter*. If the Commons only ever ships this graduation, "accuracy not popularity" remains an aspiration, not a read-surface property. A sophisticated reader can use the receipt to discount correlated verdicts, but the system itself does not act on that knowledge. Deferring CALIBRATION means deferring the only graduation that directly encodes the thesis into the standing read path — and that may be the most important thing to do.
+
+VERDICT: CORRELATION_RECEIPT

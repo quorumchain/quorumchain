@@ -1,0 +1,48 @@
+### V1 — GENERAL_TOTAL_FUNCTION
+## Reasoning
+
+**The ratified invariant is already a total-function statement.** V2/V3 ratified: "RESOLVED entails a substantive, enforceable verdict; any verdict with no enforcement direction MUST NOT project to RESOLVED." Read literally, that is a claim about *all* non-substantive outcomes, not just ABSTAIN. NO_VERDICT-only is the same class of defect — three parse failures projecting as CONTESTED is the dual of all-ABSTAIN projecting as RESOLVED: both let the `ratified` boolean stand in for "does a substantive position exist?" V1's deeper invariant is correct.
+
+**NARROW_MAP** patches the one symptom that happened to surface and knowingly leaves its twin in the tree. YAGNI is a defense against *speculative* generality. It is not a defense here: the second case is demonstrated, not hypothetical, and the NEW VERIFIED FACT removes the only real cost — zero test churn, no consensus-test edits, so no regression-laundering risk. Fixing the same defect class twice across two future ballots is the more expensive path, not the cheaper one.
+
+**EXCLUDE_RATIFY** overreaches in the opposite direction. If the status-layer total-function already yields correct chain-observable outcomes, the ratify-layer change is unnecessary — and it actively *loses* information by making an all-ABSTAIN ballot non-ratifiable, erasing the transparent record that the panel deliberately abstained. The prior 2/3 (MAP_TO_INDETERMINATE) already chose "keep ABSTAIN tallied, fix it at projection." Re-litigating ratification semantics is out of step with what was ratified.
+
+**GENERAL_TOTAL_FUNCTION** is the faithful implementation of the ratified invariant: single-file status-layer change, no ratify-layer change, folds the recorded dissent (credible-minority mechanism working as designed), preserves substantive-supermajority RESOLVED and genuine-split CONTESTED, keeps 233 green.
+
+**Binding invariant (CIP-9 amendment):** `status` is a total function of *substantive-verdict presence*, independent of the bare `ratified` flag — substantive supermajority ⟹ RESOLVED; ≥2 competing substantive verdicts without supermajority ⟹ CONTESTED; no surviving substantive position (all-ABSTAIN, NO_VERDICT-only, empty) ⟹ INDETERMINATE. RESOLVED ⟺ an enforceable direction exists.
+
+**Scope of change:** commons.ts status-layer only. No ratify-layer change.
+
+**Strongest objection to my own choice:** it builds more than the 2/3 ratified — the panel endorsed mapping ABSTAIN, not a general rewrite, so this projects my reading of the invariant onto a narrower mandate. Counter: *this ballot is the scope consult* — choosing the broader scope is in-bounds because that is precisely what is being voted, the broader fix is the literal total-function reading of the invariant the panel already adopted, and it is empirically free of test churn, so declining it only defers an identical fix to a later round.
+
+VERDICT: GENERAL_TOTAL_FUNCTION
+
+
+### V2 — GENERAL_TOTAL_FUNCTION
+The binding invariant is: `RESOLVED` entails a surviving substantive, enforceable verdict; non-enforcement outcomes like `ABSTAIN`, `INDETERMINATE`, and `NO_VERDICT` must never project as `RESOLVED`.
+
+I choose `GENERAL_TOTAL_FUNCTION`. It fixes the surfaced all-ABSTAIN bug and the already-identified NO_VERDICT-only latent bug as one status-layer correction, while preserving substantive supermajority as `RESOLVED` and genuine competing substantive splits as `CONTESTED`. It also avoids changing ratification semantics, so ABSTAIN can remain tallied and transparent without becoming an enforceable status projection.
+
+The strongest objection is scope creep: the prior ratified decision specifically endorsed mapping ratified ABSTAIN away from `RESOLVED`, not necessarily rewriting the whole status function. But the broader status-layer total function is still the cleaner implementation of the ratified invariant, and the verified zero-test-breakage fact removes the main practical objection.
+
+Requires: `commons.ts` status-layer change only. No ratify-layer change.
+
+VERDICT: GENERAL_TOTAL_FUNCTION
+
+
+### V3 — GENERAL_TOTAL_FUNCTION
+**Reasoning:**
+
+The ratified invariant (from ballot 2d1e9a2d) is clear: *RESOLVED requires a substantive, enforceable verdict.* Any verdict lacking enforcement direction — ABSTAIN, INDETERMINATE, NO_VERDICT — must not project to RESOLVED.
+
+**NARROW_MAP** patches the surfaced bug (all-ABSTAIN → RESOLVED) but knowingly leaves the NO_VERDICT-only → CONTESTED latent bug in place. Both are the same class of defect: the status layer projects a non-substantive outcome as something it is not. YAGNI is not a legitimate defense here — the second case is already demonstrated, the fix is free (zero test churn confirmed empirically), and it would mean fixing the same structural defect twice rather than once.
+
+**EXCLUDE_RATIFY** changes ratification semantics, making ABSTAIN non-ratifiable. This loses transparency: an all-ABSTAIN ballot's ratified record vanishes from the chain. The ratify-layer change is unnecessary if the status-layer total-function already produces correct observable outcomes. Ratification should record what happened; projection should interpret what it means. These are orthogonal concerns.
+
+**GENERAL_TOTAL_FUNCTION** makes status a total function on the presence of substantive verdicts — exactly what the ratified invariant demands. It is a single-file status-layer change, requires zero ratify-layer modification, preserves full transparency (ABSTAIN remains tallied and ratified, just never projects RESOLVED), and breaks zero existing tests. The "scope creep" objection — that this goes beyond what 2/3 endorsed — collapses under scrutiny: GENERAL_TOTAL_FUNCTION implements the ratified invariant *more faithfully* than NARROW_MAP does, resolves a recorded dissent through the credible-minority mechanism as designed, and costs nothing in regression risk.
+
+**Binding invariant:** *RESOLVED entails a substantive verdict with enforcement direction; absence of a substantive supermajority projects CONTESTED (competing substantive positions) or INDETERMINATE (no surviving substantive position).*
+
+**Strongest self-objection:** GENERAL_TOTAL_FUNCTION exceeds the scope formally ratified by 2/3, and a CIP-9 amendment carries chain-observable consequences — should the scope of a chain-level fix be constrained to what consensus explicitly endorsed, even when the broader fix is demonstrably correct, free of test churn, and more faithful to the ratified invariant? *Rebuttal:* The ratified invariant is the constraint; NARROW_MAP is the one that fails to fully honor it by leaving an identical defect class unresolved at zero cost. The broader fix implements the spirit and letter of what was ratified — a court should not be forced to leave a known constitutional defect in place because the original remedial order was under-specific.
+
+VERDICT: GENERAL_TOTAL_FUNCTION

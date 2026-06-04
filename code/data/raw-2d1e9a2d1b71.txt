@@ -1,0 +1,59 @@
+### V1 — EXCLUDE_FROM_RATIFY
+## Judgment
+
+**The current bug is narrower in symptom than in cause.** `status = !ratified ? CONTESTED : verdict==='INDETERMINATE' ? INDETERMINATE : RESOLVED` has two defects, not one:
+
+1. A ratified non-answer (all-ABSTAIN) projects as RESOLVED — the surfaced bug.
+2. The `!ratified` branch labels *every* non-ratifying ballot CONTESTED, including ballots with **no substantive disagreement at all** — e.g. 3×NO_VERDICT today reads CONTESTED, which is equally false (three parse failures are not a contest).
+
+ABSTAIN is just the instance that surfaced. The root defect is that the status function never asks *"does a substantive position exist?"* — it only asks *"did something ratify?"*
+
+**Why EXCLUDE_FROM_RATIFY over MAP_TO_INDETERMINATE.** Both produce identical observable outcomes for every reported case (all-ABSTAIN → INDETERMINATE; 2×ABSTAIN+1×YES → INDETERMINATE; genuine split → CONTESTED; 2×YES+1×ABSTAIN → RESOLVED/YES, unchanged). They diverge on one case: **NO_VERDICT-only ballots.** MAP patches the ABSTAIN token and leaves 3×NO_VERDICT incorrectly CONTESTED; EXCLUDE fixes both because it unifies ABSTAIN and NO_VERDICT as the structurally identical thing they are — *non-answers that are tallied for transparency but carry no ratifiable position.*
+
+On the conflation objection (adversarial point 1): note MAP *also* lands on INDETERMINATE status, so it conflates too — it just does so at the **verdict-token** level ("ABSTAIN means INDETERMINATE"), which is the false claim. EXCLUDE conflates only at the **ballot-resolution** level ("a ballot with no surviving substantive position is indeterminate"), which is *true* — an all-abstaining panel has certified nothing, exactly the definition of INDETERMINATE-the-status. EXCLUDE never asserts a validator's ABSTAIN equals "no answer exists"; the per-validator distinction stays auditable in the raw tally.
+
+**Binding invariant the chosen semantics must carry:**
+> Every RESOLVED status carries a *substantive* verdict the chain certifies. ABSTAIN (declined) and NO_VERDICT (failed) are tallied but never enter the substantive set and are never ratifiable. CONTESTED is reserved strictly for ballots holding ≥2 *competing substantive* verdicts where none reaches supermajority. A ballot with no substantive verdict resolves to INDETERMINATE. Status is thus a total function: substantive supermajority → RESOLVED; competing substantive verdicts without supermajority → CONTESTED; otherwise → INDETERMINATE.
+
+**Layers / scope:** Both. (a) Ratify layer — ABSTAIN joins NO_VERDICT as counted-but-non-ratifiable. (b) `commons.ts buildClaimIndex` — the `!ratified` branch must split CONTESTED vs INDETERMINATE on the presence of substantive verdicts. **CIP-9 amendment: yes** — this changes what verdicts are ratifiable and alters chain-observable status outcomes (all-ABSTAIN and NO_VERDICT-only ballots change resolution), so it is a normative consensus change, not a refactor.
+
+**Strongest objection to my own choice:** EXCLUDE is the broader-surface fix and may require editing existing tests that assert all-ABSTAIN→RESOLVED or NO_VERDICT-only→CONTESTED. Editing consensus tests to make a fix pass is precisely how a regression gets laundered past review — so MAP's one-line, single-file, near-zero-blast-radius guard is the safer mechanical change, and a YAGNI argument says don't generalize to NO_VERDICT until that case is shown to matter. My rebuttal: leaving the catch-all CONTESTED in place is a latent correctness bug that will resurface, and fixing the invariant once is cheaper than twice — *provided* every test EXCLUDE touches is reviewed against the raw transcript, with any flipped assertion justified as encoding the old bug rather than masking a new one. That review discipline is a precondition of my vote, not an afterthought.
+
+VERDICT: EXCLUDE_FROM_RATIFY
+
+
+### V2 — MAP_TO_INDETERMINATE
+A ratified `ABSTAIN` should not project as `RESOLVED`, because `RESOLVED` must mean the commons has certified a substantive answer or certified `INDETERMINATE` as the epistemic answer. `ABSTAIN` is not an answer; it is validator non-participation in judgment.
+
+I vote `MAP_TO_INDETERMINATE`.
+
+Binding invariant: `RESOLVED` must never carry `ABSTAIN`; every resolved claim status must represent a certifiable substantive verdict or certifiable epistemic indeterminacy. Operationally, an all-ABSTAIN or ABSTAIN-supermajority panel has produced no certifiable substantive answer, so the projected claim status should be `INDETERMINATE`, while preserving the raw verdict/tally evidence that the cause was abstention.
+
+Strongest objection to my choice: it does blur the semantic distinction between “validators declined to judge” and “the external question has no certifiable answer.” That is real. But at the claim-index/status layer, both mean the same thing for consumers: do not treat the claim as resolved true/false/etc. The raw ballot can still distinguish abstention from epistemic indeterminacy.
+
+This needs a `commons.ts` status projection change, not necessarily a ratify-layer change, because mixed ballots like `2 YES + 1 ABSTAIN` already behave correctly and ABSTAIN can remain ratifiable for transparency. It should be a CIP-9 amendment because it changes binding status semantics for ratified ABSTAIN outcomes.
+
+VERDICT: MAP_TO_INDETERMINATE
+
+
+### V3 — MAP_TO_INDETERMINATE
+**Analysis:**
+
+The bug: `status = (!ratified ? CONTESTED : verdict==='INDETERMINATE' ? INDETERMINATE : RESOLVED)` projects a ratified ABSTAIN verdict as RESOLVED. An honest "we decline to judge" becomes "this is settled." That is categorically wrong.
+
+**Evaluating the options:**
+
+1. **LEAVE_AS_IS** — Reject immediately. It treats non-judgment as resolution, violating the core invariant that RESOLVED implies an enforceable verdict.
+
+2. **EXCLUDE_FROM_RATIFY** — Makes ABSTAIN non-ratifiable (like NO_VERDICT). But as evidence point (2) notes, this alone dumps all-ABSTAIN into `!ratified → CONTESTED`, which is equally wrong — there is no dispute to contest, only a panel that declined. This option therefore requires a *second* fix in the status layer: when `!ratified` but no substantive votes exist (only ABSTAIN/NO_VERDICT), map to INDETERMINATE rather than CONTESTED. That's a two-layer change (ratify logic + status projection) with broader regression surface across the 233 tests. Architecturally principled, but operationally heavyweight.
+
+3. **MAP_TO_INDETERMINATE** — One-line surgical fix in the status projection: treat ABSTAIN the same as INDETERMINATE. Does not touch ratification semantics. Preserves all existing RESOLVED and CONTESTED behavior. Minimal test churn. The philosophical objection is real but answerable.
+
+**Choice: MAP_TO_INDETERMINATE**
+
+- **Scope:** Commons status-layer only (one change in `buildClaimIndex`). No ratification-layer changes needed.
+- **CIP-9 amendment:** Yes — this is a semantic change to how ratified verdicts project to status, which downstream consumers rely on.
+- **Binding invariant:** *"A status of RESOLVED entails the existence of a substantive, enforceable verdict. Any verdict that carries no enforcement direction (ABSTAIN, INDETERMINATE, NO_VERDICT) MUST NOT project to RESOLVED."*
+- **Strongest objection to my choice:** It conflates *volition* (validators chose not to judge) with *epistemology* (no certifiable answer exists). These are distinct states — a future auditor cannot tell from the status record whether the panel abstained because of a conflict of interest, insufficient evidence, or because the claim truly has no determinate truth value. MAP_TO_INDETERMINATE loses that diagnostic information. A two-tier INDETERMINATE (with sub-codes like `INDETERMINATE.ABSTAIN` vs `INDETERMINATE.UNDECIDABLE`) would preserve the distinction, but that's a larger change than this fix warrants.
+
+VERDICT: MAP_TO_INDETERMINATE

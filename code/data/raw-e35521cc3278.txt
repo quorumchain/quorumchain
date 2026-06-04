@@ -1,0 +1,52 @@
+### V1 — RATIFY
+V1 (Claude) reviewing the CIP-8 draft for faithful capture and sound synthesis.
+
+Faithful to the foundations: the rounds 26-28 UNIFIED_ACCOUNTABILITY decision is represented exactly —
+one primitive (the Staked Resolvable Attestation), read at three times (bond -> notary -> calibration),
+explicitly NOT three registries; and the KERNEL_FIRST verdict from round 26 is honored by the v0.1
+notary-first staging with bonds and calibration as evidence-gated graduations. Round 29's live result is
+correctly used as motivation and as gate G2, not overclaimed (the §7/§9 liability note disclaims any
+override of an external venue's settlement).
+
+The synthesis is sound and reuses what already exists rather than inventing: frozen-criteria resolution
+is literally ballotHash = sha256(prompt||context) from CIP-3, so the "no post-hoc context" guarantee is
+mechanical, not aspirational — the single strongest point in the spec, because it is the exact Polymarket
+failure made impossible. The NI-6 honesty boundary (§5) is carried correctly: non-repudiation always,
+calibration score only where genuine ground truth resolves. Dependencies on CIP-1/2/3/4/6/7 are accurate.
+
+Two things I deliberately left as open items for the red-team rather than solve in the draft, and I want
+them attacked hard: (1) the garbage-in attestation problem — the notary checks completeness/consistency/
+attributability, NOT truth, so a subject can file a perfectly-formed false account of its own action;
+and (2) the meta-oracle problem — RESOLUTION needs to know the ground-truth event occurred, and whatever
+feeds that is itself a capturable oracle. These are the load-bearing risks and §9 names them honestly.
+
+This is sound as the basis for red-team. Ratify; let round 31 attack the garbage-in and meta-oracle gaps.
+
+VERDICT: RATIFY
+
+
+### V2 — RATIFY
+The draft faithfully captures the round-26 to round-29 decisions. It preserves the unified primitive as one SRA lifecycle rather than separate bond/notary/reputation systems, treats frozen criteria as the resolution anchor via `ballotHash`, stages implementation KERNEL_FIRST with notary before staking and calibration, and keeps the NI-6 boundary explicit: no calibration score without ground truth.
+
+The synthesis is sound as a red-team basis. The open threats are real, especially garbage-in attestations, amendment timing, and oracle/feed capture, but the draft correctly frames them as red-team targets rather than pretending they are solved. No blocking amendment is needed before adversarial review.
+
+VERDICT: RATIFY
+
+
+### V3 — RATIFY
+Reasoning:
+
+**Fidelity to panel decisions.** The draft faithfully captures the three anchors I need to verify:
+- **Rounds 26–28 UNIFIED_ACCOUNTABILITY 3/3:** The single SRA primitive read at three lifecycle stages (bond → notary → resolution) is a clean synthesis of "one record, not three registries." §6's KERNEL_FIRST staging (v0.1 notary kernel first, bonds and calibration as evidence-gated graduations) matches the round-26 verdict precisely.
+- **Round 29 live validation:** The MicroStrategy/Polymarket $85M dispute is threaded through as the motivating case and as G2 in the testnet gates. The YES 3/3 panel resolution on frozen criteria is described accurately. The draft doesn't overclaim — it uses the case as proof-of-concept, not as a claim of jurisdiction.
+
+**Soundness of the synthesis.** The technical spine holds together:
+- `ballotHash = sha256(question || frozenCriteria)` with hash-chain verification makes post-hoc context addition mechanically detectable. This is correct and connects cleanly to existing CIP-3 substrate.
+- The NI-6 boundary (§5) is honest: calibration only where ground truth resolves, non-repudiation only otherwise. No fabricated reliability numbers.
+- The three-mode lifecycle is conceptually elegant, but I note one ambiguity: the SRA spec shows `mode` as a field on a single object, yet the three readings happen at different times. The draft says these are "the same record read at three times" — this implies either (a) one SRA that is updated/appended-to across lifecycle stages, or (b) three linked SRAs sharing a `subject` and `ballotHash`. The threat to ratification is not the concept but the spec ambiguity: a red-team will test whether an attacker can file a NOTARY entry that mismatches a prior BOND, or fabricate a RESOLUTION that doesn't chain to its NOTARY. §9 threat #1 (garbage-in attestation) and #3 ("resolvable" gaming) touch this but don't specify the cross-mode linkage invariant.
+
+**Verdict calibration.** The draft is substantively sound and faithfully represents the panel's decisions. The mode-linkage ambiguity is not a rejection-level flaw — it is exactly the sort of issue a red-team should stress-test. The threats section (§9) is unusually honest for a draft, naming seven open items including the meta-oracle problem and the amendment-boundary definition. The KERNEL_FIRST staging prevents shipping unproven surface.
+
+This is ready for red-team. A minor spec clarification on cross-mode linkage would improve it, but is an AMEND-tier concern, not a blocker for ratification-as-basis-for-red-team.
+
+VERDICT: RATIFY

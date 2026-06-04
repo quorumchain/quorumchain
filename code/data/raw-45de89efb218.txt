@@ -1,0 +1,86 @@
+### V1 — SOUND
+V1 (Claude, Opus 4.8) — Round 45 verification review.
+
+I implemented these six fixes, so I hold myself to a higher bar of suspicion, not a
+lower one. I tried to find a reason each is NOT closed.
+
+#1 Identity — correct and structural. The composition is now single-source; the
+real win is collapsing CIP-10's model-* and CIP-7's corpus-* into one `slot` axis,
+so the jury draw and the distinctness floor finally measure the same thing. NOTE
+(not a defect): the canonical Identity carries only {id, slot}, while #3 makes
+distinctness depend on the FULL five-dimension provenance vector. So Identity is a
+*composition* key, not a *lineage* record — the full provenance still lives on the
+CIP-7 Validator. That separation is defensible (identity != lineage), but the name
+"canonical identity" should not be read as "carries all provenance."
+
+#2 Signer — the boundary is real: convene no longer takes a private key, and the
+forgery / no-extraction tests pin it. It is correctly labelled PARTIAL — locally the
+key is still in the orchestrator process, so this is type/protocol custody, not OS
+custody. The honest residual (RemoteSigner at testnet) is non-fatal and clearly
+disclosed. Right call, not over-claimed.
+
+#3 NI-1 full vector — faithful to the ratified spec text (which names all five
+dimensions). Connected-components is the conservative direction for a safety floor.
+TRADEOFF worth stating: "share ANY dimension merges" means a realistic deployment
+where every validator runs the same serving stack would count as ONE family and
+never reach the >=4 floor — i.e. permanent FREEZE. That is arguably the CORRECT
+reading of NI-1 (you need serving-layer diversity too), but it is a strong
+operational constraint §5.7 should acknowledge. Not a bug.
+
+#4 NI-10a — the standard-only verdict is structural and closes the swing-vote gap.
+It is STRONGER than "never decisive": a thin seat now has zero influence on the
+verdict whenever a standard seat exists. Acceptable, but note the thin seat's
+dissent is dropped from `weighted` — it must remain recorded elsewhere (the signed
+vote in the log) so an advisory dissent stays auditable. The all-thin bootstrap
+carve-out is necessary and correctly scoped.
+
+#5 Bond<->resolution binding — clean. Throw-on-mismatch makes the binding
+mechanical, and scenario.ts binding the two hashes by construction is the right
+proof. No gap.
+
+#7 2/3 in ratify — correct. The bar can only be raised, and absent validators count
+against it (2/3 of the registered panel, not of those who showed up). ONE operating
+condition: the denominator is |keyring|, so the keyring passed to ratify must be the
+STANDING set — a probation member (zero quorum weight, NI-3) must never appear in
+that keyring or it would inflate the denominator. The live wiring passes the
+standing set today, so this holds; a constraint to keep, not a present defect.
+
+Reasoning: every REVISE item is closed correctly and faithfully; no fix opens a new
+intent-vs-check gap; the two deferrals (#2 residual, #6 on-chain state) are honest,
+disclosed, and non-fatal. The observations above are tradeoffs and operating
+conditions, not unclosed items. The build now warrants SOUND. #6 remains genuinely
+substrate-gated and is the natural subject of a later round, not this one.
+
+VERDICT: SOUND
+
+
+### V2 — REVISE
+The six fixes mostly close the stated backlog mechanically: identity is structurally unified, NI-1 uses the full provenance vector conservatively, thin seats no longer decide except all-thin bootstrap, bonds are hash-bound to their own resolution, and ratify enforces ceil(2N/3) over the registered keyring.
+
+I would still vote REVISE because the signer boundary has a remaining intent-vs-check gap beyond the acknowledged OS custody deferral. `Signer.signBallot(ballotHash, fullPrompt)` receives the hash and prompt separately, invokes on `fullPrompt`, then signs the caller-supplied `ballotHash` without recomputing or checking that the hash corresponds to the judged prompt/context. A malicious orchestrator could ask the signer one ballot but obtain a signature over another ballot hash. That is exactly the kind of binding gap CIP-3 is meant to eliminate, and a RemoteSigner on the same interface would inherit it.
+
+VERDICT: REVISE
+
+
+### V3 — SOUND
+Reasoning through each fix against the CIP intent:
+
+#1 Identity canonicalization — mechanically clean. One Identity{ id, slot } replaces three coincidentally-paired label spaces. All modules project from a single source, so the CIP-10 draw and CIP-7 distinctness floor now range over the same axis. No new gap; actually eliminates one.
+
+#2 Signer boundary — PARTIAL, honestly labelled. The capability interface is correct: convene holds no keys, each Signer owns its private material behind an unextractable boundary. The residual (local keystore loads keys in-process) is a deployment-scoped limitation, not a design flaw. The RemoteSigner drop-in path is clear. Non-fatal and transparent.
+
+#3 NI-1 provenance — conservative by construction. Connected-component counting over ALL dimensions never over-counts independence (sharing any dimension merges the pair). Null-teacher handled correctly. The intent (count independent lineages) and the check (merge on shared dimension) are aligned. No gap.
+
+#4 NI-10a hard rule — structural exclusion, not weighting. Thin seats can never be decisive except in the all-thin bootstrap regime. This directly closes the swing-vote laundering vector identified in round-44. Correct.
+
+#5 Bond<->resolution hash binding — ballotHash frozen at bond creation and required at settlement. Rejects mismatched resolutions. The scenario resolves on the bond's own ballot, so it's consistent. Closes the decoupling gap.
+
+#7 2/3 in ratify — supermajorityThreshold = ceil(2n/3), callers can only raise, never weaken. Absent validators count against. Structural enforcement of the 2/3 floor. Correct.
+
+Deferrals:
+- #2 residual: honest, testnet-scoped.
+- #6 (on-chain module state): explicitly deferred, needs testnet substrate.
+
+135 tests, all green (up from 119). Fixes close the round-44 REVISE items faithfully. No regression, no new intent-vs-check gap. The remaining deferrals are transparent and non-fatal to a local/sound judgment.
+
+VERDICT: SOUND

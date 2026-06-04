@@ -1,0 +1,48 @@
+### V1 — AFFIRM
+V1 (Claude) on progressive decentralization (dev runs the diverse set first, opens gradually).
+
+This is not a deviation from the project's principles — it IS the autonomy ladder applied to the operator
+set. We already accepted (round 26 KERNEL_FIRST, and the testnet alpha->beta->gamma->mainnet ladder) that
+scope and control are EARNED empirically, not declared at genesis. Running a curated, known-diverse node
+set first — with custody and quality controlled — and opening to the public progressively is the same
+discipline: it lets us prove the diversity floor holds, correlation stays low, liveness is real, and no
+capture has occurred BEFORE handing the set to an open market.
+
+Two conditions make it honest rather than a permanent-control excuse: (a) opening is gated on EMPIRICAL
+criteria (diversity floor held, low cross-slot correlation, liveness, no capture events), never on a
+calendar and never at the operator's discretion; and (b) the admission/control keys are renounced at the
+terminal step, exactly as the autonomy ladder requires for mainnet. Decentralization is the destination we
+move toward, not the claim we make on day one — affirm.
+
+VERDICT: AFFIRM
+
+
+### V2 — AFFIRM
+Progressive decentralization is the right stance for the judgment tier. Day-1 permissionless operation would expose the system before CIP-7 diversity, correlation eviction, pinned-model verification, and liveness evidence are proven in production. A curated genesis set is acceptable only if it is explicitly temporary, measured against empirical gates, and ends with control-key renunciation.
+
+The key condition is that the gates must be public, objective, and hard to self-mark: diversity floor, low cross-slot correlation, sustained liveness, no operator capture, verifiable randomness, and model-binding proofs should all be externally auditable before each opening step.
+
+VERDICT: AFFIRM
+
+
+### V3 — AFFIRM
+**Ballot 34: Progressive Decentralization on the autonomy ladder.**
+
+**Analysis:**
+
+This applies the autonomy-ladder concept (already validated in prior rounds) to the *operator set* specifically. The Hyperliquid precedent demonstrates the model's viability in production: curated genesis -> empirical gate satisfaction -> public opening -> terminal commitment (key renouncement).
+
+**Points in favor:**
+- Honest about the cold-start problem. A day-1 permissionless node set on a young chain is security theater (exactly D10's reasoning for rejecting sovereign L1 at genesis).
+- Empirical gates (diversity floor, low correlation, liveness, no capture) are objective criteria, not dev discretion. They define "ready," not "when convenient."
+- Terminal key renouncement creates a credible commitment — irreversible, non-political handoff.
+- Compatible with KERNEL_FIRST: earn the scope before opening the floodgates.
+
+**Concerns:**
+- "Gradual" lacks a timeline bound. Without a maximum window, gradual can become indefinite drift.
+- Gate auditing needs a defined verifier — who certifies that correlation is low enough, or capture has not occurred? Cannot be the dev team alone.
+- The curated phase is a trust window. Operators there are effectively privileged early entrants; this needs transparency.
+
+**Weighing:** These are implementation-level gaps (timeline bounds, audit authority, transparency logs), not structural flaws in the mechanism itself. The proposition establishes a sound *principle*: decentralization is the destination, reached via evidence-based gates, not a launch-day marketing claim. The specifics can be defined in the accompanying implementation spec. The Hyperliquid precedent validates the empirical-gate approach in a live system.
+
+VERDICT: AFFIRM

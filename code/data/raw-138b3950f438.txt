@@ -1,0 +1,53 @@
+### V1 — YES
+I'll reason as a validator, testing the new items for distinctness and probing for any unconceded first-order gap.
+
+**Do 14–18 each bite and stay distinct?**
+- **14 (eval-time injection)** — attacks the validators' instruction-following via the *evidence channel at evaluation*, after criteria freeze. Genuinely distinct from 2 (non-adversarial shared error), 6 (creation-time framing), and 7 (false content the truth-blind kernel passes). Bites.
+- **15 (reflexive contamination)** — output→input loop that worsens with adoption; distinct from 2's input-side shared-data problem. Bites.
+- **16 (legal coercion)** — a structured state/regulator adversary with authority over a provider, beyond generic ToS/censorship. Distinct. Bites.
+- **17 (mitigations fail)** — concedes the challenge-market/calibration defenses leaned on in 2/7 are themselves attackable and presuppose disprovability that 4/11 lack. This is the honesty backstop. Bites.
+- **18 (confidentiality)** — data exposure to providers, orthogonal to 3's liveness/neutrality. Bites.
+
+**Is a still-distinct first-order limitation unconceded?** I tested the three strongest candidates:
+- *Capability ceiling* (objective-but-too-hard questions yielding confident-wrong verdicts) → a shared-blindspot case of **item 2**. Relabel.
+- *Temporal truth-decay* of subject matter → verdicts are timestamped claims about T; correct behavior, not a soundness limit.
+- *Protocol-governance / validator-set & threshold capture* — the most tempting. But under the whitepaper's stated single-operator regime, "you must trust the operator's choice of models/parameters" collapses into **item 8** (single-operator / no-continuity). Naming it would be relabeling, which the ballot forbids.
+
+The list now spans epistemics (1,2,4,11,12), trust relocation (5), creation-time (6), evaluation-time adversarial (7,14), operational (8,9,10), the provider relationship (3,16,18), the reflexive loop (15), defense-honesty (17), and the meta-point (13). Two prior NO votes forced real additions; this pass closes the five named gaps with items that are each distinct and bite, and I cannot produce a remaining first-order limitation that isn't a relabel of an existing one.
+
+The section is complete and honest at the first-order level.
+
+VERDICT: YES
+
+
+### V2 — YES
+Items 14-18 cover the previously missing first-order limits without merely renaming earlier ones. They add evaluation-channel attacks, longitudinal self-contamination, jurisdictional coercion, mitigation fragility, and confidentiality exposure. I do not see a remaining distinct first-order limitation that is both unconceded and outside the retained 1-18 set.
+
+VERDICT: YES
+
+
+### V3 — YES
+Reasoning through the 18 items systematically.
+
+**What's well-covered now:**
+- Epistemic limits (1, 4, 6, 11, 12)
+- Model-level failures (2, 3)
+- Adversarial content (7)
+- Prompt injection as distinct from content falsehood (14) — correctly carved out from 2, 6, 7
+- Feedback loop / reflexive contamination (15) — distinct from input-side shared error
+- Legal coercion as structured adversary (16) — beyond ToS/censorship
+- Meta-failure of defenses (17) — honest admission that mitigations aren't assumed sound
+- Privacy / data exposure (18) — separate from liveness/neutrality
+- Infrastructure (5, 8, 9, 10)
+- Scope dynamics (12, 13)
+
+**Potential gaps I checked:**
+- *Sybil/false diversity of validators:* Distinct from key-compromise (8). However, item 12 ("earns-its-scope as trajectory-not-property") covers independence as something that must be maintained over time, not assumed. Not first-order separable.
+- *Compositional / chaining risk:* A verdict cited as anchor in a subsequent question compounds error. Item 15 (reflexive contamination) captures output→input feedback; chaining is a close subclass. Not independently necessary.
+- *Bootstrap / cold-start:* How are initial criteria and anchors chosen before any track record exists? Item 6 (bad/captured criteria at creation) and item 5 (anchors relocate trust) jointly cover this — the system starts with inherited trust and can be captured from minute one.
+
+Each of items 14–18 bites independently, maps to a concrete adversary or failure mechanism, and doesn't overlap existing items in a way that permits deletion.
+
+I find no still-distinct first-order limitation remaining unconceded.
+
+VERDICT: YES

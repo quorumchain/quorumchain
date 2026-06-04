@@ -1,0 +1,147 @@
+### V1 — HOLDS
+V1 (Claude) red-teaming CIP-8. Break it, then decide if it survives.
+
+Attack 1 — the notary secures the wrong thing (garbage-in). The notary checks completeness, consistency,
+and attributability, NOT truth. So a subject can file a perfectly-formed FALSE account of its own action
+and the chain will stamp it with permanent, signed, authoritative-looking non-repudiation. For RESOLVABLE
+claims, later calibration punishes the lie — fine. But for the unverifiable-claim class (which never
+resolves, per NI-6), the lie stands forever with a signature and no counter. The danger is that users read
+"on the tamper-proof chain" as "verified," when the notary only ever proved authorship and timing. The
+guarantee is real but narrow, and the spec must say so loudly or it manufactures false trust — the exact
+thing the project exists to prevent.
+
+Attack 2 — the meta-oracle problem is the deepest gap. RESOLUTION must know the ground-truth event
+occurred. Whatever feeds that — a price feed, an SEC filing, a reporter — is ITSELF a capturable oracle.
+Frozen criteria + diversity defend the JUDGMENT; they do nothing for the INPUT. Round 29 only worked
+because an SEC 8-K is a near-unimpeachable primary source; most claims have no such anchor. CIP-8 risks
+relocating the trust problem from "who resolves" to "who feeds the ground truth," and declaring victory.
+
+Attack 3 — "resolver holds no position" is a rule with no mechanical check. §4.4 asserts the resolver has
+no stake in the market it judges, but a provider can hold a position off-book. This is the recurring
+lesson precisely: the intent (disinterested resolver) has no enforcement (you cannot prove a provider's
+book is flat). Stated but unenforced, it is a dashboard label.
+
+Attack 4 — frozen criteria can lock in ambiguity, and the amendment escape hatch is gameable. Round 29's
+market WAS genuinely ambiguous (sale-event vs disclosure). Freezing locks ambiguity in; the "legitimate
+amendment before the resolving facts are known" hatch then becomes the new attack surface — who decides
+WHEN facts are "known," and an adversary times an amendment to just before a leak. The freeze moved the
+post-hoc-edit fight to the definition of "before."
+
+Attack 5 — evidence commitments can be theater. A hash proves a record existed, not its content. If no one
+can compel disclosure, a subject commits to a hash of garbage and never reveals it; if someone CAN compel,
+that is a privileged surface violating CIP-0 D10.
+
+Verdict: none are architectural disqualifiers, and crucially the KERNEL_FIRST staging already quarantines
+the deepest risk — the v0.1 NOTARY kernel needs NO ground-truth oracle (non-repudiation does not require
+truth), so Attack 2 only bites at the gated v0.3 calibration stage. CIP-8 HOLDS, conditional on these
+becoming non-negotiable before the relevant stage ships:
+(a) state the notary's guarantee as authorship+timing+non-repudiation ONLY, explicitly NOT content-truth,
+    as a first-class limitation, so non-repudiation is never mistaken for verification;
+(b) gate RESOLUTION/calibration behind an explicit ground-truth-source policy; where the feed is weak or
+    capturable, fall back to NOTARY-only (no score), inheriting NI-6;
+(c) define the evidence-commitment disclosure/challenge rule with NO privileged decryptor — default:
+    an unrevealed commitment carries zero evidentiary weight at resolution;
+(d) bind a resolver position-disclosure into the signed verdict and treat "no-position" as the load-bearing
+    UNSOLVED check, flagged not assumed;
+(e) define "before the resolving facts are known" adversarially (who timestamps it), and require genuinely-
+    ambiguous criteria to resolve INDETERMINATE rather than be force-read.
+
+VERDICT: HOLDS
+
+
+### V2 — FAILS
+CIP-8 **does not yet hold as a ratification basis**. The core primitive is useful, but the draft currently overclaims the security properties of the product.
+
+The fatal gap is the **meta-oracle layer**. RESOLUTION depends on “ground truth arrives,” but CIP-8 does not secure who reports it, how competing feeds are handled, what counts as availability, or how oracle capture is detected. Frozen criteria prevent silent rule edits, but they do not make the external fact source neutral. If the feed of “resolving facts” is capturable, the whole calibration and stake-settlement layer inherits that capture.
+
+The second serious gap is that **NOTARY can manufacture false trust**. The draft correctly says the notary checks form, not truth, but then markets the result as accountability. A well-formed false attestation gets permanent non-repudiation and may look trustworthy unless every surface clearly labels it as “claimed, not verified.” Evidence commitments do not fix this unless there is a disclosure, challenge, and penalty rule.
+
+“Resolver holds no position” is also asserted more than enforced. It needs a concrete conflict model: direct positions, affiliates, correlated incentives, model-provider exposure, operator incentives, and delayed/bribed positions. Without that, “position-free” is a governance promise, not a protocol property.
+
+Frozen criteria are directionally right, but can lock in ambiguity. The amendment hatch is gameable unless “before facts known” is defined with an adversarial standard and tied to public information timestamps. Otherwise insiders can amend during asymmetric knowledge windows.
+
+So the verdict is not that CIP-8 is bad. The notary-first kernel can be ratified as a limited tamper-evident claim log. But CIP-8 as “The Accountability Ledger” needs conditions before ratification: explicit claim-vs-truth labeling, disclosure/challenge rules for evidence commitments, secured or pluralized ground-truth feeds, enforceable resolver conflict rules, and a precise amendment-timing standard.
+
+VERDICT: FAILS
+
+
+### V3 — HOLDS
+Let me trace each attack surface systematically.
+
+---
+
+**Attack 1: Manufactured Trust via Well-Formed False Attestations**
+
+The notary kernel verifies procedural completeness, internal consistency, and attributability — not truth. A sophisticated agent can file a complete, internally consistent, attributable record of events that never occurred. The evidence commitments are just hashes; content is unverifiable at filing time.
+
+Critical observation: over time, these false-but-well-formed attestations accumulate. They gain full cryptographic weight of the chain. Users see "signed, hash-chained, evidence-committed" and conflate *certainty about procedure* with *certainty about substance*. The NI-6 boundary prevents fabricated calibration scores for unverifiable claims, but the vast majority of NOTARY-mode records never enter RESOLUTION. They get permanent non-repudiation with no truth check ever applied.
+
+**Verdict on this vector:** Real gap, but bounded. The system explicitly provides non-repudiation of *records*, not truth certification. The damage is user misinterpretation, not protocol failure. Requires explicit user-facing disclaimers and perhaps a "NOT_VERIFIED" flag on non-resolvable attestations.
+
+**Attack 2: The Meta-Oracle is the Capturable Surface**
+
+RESOLUTION requires knowing the ground-truth event occurred. How does that information arrive?
+
+- If via on-chain oracle: exactly the Polymarket attack vector, relocated not eliminated
+- If the panel determines ground truth: panel is now both judge AND fact-finder — massive power concentration
+- If via "designated primary sources" (§4.5): the *choice* of primary source is itself political. In the MSTR case, was the SEC 8-K the primary source? What if there are two conflicting official sources? What if the designated URL returns 404?
+
+Freezing the criteria doesn't freeze the *data* the criteria reference. The meta-oracle is a single point of capture the design doesn't secure.
+
+**Verdict on this vector:** Deepest gap. But not unique to CIP-8 — it's the general oracle problem. CIP-8 *reduces* the oracle surface: NOTARY mode needs no oracle; RESOLUTION narrows it to a specific frozen question rather than open-ended judgment. The KERNEL_FIRST approach correctly isolates the notary kernel (oracle-free) as v0.1.
+
+**Attack 3: "Resolver Holds No Position" is Asserted, Not Enforced**
+
+The document asserts (§4.4) that the resolver holds no position. But:
+
+- No on-chain verification mechanism is specified. No bond, no penalty for lying.
+- On-chain positions are auditable; off-chain positions (beneficial ownership through proxies, correlated incentives, shared training data biases across providers) are not
+- CIP-1 diversity prevents *concentration* but not *alignment* — three independent providers can share investors, training corpora, and industry incentives that bias all three in the same direction
+
+**Verdict on this vector:** Specification gap, not fundamental failure. Can be addressed with a position declaration (signed, hash-chained, penalty for proven false declaration) plus the existing CIP-1 diversity constraint.
+
+**Attack 4: Amendment Hatch is Gameable**
+
+"Amendment before facts are known" (§4.3) has a timing vulnerability:
+
+- Who determines when "facts are known"? The fact of a fact becoming known is itself a contestable fact
+- An actor with faster data access (insider information, premium feed) can post an amendment before the public knows, shaping criteria to favor their position
+- Who can file amendments? If only the author: unilateral amendment power. If anyone: spam/griefing vector
+
+Freezing genuinely ambiguous criteria means the resolution will be arbitrary — the panel picks an interpretation that wasn't in the frozen criteria.
+
+**Verdict on this vector:** Fixable with a cryptographic timestamp oracle for amendments + public notice period + restriction that amendments must be *narrower* (clarifying, not expanding) the original criteria scope.
+
+**Attack 5: Evidence Commitments Without Disclosure Are Theater**
+
+Hashes prove *something* existed, not *what*. Without:
+- A disclosure protocol (who can compel decryption, under what conditions, timeline)
+- Mechanism to verify the hash commits to the claimed content (not random data)
+- Rules for what happens when a challenged party refuses to disclose
+
+The system provides the appearance of rigor. Users see `evidenceCommitments[]` and assume verification.
+
+**Verdict on this vector:** Must be specified before v0.1. Without a disclosure rule, evidence commitments are decorative. A minimal rule: upon challenge, evidence holder must decrypt within N blocks or forfeit stake.
+
+---
+
+**Bottom Line Assessment:**
+
+The fatal-gap candidates are the meta-oracle (§2) and manufactured trust (§1). Neither destroys the core value proposition:
+
+- The meta-oracle is an inherent blockchain problem, not a CIP-8 invention. CIP-8 meaningfully reduces the oracle surface via KERNEL_FIRST (notary mode needs no oracle) and frozen-criteria narrowing (resolution is bounded, not open-ended).
+- Manufactured trust is a UX/labeling problem, not a protocol flaw. The system does what it claims: non-repudiation of records. The fix is honest labeling, not architectural change.
+
+The other three vectors (position assertion, amendment gaming, evidence theater) are specification gaps — real, but patchable without redesign.
+
+The frozen-criteria mechanism itself is sound. The round-29 replay proves the concept works on a real dispute. The KERNEL_FIRST staging correctly sequences risk: ship the oracle-free notary kernel first, add bonds and calibration only when demand justifies the additional attack surface.
+
+**Required conditions for ratification:**
+1. Evidence disclosure protocol specified before v0.1 (challenge triggers forced decryption or forfeit)
+2. Amendment rules: cryptographic timestamp + public notice period + "narrower-only" constraint
+3. Position-free resolver: signed declaration + penalty for proven false declaration
+4. Explicit "NOT_VERIFIED" labeling on non-resolvable attestations to prevent trust laundering
+
+These are specification additions, not architectural rebuilds. The core design survives.
+
+VERDICT: HOLDS

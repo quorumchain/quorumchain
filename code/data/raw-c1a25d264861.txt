@@ -1,0 +1,64 @@
+### V1 — AUTONOMY_FIRST
+V1 (Claude, Opus 4.8) — Round 48 roadmap sequencing.
+
+I vote AUTONOMY_FIRST, and I want to be precise about why this is not the cautious
+default but the thesis-consistent one.
+
+Quorumchain's entire reason to exist is that governance should not be capturable and
+should not need a human in the loop. A token is a claim. $QRM launched before the
+no-human loop is demonstrable is a claim the system cannot yet honor — "autonomous
+AI-governed chain" sold while a human still triggers every convening and pastes V1's
+verdict. That is the exact failure mode this project keeps catching in its own code:
+a gap between a thing's intent and what it mechanically does, now priced into a
+financial instrument. We caught it in round 45 (a signer that trusted a caller hash),
+in round 47 (custody "closed" that wasn't wired). Selling autonomy before it is wired
+would be the same error with real money and outside holders on the other side of it.
+
+There is a second, structural reason. TOKEN_FIRST means a treasury exists before the
+autonomy does — and a treasury someone controls is a human in the loop at the most
+sensitive point: the money. "No human" has to be true at the treasury or it is not
+true anywhere. Launch the token into a system that already gates spending 2/3 with no
+human key, and the treasury is born trustless; launch it before, and we have to
+retrofit trustlessness onto a pot of real value, which is strictly harder and exactly
+the kind of thing that gets captured.
+
+I take the funding objection seriously and will not wave it away: inference is the
+real cost, three frontier models per convening is not free, and a continuous Phase-1
+loop multiplies it. But the conclusion that follows is NOT "launch the full token
+early." It is: keep Phase 1's loop cadence modest until it is funded, and IF cost is
+the binding constraint, the answer is a MINIMAL, honestly-marketed funding mechanism
+(treasury under the same 2/3 gate, claims limited to what is actually live) — not a
+full launch that pre-sells autonomy. That middle path is reachable from AUTONOMY_FIRST;
+it is not reachable from TOKEN_FIRST without first making a claim we cannot back.
+
+Note on round-19 D5: "token first, independent of the chain" sequences the token
+before the SUBSTRATE (Phase 3), and I agree — the token does not need the appchain.
+It says nothing about launching before AUTONOMY. The cheap, credible order is Phase 0
+(local, removes the human paste) → Phase 1 (prove the loop) → then $QRM into a system
+that does what the token says.
+
+VERDICT: AUTONOMY_FIRST
+
+
+### V2 — AUTONOMY_FIRST
+AUTONOMY_FIRST best preserves the core thesis. Phase 0 and Phase 1 are the credibility layer: remove the human paste, prove no-human convening off-chain, and publish an auditable loop before attaching a tradable token to the claim. Launching $QRM first creates the exact intent-vs-enforcement gap the roadmap is trying to close, especially if treasury control is still human-mediated.
+
+The funding constraint is real, and round-19 D5 matters, but it does not outweigh the reputational and governance risk of selling autonomy before autonomy exists. The acceptable compromise would be the named middle path: a minimal funding-only token launch with honest claims and a 2/3 treasury gate. But as primary sequencing, the system should prove the loop first.
+
+VERDICT: AUTONOMY_FIRST
+
+
+### V3 — AUTONOMY_FIRST
+The core tension is honest. Let me weigh it against the project's actual constraints.
+
+**The capture-resistance thesis is the project's only defensible moat.** If the panel has repeatedly caught an intent-vs-check gap (the pitch outpaces the proof), baking that same gap into a financial instrument is compounding a known vulnerability, not accepting a temporary trade-off. A human-controlled treasury selling "autonomous governance" is exactly the kind of contradiction that breeds cynicism at launch — and cynicism is fatal to a credibility-first project.
+
+**The funding concern is real but bounded.** Three frontier models per convening is the operating cost ceiling for production-scale autonomy. But proving the loop doesn't require production scale. Phase 0 is local/cheap. Phase 1 is orchestration plumbing — you can demonstrate the no-human convening cycle working on limited inference spend (fewer models, cheaper models, or slower cadence) without needing token revenues. The demonstration is about structural existence, not economic scale. Once the loop is proven, the token becomes the funding mechanism *for scaling it* — which is honest sequencing.
+
+**Round-19 D5 said the token is "first as independent of the chain."** But D5 was about independence from the substrate, not about independence from the autonomy proof. The sequencing fork here is specifically token vs. autonomy loop — a question D5 didn't directly resolve.
+
+**The middle path** (minimal funding-only launch, honest claims, 2/3 treasury gate) is a valid operational strategy that mitigates the worst dishonesty. But it still launches a financial instrument before the governance it governs actually functions autonomously. A 2/3 gate constrains human discretion; it doesn't eliminate the contradiction at the center of the marketing pitch.
+
+The project's identity is "no human." The cheapest and most credible path is to make that true before putting a price on it. Autonomy proven at small scale is still autonomy proven. A token launched into a human-controlled system is still a human-controlled system.
+
+VERDICT: AUTONOMY_FIRST

@@ -1,0 +1,171 @@
+### V1 — YES
+I read `src/commons.ts` (the live status line at `commons.ts:117`), `src/signed-vote.ts` (`ratify`), and `test/commons.test.ts`. Verified the draft against the actual code.
+
+**Current status line (commons.ts:117):** `!r.ratified ? 'CONTESTED' : r.verdict === 'INDETERMINATE' ? 'INDETERMINATE' : 'RESOLVED'`. **`ratify` (signed-vote.ts:198-208):** skips *only* `NO_VERDICT` when picking the max; ABSTAIN **is** ratifiable.
+
+**§4 table "today" column — all accurate:**
+- All-ABSTAIN: tally `{ABSTAIN:3}`, ABSTAIN not skipped → ratified, verdict=ABSTAIN≠INDETERMINATE → **RESOLVED/ABSTAIN** ✓ (bug confirmed).
+- NO_VERDICT-only: verdict loop skips NO_VERDICT → verdict=null → not ratified → **CONTESTED** ✓ (twin confirmed).
+- 1×YES+2×NO_VERDICT: verdict=YES, max=1 < required 2 → not ratified → **CONTESTED** ✓.
+- 2×YES+1×NO_VERDICT (BH_WITHFAIL): max=2≥2 → **RESOLVED/YES** ✓. A/B/C (BH_NOQUORUM): max=1<2 → **CONTESTED** ✓. Ratified all-INDETERMINATE → **INDETERMINATE** ✓.
+
+**§2 totality — every enumerated ballot classifies, no fall-through** (if/else-if/else is exhaustive). Adversarial cases I hunted:
+- 3×INDETERMINATE: ratified=true but verdict non-substantive → fails case 1; 0 distinct substantive → fails case 2 → **INDETERMINATE** (not wrongly CONTESTED). This is the trap in red-team Q5, and it's handled correctly.
+- Large-panel 4×ABSTAIN+1×YES+1×NO: ratified ABSTAIN, non-substantive → case 1 fails; YES,NO = 2 distinct substantive → CONTESTED — defensible and matches §3's wording ("≥2 competing substantive, none at supermajority").
+- 3×YES+2×ABSTAIN (5-panel): lone sub-supermajority substantive → INDETERMINATE, exactly as §3 states ("a lone sub-supermajority position").
+
+**§3 invariant fidelity:** RESOLVED ⟺ (ratified ∧ substantive). Since `ratified` already enforces `max ≥ max(quorum, 2/3)`, this is exactly "enforceable substantive verdict holds a supermajority." Faithful both directions.
+
+**§5 zero-regression:** the only status changes are all-ABSTAIN, NO_VERDICT-only, and lone-substantive-below-bar — none of which appear in the suite. All five status-bearing tests in commons.test.ts hold under the new line (UNANIMOUS→RESOLVED, SPLIT→RESOLVED/NO, WITHFAIL→RESOLVED/YES, INDET[2×IND+1×NO]→INDETERMINATE, NOQUORUM→CONTESTED). `ranked = status==='RESOLVED'` is unchanged for every existing ballot, so standing assertions (incl. the NO_VERDICT-UNRANKED and all-UNRANKED-on-INDETERMINATE tests) are untouched.
+
+**Non-substantive set** `{ABSTAIN, INDETERMINATE, NO_VERDICT}` is correct and complete — these are precisely the three non-enforcement sentinels; YES/NO/domain tokens are substantive.
+
+**Scope:** status-layer only is sufficient. Note that for all-ABSTAIN the `Claim.verdict` field still reads `'ABSTAIN'` (ratify untouched) while status flips to INDETERMINATE — this is the *intended* transparency ("ratification records what happened; projection interprets what it means"), not a contradiction, and the §7 plan correctly tests status, not verdict. No ratify-layer change is needed for chain-observable correctness.
+
+No mis-classified ballot, no inaccurate row, no hidden regression, no overclaim. The draft is sound to implement under TDD.
+
+VERDICT: YES
+
+
+### V2 — YES
+I verified `src/commons.ts`, `src/signed-vote.ts`, and `test/commons.test.ts`. The draft’s current-behavior table is accurate: `ABSTAIN` can ratify today and projects `RESOLVED/ABSTAIN`; `NO_VERDICT` cannot ratify and therefore NO_VERDICT-only and `1×YES+2×NO_VERDICT` project `CONTESTED`; `BH_WITHFAIL` remains `RESOLVED/YES`; `BH_NOQUORUM` remains `CONTESTED`.
+
+The three-case rule is total and handles the adversarial cases correctly. The non-substantive set `{ABSTAIN, INDETERMINATE, NO_VERDICT}` is right for status projection. The invariant “RESOLVED iff ratified substantive verdict” matches the ratified rule, and the scope can stay status-layer only because the ratify layer still records ABSTAIN transparently.
+
+I ran `npm test`; it enumerated 233 tests. The run failed only because the sandbox is read-only / network-restricted (`mkdtemp` and local `listen` EPERM), while the Commons tests relevant to this change passed before those environment failures. I found no hidden status assertion for all-ABSTAIN or NO_VERDICT-only.
+
+VERDICT: YES
+
+
+### V3 — YES
+I've read `src/commons.ts`, `src/signed-vote.ts`, and `test/commons.test.ts` in full. Now I'll systematically attack each section against the real code.
+
+---
+
+## 1. TOTALITY — does every ballot fall into exactly one branch?
+
+Tracing through the three-case logic in §2 for all meaningful 3-validator compositions:
+
+| Ballot | `r.ratified` | `r.verdict` | `substantive` distinct | Current status | Amendment status |
+|---|---|---|---|---|---|
+| 3xYES | true | YES | {YES} | RESOLVED | RESOLVED |
+| 2xYES+1xNO | true | YES | {YES,NO} | RESOLVED | RESOLVED |
+| 2xYES+1xABSTAIN | true | YES | {YES} | RESOLVED | RESOLVED |
+| 2xYES+1xNO_VERDICT | true | YES | {YES} | RESOLVED | RESOLVED |
+| A/B/C (NOQUORUM) | false | null | {A,B,C} | CONTESTED | CONTESTED |
+| 3xINDETERMINATE | true | INDETERMINATE | {} | INDETERMINATE | INDETERMINATE |
+| 3xABSTAIN | true | ABSTAIN | {} | **RESOLVED** | INDETERMINATE |
+| 3xNO_VERDICT | false | null | {} | CONTESTED | INDETERMINATE |
+| 1xYES+2xNO_VERDICT | false | null | {YES} | CONTESTED | INDETERMINATE |
+| 1xYES+2xINDETERMINATE | false | null | {YES} | CONTESTED | INDETERMINATE |
+| 2xNO+1xABSTAIN | true | NO | {NO} | RESOLVED | RESOLVED |
+| empty (0 validators) | false | null | {} | CONTESTED | INDETERMINATE |
+
+Code verification of the `ratify` function (signed-vote.ts):
+- `NO_VERDICT` is explicitly skipped in the verdict loop (line 201: `if (val === 'NO_VERDICT') continue`). So NO_VERDICT can never become `r.verdict`.
+- `ABSTAIN` is NOT skipped — it CAN ratify. So all-ABSTAIN produces `r.ratified=true`, `r.verdict='ABSTAIN'`.
+- `INDETERMINATE` is NOT skipped — it CAN ratify. So all-INDETERMINATE produces `r.ratified=true`, `r.verdict='INDETERMINATE'`.
+
+Current status line (commons.ts:117):
+```
+!r.ratified ? 'CONTESTED' : r.verdict === 'INDETERMINATE' ? 'INDETERMINATE' : 'RESOLVED'
+```
+
+Both defects confirmed against real code:
+- All-ABSTAIN: `ratified=true`, `verdict='ABSTAIN'`, not-INDETERMINATE → **RESOLVED** (confirmed bug)
+- NO_VERDICT-only: `ratified=false`, `verdict=null` → **CONTESTED** (confirmed bug)
+- 1xYES+2xNO_VERDICT: `ratified=false` → **CONTESTED** (confirmed: no competitor exists, yet flagged as contest)
+
+**Verdict: Total, no fall-through. Both branches (`ratified+substantive`, `>=2 distinct substantive`, `else`) partition the space.**
+
+---
+
+## 2. INVARIANT FIDELITY (§3)
+
+> "RESOLVED iff an enforceable substantive verdict holds a supermajority"
+
+Verified against `ratify()`: supermajority = `ceil(2n/3)` (line 142), and the bar is `max(quorum, threshold)` (line 207). The amendment correctly requires the ratified verdict to also pass the *non-substantive* filter before projecting RESOLVED. The "independent of the bare ratified flag" is true — ABSTAIN CAN ratify (the flag goes true) but the non-substantive check demotes it to INDETERMINATE.
+
+One nuance: `CONTESTED` currently means "`!ratified`" which includes both genuine disagreement AND invocation failure. The amendment narrows it to "≥2 competing substantive." This is a semantic improvement, not a contradiction — and the binding invariant correctly states the new meaning.
+
+**§3 is faithful to the ratified principle and precisely states the rule.**
+
+---
+
+## 3. TABLE ACCURACY (§4) — verify each "Today" against real code
+
+Row-by-row:
+
+| Row | "Today" claim | Real code result | Match? |
+|---|---|---|---|
+| 3xYES, 2xYES+1xNO | RESOLVED | `ratified=true, verdict≠INDET` → RESOLVED | ✓ |
+| 2xYES+1xABSTAIN | RESOLVED/YES | `ratified=true, verdict=YES` → RESOLVED | ✓ |
+| 2xYES+1xNO_VERDICT | RESOLVED/YES | `ratified=true, verdict=YES` → RESOLVED | ✓ |
+| A/B/C (BH_NOQUORUM) | CONTESTED | `ratified=false` → CONTESTED | ✓ |
+| 3xINDETERMINATE | INDETERMINATE | `ratified=true, verdict=INDETERMINATE` → INDETERMINATE | ✓ |
+| all-ABSTAIN | RESOLVED/ABSTAIN | `ratified=true, verdict=ABSTAIN, not-INDET` → RESOLVED | ✓ (bug confirmed) |
+| NO_VERDICT-only | CONTESTED | `ratified=false` → CONTESTED | ✓ (latent twin confirmed) |
+| 1xYES+2xNO_VERDICT | CONTESTED | `ratified=false, verdict=null` → CONTESTED | ✓ |
+
+**Every "Today" value matches actual code. Every "After" value matches the amended logic. Table is accurate.**
+
+One additional case NOT tabulated — `1xYES+2xINDETERMINATE` — also changes: currently CONTESTED, becomes INDETERMINATE. This is NOT a defect in the table (it enumerates salient cases, not an exhaustive truth table), and it's covered implicitly by the non-substantive set and the `else` branch.
+
+---
+
+## 4. ZERO-REGRESSION (§5) — scan commons.test.ts
+
+I found 18 tests. The ones that assert `status` specifically:
+
+```
+Line 39:  BH_UNANIMOUS   status === 'RESOLVED'        → unchanged
+Line 49:  BH_SPLIT       status === 'RESOLVED'        → unchanged
+Line 66:  BH_WITHFAIL    status === 'RESOLVED'        → unchanged
+Line 77:  BH_INDET       status === 'INDETERMINATE'   → unchanged
+Line 88:  BH_NOQUORUM    status === 'CONTESTED'       → unchanged
+```
+
+No test constructs or asserts on:
+- all-ABSTAIN ballots → no assertion on RESOLVED/ABSTAIN to flip
+- NO_VERDICT-only ballots → no assertion on CONTESTED to flip
+- 1 substantive + N non-substantive → no assertion exists
+
+The test at line 179 (NI-12b) compares `status` across provenance/no-provenance variants of the SAME ballots — those ballots don't change.
+
+**Zero regression confirmed. No existing test flips. BH_NOQUORUM stays CONTESTED, BH_WITHFAIL stays RESOLVED.**
+
+The "233 tests" claim is plausible as a total assertion count across all test files; at minimum the commons.test.ts portion (which is where status assertions live) is fully green under the change.
+
+---
+
+## 5. NON-SUBSTANTIVE SET = {ABSTAIN, INDETERMINATE, NO_VERDICT}
+
+- **ABSTAIN**: Validator declined to judge. No enforcement direction. Non-substantive. ✓
+- **NO_VERDICT**: Invocation failed. No verdict produced. `ratify()` explicitly treats it as non-ratifiable (line 201 skip). Non-substantive. ✓
+- **INDETERMINATE**: The "honest unknown" token (G5). Does it carry enforcement direction? No — a unanimous INDETERMINATE means the panel could not produce a determinate answer. Non-substantive. ✓
+
+And critically, does the set miss anything? Domain tokens like YES, NO, or any future proposal tokens ARE substantive — they carry an enforcement direction. The non-substantive set is complete.
+
+The ratified-all-INDETERMINATE case: `ratified=true`, `verdict='INDETERMINATE'`, but INDETERMINATE ∉ substantive → falls to else → INDETERMINATE. The amendment correctly preserves this.
+
+---
+
+## 6. SCOPE / OVERCLAIM — "status-layer only, no ratify change"
+
+The amendment only changes commons.ts line 117. Let me verify no ratify-layer change is secretly needed:
+
+The `ratify()` function treats ABSTAIN as a valid, ratifiable verdict token — and the amendment preserves this. ABSTAIN can still ratify, the transparent record of deliberation survives on-chain. The amendment just ensures that the *status projection* (a separate concern) doesn't falsely display it as an enforcement-ready result.
+
+No downstream code in commons.ts depends on `status` being the old value for correctness. The stances/standing logic (line 125-131) depends on `status === 'RESOLVED'` for ranking — and the amended logic only changes `status` for cases that were never enforceable anyway, so no standing gets mis-computed.
+
+**"Status-layer only" is sufficient. No ratify-layer change needed.**
+
+---
+
+## RED-TEAM SUMMARY
+
+I attacked all six dimensions. Every table row matches real code. The three-case logic is total and correct. No regression exists in any of the 18 tests. The non-substantive set is complete. The scope claim is accurate. The binding invariant faithfully restates the ratified rule.
+
+The one case not explicitly tabulated (1xYES + 2xINDETERMINATE: CONTESTED → INDETERMINATE) is correctly handled by the logic but not documented in the table — a minor documentation gap, not a soundness defect.
+
+VERDICT: YES

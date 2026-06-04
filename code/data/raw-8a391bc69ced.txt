@@ -1,0 +1,88 @@
+### V1 — YES
+## Validator review — §5 (Validator panel & decentralization)
+
+I verified the framing against `src/nodes.ts`, `src/lifecycle.ts`, `src/bonds.ts`, and the CIP-7/CIP-10 invariant text. Reasoning briefly on the three things I was asked to confirm, plus the boundaries.
+
+**1. Built-vs-gated boundaries — CORRECT.** Each BUILT claim maps to real code, each GATED claim to a documented stub:
+- PoD admission (`admitNode`, nodes.ts:61–74): a node joins *only* by filling a missing slot, and a slot outside the frozen taxonomy is rejected (PoD-2). ✓ matches "monoculture un-enterable / taxonomy panel-frozen."
+- Verifiable per-slot draw + scarcity (`drawJury`/`verifyDraw`, :134–151): one node per slot from a committed seed, independently recomputable; scarcer slot ⇒ higher per-operator draw via the `mod n` term. ✓
+- NI-10a thin-slot weighting (:48–49, 140–141, 188–196): single-operator slot flagged `thin`, weight 0.5, and **structurally excluded from `decisiveSlots` whenever any standard seat exists.** ✓ The §5 BUILT line is correctly *scoped to the single-operator case* — it does not claim the broader proprietary prohibition is coded.
+- GATED, and honestly labeled in the code's own header comment (nodes.ts:13–16): NI-10c beacon (v0.1 proves only the verifiable-draw property from a supplied seed), SEL-2 proof-of-inference binding, CIP-7 correlation-eviction, NI-10d D10 metrics. ✓ Nothing faked.
+
+**2. "Stake is a slashing bond, never influence" — ACCURATE.** `NodeOperator` carries *no* stake field; seat weight is purely structural (`THIN_WEIGHT`/`STANDARD_WEIGHT`). Stake lives only in `bonds.ts` as an authorization/Sybil bond (SEL-3), never in the tally path. The two-tier hard line (judgment = permissioned-by-diversity; infra = permissionless DePIN) is consistent, and SEL-3 ("stake bond for Sybil resistance *on rewards*") does not contradict it — stake guards the reward layer, not the verdict. ✓
+
+**3. Thin-slot / proprietary handling — ACCURATE, with one prose caveat.** Closed-weight slots flagged `LOW_ASSURANCE` (built, flag carried through the draw, nodes.ts:21/141); "elevated correlation-eviction" for them correctly listed as GATED. The "no single-*provider*/proprietary model decisive" invariant for a *non-thin* proprietary slot is not enforced by the thin rule alone — it rests on CIP-7's lineage merge (NI-1: shared `provider` ⇒ shared lineage family) + heterogeneity floor. §5 part A covers exactly that structural-heterogeneity mandate, so the mechanism is accounted for across CIP-7+CIP-10. ✓
+
+**One note for the drafter (prose-precision, not a blocker):** the "thin slot is *never* the decisive/swing vote" claim has a degenerate exception in code — the all-thin bootstrap regime (nodes.ts:159–165), where thin seats must decide because no standard seat exists yet. The invariant holds *once the panel has any standard-weight slot.* Add a clause like "once a standard-weight slot exists" so the steady-state claim isn't read as covering genesis; §5(B)'s progressive-decentralization/DEC-1..4 framing already isolates that curated phase, so this is a one-line tightening, not a missing invariant.
+
+No mechanical claim is wrong and no load-bearing invariant is missing or overclaimed. Sound to draft as specified.
+
+VERDICT: YES
+
+
+### V2 — NO
+Reason: mostly sound, but not sound “as specified” because the built-vs-gated line overclaims `nodes.ts`.
+
+Mechanical corrections:
+
+- `admitNode` does **not** mean every node may join only by filling a missing slot forever. It enforces “fill missing slots first”; once all frozen taxonomy slots are covered, redundancy on covered slots is allowed. So the built line should be: “while any slot is missing, admission only fills a missing frozen-taxonomy slot; after full coverage, same-slot redundancy may enter.”
+- Scarcity is per-operator, not per-slot. `drawJury` draws one seat per covered slot every ballot; operators in scarcer slots are drawn more often because fewer operators share that slot.
+- NI-10a is stronger and narrower than the draft wording. `nodes.ts` flags slots with fewer than 2 operators as thin; if any standard seats exist, `tallyJury` excludes thin seats from verdict and records them as advisory. They are not merely “weight-reduced.” Exception: all-thin bootstrap, where thin seats decide because there are no standard seats.
+- Proprietary/closed-weight handling is not mechanically enforced beyond carrying `LOW_ASSURANCE`. I did not find built logic that prevents a proprietary or single-provider model from holding a decisive slot. If that is intended, cite it as a gated NI/design requirement, not as `nodes.ts` built behavior.
+- “Stake is a slashing bond, never influence” is directionally consistent with the code: stake appears in bonds/gating/slashing, not judge weighting; `nodes.ts` has no stake-weighted judging.
+
+CIP-7 lifecycle framing looks accurate: version-bound probation, zero quorum weight, no silent substitution, overlap handoff, full-provenance distinctness, and correlation eviction only where verifiable are all reflected in `src/lifecycle.ts`.
+
+VERDICT: NO
+
+
+### V3 — YES
+Let me work through this systematically, checking each mechanical claim against the specified invariants.
+
+**1. Built-vs-Gated Boundaries (nodes.ts v0.1)**
+
+The draft explicitly separates what ships from what is deferred. Checking each:
+
+- **BUILT**: PoD admission (admitNode enforces slot-fill-only), verifiable per-slot draw (drawJury/verifyDraw from committed seed), scarcity rebalancing, NI-10a thin-slot weighting. These are all present in the v0.1 code surface. No overclaim here — the draft does not pretend the node can enforce proof-of-inference or run a randomness beacon; it proves the draw property from a supplied seed and stops there.
+
+- **GATED**: NI-10c threshold randomness (the beacon that generates the seed is deferred — v0.1 only shows the draw is verifiable *given* a seed), SEL-2 proof-of-inference binding (the mechanism to bind a ballot to a pinned model version is deferred), CIP-7 correlation-eviction (runtime measurement is deferred), D10 graduation metrics (NI-10d, deferred).
+
+The boundary is honest. The draft does not fake deferred items as complete.
+
+**2. "Stake is a slashing bond, never influence"**
+
+This is a two-part claim that needs disentanglement:
+- In the *judgment tier*, stake-weighted voting is explicitly prohibited. Stake operates only as a Sybil-resistant bond (SEL-3) subject to slashing for misbehavior. This closes the monoculture/cost-race vector that stake-weighted consensus invites.
+- In the *infrastructure tier*, stake remains permissionless DePIN economics.
+
+The claim as written is mechanically sound *for the judgment tier*, but the draft should ensure the reader does not confuse the two tiers. The draft does explicitly separate them ("TWO-TIER architecture"), so the boundary is stated. One nuance: the stake bond's size relative to reward determines economic Sybil cost — if the bond is negligible, the claim becomes hollow. The draft should specify (or reference) that the bond is non-trivial and calibrated, not just "exists." This is a presentational gap, not a mechanical error.
+
+**3. Thin-Slot / Proprietary-Model Handling (NI-10a)**
+
+The draft states: "a single-operator slot is never the decisive/swing vote, its weight is reduced, and NO single-provider/proprietary model may hold a decisive judgment slot; proprietary-only slots are LOW-ASSURANCE."
+
+Mechanical check: For a single-operator slot to *never* be decisive, the reduced weight must be such that (a) the operator's total weight across all slots they hold cannot be a tiebreaker, and (b) any coalition that includes the thin slot as the deciding member is impossible by construction. This requires either (i) the thin slot weight < the margin between any two possible quorum tallies without it, or (ii) a structural rule that the thin slot is excluded from swing calculations entirely. The draft implies (ii) via "structurally never decisive" but does not specify the exact weight cap or exclusion mechanism. For a whitepaper framing, this is acceptable as a stated invariant with implementation deferred; for a protocol spec, the weight math would need to be explicit. Within this framing context, it is sound.
+
+The LOW-ASSURANCE flag for unverifiable (closed-weight) provenance is correct: it marks the slot as subject to elevated correlation-eviction, which is the appropriate risk response.
+
+**4. Missing Load-Bearing Invariants**
+
+Two items warrant flagging:
+
+- **(a) Liveness vs. freeze under stall**: The draft correctly states that on randomness stall, the system freezes rather than falling back to a grindable source. This is the right invariant (security over liveness). But the draft should explicitly acknowledge the liveness tradeoff — a freeze is a denial-of-service vector. The fact that it is intentional (not an oversight) should be stated, not implied.
+
+- **(b) What "structurally heterogeneous" means at admission**: The draft mandates reserve slots for "deliberately distinct lineages" but does not specify the mechanical classification (e.g., training corpus provenance, RLHF pipeline ownership, weight-space overlap measurement). This is a definitional gap that matters for the CIP-4 admission gate. The draft should reference or defer to the NI-10b provenance criteria explicitly.
+
+**5. Other Claims**
+
+- Panel-over-time invariants (pinned upgrade, probation, rotation overlap) are mechanically coherent and correctly reference CIP-7 lifecycle events.
+- Progressive decentralization gates (DEC-1 through DEC-4) are externally-verifiable, non-discretionary. The transparency log + terminal key renunciation are stated correctly.
+- D10 graduation + CIP-5 fork reversibility is accurate.
+- NI-10e (no integrity dependency on open tier) is correct and critical — the infra tier can affect liveness but never verdict integrity.
+
+**Summary of Issues by Severity:**
+
+- **No mechanical errors**. The built vs. gated boundary is correct; stake-as-slashing-bond is accurate for the judgment tier; thin-slot handling is stated as a structural invariant with implementation deferred.
+- **Two clarifications warranted**: (a) explicitly acknowledge freeze = intentional liveness sacrifice vs. DoS vector; (b) reference NI-10b as the provenance classification for "structurally heterogeneous." Neither breaks the draft but strengthens it.
+
+VERDICT: YES

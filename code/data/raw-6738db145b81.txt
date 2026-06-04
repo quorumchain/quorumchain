@@ -1,0 +1,52 @@
+### V1 — YES
+I read the built surface (`src/commons.ts:17-100`) to ground the attack. Current `PanelStateReceipt = {validators, size}`; `Stance` carries `panelVotes` with the explicit "NOT reputation" comment; `Standing`/`ClaimStatus` computed, `panelVotes` is panel distribution. Now the red-team.
+
+**1. Invariant fidelity (§2).** All nine consult-named invariants map 1:1 onto NI-12a..i — computed-not-assigned (a), descriptive/no-verdict-effect (b), frozen/append-only (c), no-popularity (d), anti-Orwell + *explicit* no-auto-discount (e), no-false-independence (f), no-silent-omission (g), privacy-minimality (h), forward-compatible (i). None dropped or softened. NI-12e even strengthens by spelling out "never auto-discounts on the receipt's basis."
+
+**2. Schema soundness (§1).** Genuinely additive: only `composition` + `correlationBand` are added, both on `PanelStateReceipt`. The draft enumerates the untouched set (`Claim/Stance/Standing/ClaimStatus/verdict/panelVotes`) and states a reader ignoring the receipt sees the identical Commons. No path feeds back into a computed field → no NI-12b violation. `composition` records provider/lineage (provenance), `correlationBand` is a structural correlation summary — neither is a per-validator reputation or vote-weight, so no NI-12d ranking leak by the system. (A reader *correlating* the already-public `stances.validators` with provider is the intended "observable," not a system-asserted ranking — consistent with NI-12e.)
+
+**3. UNKNOWN honesty.** Honest and forward-compatible: defaults to `UNKNOWN` rather than fabricating `LOW` absent live round-60 probes; §5 keeps the live-band capability gated. No overclaim of a capability the local pipeline lacks.
+
+**4. Strongest probe — UNKNOWN vs the ELEVATED floor.** §1 says band is `UNKNOWN` until probes ship, yet also "known shared-foundation forces it no lower than `ELEVATED`." This is *not* a contradiction: shared-foundation is a **registry-static** fact (lineage), not a probe output. So `UNKNOWN` = genuinely no information; `ELEVATED` floor = known structural correlation recorded even pre-probe. That is exactly no-false-independence working — you never assert independence (`LOW`) you can't substantiate. Coheres with CIP-11 NI-11b and CIP-10 same-family collapse; it records, never auto-acts (NI-12e), so it doesn't usurp CIP-10's dispositive role.
+
+**5. Status honesty.** Status banner reads consult-ratified-direction, "Draft → red-team pending," "Unblocks (does not build)," and Next stages list "implement (TDD)" as future. §4 keeps the conceded "observable, not smarter / accuracy-not-popularity deferred" limit and warns against overselling. "gated → built" is the graduation-tier term of art, not an implementation claim — the pervasive draft signposting prevents misreading.
+
+**6. Forward-compat.** composition (who) + correlationBand (under what conditions) is precisely what calibration needs to avoid mistaking a correlated cluster for accuracy, and the provenance forking needs. Fields are additive/nullable → consumed, not reshaped. §7's open parameters (lineage taxonomy, band thresholds, opt-out) are value-level ratifications within the NIs, not schema migrations — NI-12i doesn't overpromise.
+
+**7. CIP-9 coherence.** `validators`/`size` unchanged; pinned-keyring-at-ballot-close + frozen/append-only (NI-12c) handles registry mutation without retroactive re-qualification. A CIP-9 reader is unaffected. No contradiction.
+
+I hunted for a dropped invariant, a hidden verdict/standing feedback, a popularity leak, and a migration trap. Each candidate resolves as coherent. The draft faithfully carries NI-12a..i, stays additive, keeps UNKNOWN honest, and does not overclaim. Sound to advance.
+
+VERDICT: YES
+
+
+### V2 — YES
+The strongest attack I see is status wording: the draft repeatedly says “builds,” “What ships,” and “Built by CIP-12,” but it also clearly marks itself “Draft → red-team pending” and lists “draft red-team → fold → ratify → implement” as next stages. In context, that reads as the CIP’s proposed effect once ratified, not a claim that the local pipeline already has it.
+
+I do not find a dropped invariant or schema backdoor into verdict/standing/status/panelVotes. The extension is additive against current `PanelStateReceipt { validators, size }`; `composition` and `correlationBand` are descriptive only. `UNKNOWN` is honest while probes are absent. The shared-foundation floor to `ELEVATED` is coherent with no-false-independence. The only implementation caveat is that `lineage` taxonomy and provider opt-out policy must be fixed before producing durable receipts, but the draft names those as open parameters within the NIs rather than pretending they are solved.
+
+VERDICT: YES
+
+
+### V3 — YES
+I've read the current `src/commons.ts` (line 29–32 shows the live `PanelStateReceipt { validators: string[]; size: number; }` and lines 87–101 show the construction site). Here's my reasoning across the seven red-team dimensions.
+
+**1. Invariant Fidelity (NI-12a..i):** All nine invariants from the consult are present and none are weakened. NI-12b (no-verdict-effect) maps correctly to the code path — `buildClaimIndex` would need modification to add the two new fields on line 99, but no field on `status`, `verdict`, `panelVotes`, `standing`, or any `Stance` is altered. I verify no dropped invariants.
+
+**2. Schema Soundness (§1):** The extension is genuinely additive. `composition` and `correlationBand` are two new top-level keys on `PanelStateReceipt`. A reader who ignores them (the "conceded limit" from §4) sees byte-identical behavior on all standing/verdict paths. No feedback loop into `ClaimStatus` or `Stance`. On NI-12d — `composition` records per-validator provider identity without vote weight, rank, or reputation aggregation. A downstream consumer *could* count provider frequency across claims, but the receipt itself carries no such aggregate — it's a structural record, not a ranking. The NI explicitly says "must not *leak* a reputation-by-provider ranking," not "must not make provider identity observable" (that would contradict the entire purpose). Pass.
+
+**3. UNKNOWN-Honesty:** The draft is explicitly honest: `"UNKNOWN"` until correlation probes ship, rather than fabricating `"LOW"`. The shared-foundation → `ELEVATED` floor is a separate rule that operates on known provider relationships (the CIP-11 sense). This does not overclaim. The draft explicitly gates non-UNKNOWN bands on "round-60 probes live" (§5 Built vs still-gated). Pass.
+
+**4. No-False-Independence (NI-12f):** "Shared-foundation between providers forces `correlationBand` no lower than ELEVATED" is a correct floor, not a ceiling. This coheres precisely with CIP-11 NI-11b (same-base-model validators must be treated as correlated, not independent) and CIP-10's anchor-correlation collapse logic. No contradiction.
+
+**5. Status Honesty:** The draft's Status line reads "Consult-ratified — graduation chosen 3/3 ... Draft → red-team pending." It does not claim the receipt is built. §4's conceded limit ("observable, not smarter") is preserved verbatim. §5 explicitly separates what ships from what remains gated. No overclaim.
+
+**6. Forward-Compat Trap (NI-12i):** `CompositionEntry` uses `string | null` for provider and lineage — calibration can consume provider identity as a weighting dimension, and forking can consume lineage taxonomy. Adding fields to an existing object is schema-safe: older parsers ignore unknown keys (standard JSON behavior), and newer parsers get null for gaps. No migration required. Pass.
+
+**7. Contradictions with CIP-9:** No contradiction. CIP-9 line 28-29 already states provider/diversity is a "v0.2 graduation." CIP-12 is v0.2, fulfilling the gated promise.
+
+**One minor ambiguity found (not a vote-flipper):** NI-12g's parenthetical `(provider: null, lineage: null, correlationBand: "UNKNOWN")` conflates per-validator nulls with the panel-level UNKNOWN band in a way that could be misread — a single null provider doesn't force the whole panel to UNKNOWN. But this is a presentational gloss in the invariant prose, not a contradiction or weakened guarantee. The draft body correctly treats them separately (§1, bullet 2).
+
+The draft faithfully carries all nine invariants, the schema extension is additive with no verdict feed-back, the UNKNOWN honesty is maintained, the no-false-independence rule coheres with CIP-10/CIP-11, status is honest, and the forward-compat path is clear.
+
+VERDICT: YES

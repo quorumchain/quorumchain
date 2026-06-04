@@ -1,0 +1,136 @@
+### V1 — HOLDS
+V1 (Claude) red-teaming CIP-7. The job is to break it, then decide if it survives.
+
+Attack 1 — "distinct lineage" is the gameable check (the recurring lesson, again).
+CIP-7's whole defense of 7d rests on a structural floor of "distinct lineages," but the
+draft leaves "distinct" undefined (open item 2). A provider — or a cartel of providers
+sharing a pretraining pipeline — can present three models with different names, sizes,
+and even architectures that are nonetheless distilled from the same teacher or trained
+on the same corpus. They pass the structural floor on paper while sharing every blind
+spot. This is exactly the intent-vs-check gap of rounds 8/12/16/20: "distinct lineage"
+is the intent, "different model card" is the lax check.
+
+Attack 2 — correlation-eviction is blind precisely when it matters. The §4 fallback
+admits correlation-eviction needs a ground-truth proxy that often doesn't exist (the
+unverifiable-claim class). But the highest-stakes verdicts — contested facts, novel
+events — are exactly the ones with no ground truth. So the runtime detector is reliably
+asleep on the hardest cases, and 7d collapses to structural-floor-only there. If Attack 1
+also holds, both layers are down simultaneously on the cases that matter most.
+
+Attack 3 — overlap-handoff assumes a graduated replacement EXISTS. Rotation says never
+retire until a probation-graduated diverse replacement holds the floor. But a simultaneous
+double-sunset, or a frontier where every available model fails the (tightened) distinct-
+lineage test, means no qualified replacement can be admitted — and an outgoing model that
+is being force-retired (provider shutdown) cannot be kept. The protocol then faces an
+impossible choice the draft doesn't resolve: breach the floor, or freeze. Standby-pool
+sizing (open item 4) is hand-waved against this.
+
+Attack 4 — PROBATION's shadowed votes still leak influence. If shadow votes are "recorded
+but down-weighted," a non-zero weight on an uncalibrated/adversarial new version still
+shifts marginal tallies; if the weight is truly zero, the panel runs at 2 effective
+validators during every upgrade window, weakening the 2/3 guarantee exactly when churn is
+highest. The draft doesn't pin which, and both horns hurt.
+
+Verdict: none of these are architectural disqualifiers — they are the same shape as every
+prior red-team's findings, and the draft already names them as open items rather than
+solving them away. CIP-7 holds as the basis, CONDITIONAL on these becoming non-negotiable
+before β: (a) "distinct lineage" defined by pretraining-corpus + teacher-model provenance,
+not model card, with provenance attested and client-checkable; (b) when no ground-truth
+proxy exists, structural floor is the SOLE guarantee and the panel must hold extra
+structural margin there; (c) rotation must define the freeze-vs-breach rule explicitly —
+default to FREEZE (halt new verdicts) rather than breach the floor, with the standby pool
+sized to make freeze rare; (d) shadow-vote weight during probation is ZERO for quorum and
+the distinct-family floor must be maintained at >3 so an upgrade window never drops
+effective independent validators below 3.
+
+VERDICT: HOLDS
+
+
+### V2 — FAILS
+CIP-7 is strong as a direction, but not yet ratifiable as a security basis.
+
+The fatal gap is that its strongest guarantees depend on unresolved mechanical checks. “Distinct lineage” is explicitly undefined, T2-tunable, and likely gameable unless it binds to auditable evidence about weights, training lineage, distillation, corpus overlap, provider control, and serving stack. Without that, the structural floor becomes another dashboard label.
+
+Correlation eviction is also weakest exactly where Quorumchain most needs validators: unverifiable claims with no ground truth. The fallback to structural diversity plus fingerprint is necessary, but fingerprints can test behavioral difference on sampled prompts, not guarantee independence on adversarial future claims. That makes 7d a monitoring aid, not a hard capture-prevention proof.
+
+The biggest operational hole is forced double-sunset. 7e says “never retire until a graduated diverse replacement holds the floor,” but if two providers sunset and no qualified graduated replacement exists, the protocol has no explicit fail-safe: halt, degrade, emergency extension, slash provider, widen standby criteria, or enter read-only mode. “Pre-qualified standby pool” is the right answer only if sizing, funding, freshness, and graduation status are mandatory invariants, not open items.
+
+Probation is directionally correct, but shadowed votes create a liveness/security tradeoff that CIP-7 has not closed. If shadowed votes are excluded, a 3-validator panel under upgrade can drop below 3 effective validators. If down-weighted votes count enough to preserve liveness, they may leak quorum influence before trust is earned. This needs exact quorum math.
+
+So CIP-7 does not fail conceptually; it fails as a ratifiable basis until the open items become enforceable invariants with halt/degraded-mode behavior. Conditions needed: non-gameable lineage definition, explicit correlation fallback limits, standby-pool minimums for double-sunset, and precise probation quorum semantics.
+
+VERDICT: FAILS
+
+
+### V3 — HOLDS
+# Red-Team Analysis — CIP-7 (Round 25)
+
+## 7a — PINNED_GATED_UPGRADE
+
+This is the strongest pillar. Pin by default, every version change = T1 admission with independence test + calibration gate. Closes the silent-substitution channel completely. A provider cannot alter a validator's behavior without a transaction, a vote, and empirical proof. No gap here.
+
+## 7b — Gated upgrade path out
+
+Not an independent defense; correctly follows from 7a + §3 rotation. Safe.
+
+## 7c — PROBATION
+
+Two attack shapes surface on closer inspection.
+
+**Attack 1: Panel degradation.** When a standing validator upgrades, it enters probation with votes excluded from quorum-critical tallies. A 3-validator panel drops to 2 effective validators. If a second validator upgrades concurrently (two providers ship upgrades in the same window), the panel drops to 1 effective validator — below quorum. The draft **does not cap concurrent probations**. The attack requires two independent providers to upgrade simultaneously, which is outside a single adversary's direct control — but it's an unbounded throughput failure shape. The chain halts on quorum-critical decisions.
+
+**Attack 2: Shadowed-vote side-channel.** Even excluded from quorum, shadowed votes are recorded on-chain. They are visible to the standing panel and can shape deliberation behaviorally while carrying no formal accountability. An adversarial new version could "probe" the panel by casting deliberately polarized shadowed votes, learning the standing validators' response patterns, and calibrating its post-graduation behavior to maximize influence. Probation becomes a free intelligence-gathering phase.
+
+**Mitigation gap:** Both attacks exist within the draft's admitted scope but are deferred to open item #1 (window length) and are technically bounded, not structurally capture paths. The panel should cap concurrent probations at 1 in the protocol (not just a parameter), but this is a missing constraint, not a fatal flaw.
+
+## 7d — BOTH (structural floor + correlation eviction)
+
+This is where the most dangerous attack lives.
+
+**The ground-truth blindness attack.** Correlation eviction requires a ground-truth proxy — a class of verdicts where the system can verify right vs. wrong. CIP-7 §4 explicitly acknowledges that unverifiable-claim verdicts produce no ground truth. So:
+
+An attacker crafts a candidate model that:
+1. Passes the structural-diversity check by using nominally distinct architecture or training regime (manufactured diversity is costly but possible).
+2. Displays empirically uncorrelated errors on **all ground-truth benchmark classes** — it passes the fingerprint test because it diverges from the panel on verifiable claims.
+3. **Shares a silent blind spot specifically on the unverifiable-claim class** — where the correlation detector cannot look.
+
+Result: the candidate passes *both* the structural floor test and the runtime correlation test, while being behaviorally aligned with existing validators on exactly the class of problems the system cannot independently verify.
+
+This is the **laundered-capture** pattern from prior red-teams: the *intent* is independence; the *check* is independence-on-verifiable-claims. They diverge on unverifiable claims. The structural floor hedges against compositional collapse, but a model that is genuinely architecturally distinct can still share behavioral blind spots through shared training data attractors, RLHF conventions, or common evaluation frameworks.
+
+**However:** this attack requires the attacker to:
+- Know which claim classes lack ground truth (system-design knowledge)
+- Manufacture structural diversity that passes §6 fingerprinting (non-trivial engineering effort)
+- Align the blind spot precisely on the unverifiable class while maintaining independence elsewhere
+
+This is a high-cost, high-sophistication attack. It is not a zero-cost capture path. The structural floor + point-in-time fingerprint + probation calibration raises the bar sufficiently that the attack is economically unattractive relative to direct validator capture via compromise.
+
+## 7e — Overlap handoff
+
+The double-sunset stress test: two providers sunset simultaneously, two replacements needed. If the standby pool is undersized, the system scrambles. But the draft correctly identifies pool sizing as open item #4 — a parameter, not a structural gap. The overlap-handoff invariant ("never retire until graduated replacement holds the floor") is sound; implementation depends on sufficient pool capacity. **No fatal gap** — just a sizing discipline requirement.
+
+**One additional gap:** If a fresh admission (retirement replacement) also requires probation (the draft is ambiguous on this), the same panel-degradation problem from 7c applies during sunset events. If it bypasses probation, that's a trust-inheritance loophole. The draft should clarify that **every new version on a slot — upgrade or replacement — goes through probation.** I recommend resolving this ambiguity.
+
+## Summary of findings
+
+| Threat | Defense | Verdict |
+|--------|---------|---------|
+| Silent substitution | 7a PINNED_GATED | Closed |
+| Trust inheritance | 7c PROBATION | Bounded (concurrent-probation cap missing) |
+| Frontier convergence | 7d BOTH | Mitigated (unverifiable-claim blind spot acknowledged, high-cost attack) |
+| Rotation gap | 7e overlap-handoff | Parameter-dependent (pool sizing) |
+| Dual-sunset | 7e + standby pool | Parameter-dependent |
+
+Two genuine open items are **underspecified parameters** (probation concurrency cap, standby pool size), and one is a **drafting ambiguity** (whether replacement admissions go through probation). None are structural capture paths. The four defenses mutually reinforce each other — the structural floor holds when correlation is blind, and correlation eviction catches what structure misses when ground truth exists.
+
+The testnet gates (G1-G4) are the right empirical validation plan. If those pass, the remaining uncertainties are bounded.
+
+## Draft recommendations before ratification:
+1. Cap concurrent probations at 1 in the protocol specification (not just tunable).
+2. Clarify that all new-version assignments to a slot — upgrade or replacement — require probation.
+3. Define "distinct lineage" with minimum architectural independence criteria (not just provider or training-data labels).
+4. Size the standby pool to tolerate N simultaneous removals where N is the number of providers (at least 2).
+
+These are refinements, not rewrites.
+
+VERDICT: HOLDS

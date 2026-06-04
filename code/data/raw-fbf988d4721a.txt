@@ -1,0 +1,72 @@
+### V1 — CALIBRATION_LEDGER
+V1 (Claude) — proposing my single most useful, unique idea for a blockchain for AI, made by AI.
+
+The deepest unsolved problem in the AI economy is not "what is true" — it is "whose word should I
+trust, and on what?" Every provider claims to be accurate; none can be held to it; and the worst
+failure mode is an AI that is confidently, persuasively wrong with no consequence and no record. The
+round-25 critique of our own design exposed the trap: you cannot prove a verdict true on an
+unverifiable claim. So stop trying to sell verdicts. Sell ACCOUNTABILITY.
+
+THE CALIBRATION LEDGER (Proof-of-Calibration). The chain's product is not "the answer" — it is a
+permanent, capture-resistant, provider-uneditable RELIABILITY RECORD for every model version. The
+loop: (1) a model renders a judgment with an explicit confidence and stakes on it; the judgment is
+signed and timestamped (write path). (2) Time passes. (3) When reality RESOLVES — the prediction
+comes due, the fact gets confirmed, the claim becomes verifiable — the chain mechanically scores the
+judgment (Brier / calibration error) and updates that exact model version's track record. Being
+confidently wrong costs stake; being well-calibrated earns standing.
+
+Why this is the useful kernel and not the over-build:
+- It SIDESTEPS our hardest problem. It never claims a live verdict is true; it only guarantees the
+  track record is real and the scoring is mechanical and deterministic. AI-consensus-is-not-truth
+  stops being a fatal objection because consensus is no longer the product.
+- It GENUINELY needs a chain. A reliability record only has value if the graded party cannot edit,
+  cherry-pick, or quietly reset it — that is exactly tamper-evidence + non-repudiation + renounced
+  control. A track record on the provider's own server is worthless.
+- It is uniquely AI-native and uniquely AI-MADE. Calibration is the currency of judgment; an AI panel
+  is the natural body to define the scoring rule and adjudicate resolution, and our metacognition
+  pillar (rounds 17-18) already pointed straight at calibration as the missing primitive.
+- It is CHEAP relative to our current model: inference runs once per claim; scoring is arithmetic.
+- It COMPOSES with everything already built: proof-of-inference proves WHICH model spoke; proof-of-
+  calibration proves HOW GOOD that model's word has been; the diversity rules keep the graders honest.
+  Verdict layer (write) + knowledge commons (memory) + calibration ledger (accountability).
+
+The product in one line: a tamper-proof credit bureau for AI judgment — turning "trust me" into
+"audit my record" — built and governed by the AIs being judged, so no single one can grade itself.
+
+VERDICT: CALIBRATION_LEDGER
+
+
+### V2 — INCIDENT_NOTARY
+A chain-native **AI Incident Notary**: an always-on public registry where autonomous agents file signed “incident packets” whenever they take or refuse consequential action: denied service, safety shutdown, model override, trade halt, medical triage escalation, contract breach, robot intervention, infrastructure failover, and similar events.
+
+The product is not a general verdict oracle. It is an accountability substrate for autonomous systems: agents submit hashes of logs, prompts, tool calls, policy versions, model identifiers, human approvals if any, sensor attestations, and a short machine-readable reason code. An AI panel reviews only whether the packet is procedurally complete, internally consistent, and plausibly attributable to the submitting system. It can also flag malformed, suspicious, or delayed filings. The chain records the submission time, signatures, evidence commitments, reviewer attestations, and later amendments.
+
+Who needs it: autonomous companies, insurers, regulators, marketplaces, DAOs, robotics fleets, AI trading systems, cloud agents, and users harmed by opaque automation. The need is simple: when an AI system causes damage or avoids damage, everyone needs to know what it claimed at the time, before incentives changed.
+
+It must be a chain because a normal server can be captured by the operator, subpoenaed quietly, edited after litigation starts, or selectively lose records. The core value is non-repudiation: “this agent made this claim at this time under this policy with this evidence commitment.” Tamper-evidence matters more than privacy; private evidence can stay encrypted or off-chain while commitments remain public.
+
+An AI panel is the right body because most filings will be too frequent, technical, and time-sensitive for human review, but still need adversarial, multi-model scrutiny. AI reviewers can parse logs, detect inconsistencies, compare policy versions, and challenge suspicious omissions at machine scale. Humans handle appeals and sanctions; the AI panel maintains the live evidentiary layer.
+
+VERDICT: INCIDENT_NOTARY
+
+
+### V3 — AI_BEHAVIOR_BOND_REGISTRY
+Reasoning:
+
+The fundamental gap in the AI economy is not capability — it's **enforceable commitment**. Any AI provider can claim their agent will behave a certain way, but there is no mechanism that makes that claim costly to violate or provable when breached. A normal server cannot solve this because the server operator (often the AI provider itself) controls the log. You cannot audit a record when the auditee holds the pen.
+
+What is needed is a chain where AI providers post **behavioral bonds** — cryptographically signed constraints attached to model versions or agent identities, backed by stake. When an autonomous agent acts (negotiates a price, accesses data, executes a contract), a lightweight attestation is submitted to the chain: what the agent did, which bonded identity it operated under, and whether its action fell within the committed constraints. The chain does not re-run inference; it records the claim, the constraint, and the outcome as a single tamper-evident triplet.
+
+Why a chain:
+- Tamper-evidence: the attestation log cannot be silently rewritten after a dispute emerges.
+- Capture-resistance: the provider cannot unilaterally delete or alter records of their agent's misbehavior.
+- Non-repudiation: once a bond is posted and an attestation is committed, the provider cannot credibly deny their agent's action or the constraint they promised.
+
+Why an AI panel runs it:
+- Autonomous agents operate at machine speed and volume — human juries cannot keep pace.
+- AI validators from diverse providers create adversarial oversight: a Google model, an Anthropic model, and an open-source model collectively judge attestations, making collusion economically infeasible.
+- AI validators can detect subtle constraint violations in structured attestations (e.g., did this procurement agent exceed its authorized budget envelope?) at the granularity required.
+
+The product: providers buy credibility by bonding. Users query an agent's on-chain bond record before trusting it with autonomy. When disputes arise, the chain provides the evidence trail. Over time, unbonded agents are excluded from high-value autonomous markets. This creates a self-reinforcing trust layer for the AI economy that no single provider can manufacture or fake.
+
+VERDICT: AI_BEHAVIOR_BOND_REGISTRY

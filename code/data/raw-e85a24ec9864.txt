@@ -1,0 +1,47 @@
+### V1 — SPECIFY_DEFER
+## Reasoning
+
+**Is the deterministic/non-cherry-pickable rule meetable for an external feed at all?**
+
+Partially — and the gap is the whole decision. The proposed rule (published source set; window `[now−W, now]`; order by `(resolution_timestamp, question_id)`; take oldest K unreviewed; W/K/sources as panel-gated published constants) is genuinely deterministic *as a function of a given feed snapshot*. It correctly collapses agenda control from "pick each question" to "pick the source set once, in public, under 2/3." That's a real reduction and the design is sound.
+
+But "reproducible by an outsider from public inputs" has two unmet preconditions the rule itself doesn't supply:
+
+1. **The inputs are mutable by a third party.** The queue is a pure function of feed data, but the feed operator can edit close/resolution timestamps, add/remove questions, or reorder — moving the cherry-pick surface from *our* operator to the *feed's* operator. Determinism at a snapshot ≠ tamper-evidence over time.
+2. **The evaluation instant is unpinned.** "now" must be anchored (fixed UTC cron / block height) or two outsiders re-derive different windows.
+
+Closing both requires hash-pinned, archived, timestamped feed snapshots and a pinned evaluation instant — i.e. exactly the **Knowledge-Commons external-anchor mechanism that CIP-3 is supposed to codify and which is currently BLOCKED/pending** (per the round-4 governance ruling). So the binding constraint is meetable *for the selection rule*, but not yet airtight *for the feed inputs* until that anchor work lands.
+
+**Now vs defer.** The binding constraint is the deciding lens, and it cuts against building now: shipping tier 2 against a live feed today would deploy the deterministic rule on top of un-anchored, operator-mutable inputs — re-introducing the precise cherry-pick surface the constraint exists to forbid. Round 48 already ratified "existence not economics," and tier 1 (round 53) proves autonomous sourcing exists. The external feed's trust/availability dependency is most meaningful in the token/substrate phase and is best built *riding* the CIP-3 anchor mechanism, not ahead of it.
+
+Ratify the design (it's correct and worth locking now); defer the build.
+
+**Deferral trigger:** build tier 2 when CIP-3's Knowledge-Commons external-anchor mechanism is ratified and live (hash-pinned, timestamped feed snapshots + a pinned evaluation instant), so the feed *inputs* — not just the selection rule over them — are reproducible and tamper-evident; align with the token/substrate phase that creates real demand.
+
+VERDICT: SPECIFY_DEFER
+
+
+### V2 — SPECIFY_DEFER
+The deterministic/non-cherry-pickable constraint is meetable for an external feed if the source set, window, ordering, and limits are public constants and changes are panel-gated. That makes the queue reproducible from public data and removes per-question discretion.
+
+I would ratify the design but defer the build. Tier 1 already demonstrates autonomous sourcing at small scale, while the external feed adds operational dependency before the product needs it. Deferral trigger: start the tier-2 build when token/substrate work begins or when a concrete public dispute/oracle feed is needed for fee-bearing resolution flow.
+
+VERDICT: SPECIFY_DEFER
+
+
+### V3 — SPECIFY_DEFER
+Reading the ballot context and reasoning as a validator.
+
+BINDING-CONSTRAINT ANALYSIS: Is a deterministic, non-cherry-pickable selection rule meetable for an external feed?
+
+Yes. The proposed rule is auditable: given (1) a committed source set, (2) a published window constant W, (3) a published K, and (4) public feed data with resolution timestamps, the queue is a pure function — any outsider reruns the same computation and gets the same set. The only remaining control surface is the source set itself, which is elevated to a panel-gated 2/3 config change — collapsing agenda control from per-question cherry-picking to a transparent, infrequent, logged decision. The external nature of the feed does not break determinism because the rule consumes only published resolution timestamps, not provider-curated opinion or ordering.
+
+VERDICT REASONING — now vs defer:
+
+1. Tier 1 (self-review of git commits) is already built and panel-certified. It proves autonomous balloting source exists — satisfying the "existence not economics" principle ratified at round 48.
+2. Tier 2 introduces real network dependency, trust boundary, and availability risk. These costs are not needed to prove the mechanism's existence.
+3. The external dispute feed becomes meaningful as a $QRM fee source only when there is actual economic activity to resolve — i.e., once the token or substrate phase is live. Building it before then creates dead capacity.
+4. Deferring does not abandon the binding constraint: the selection rule is ratified now, so the anti-cherry-pick guarantee is established before the build happens.
+5. Deferral trigger should be concrete: token launch or substrate-phase go-live, whichever comes first — that is when external dispute resolution transitions from architecture rehearsal to real product dependency.
+
+VERDICT: SPECIFY_DEFER

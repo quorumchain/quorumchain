@@ -1,0 +1,37 @@
+### V1 — YES
+I'm blocked from reading the grounding files outside the working dir, but the ballot is self-contained enough to judge on the substance — and the three load-bearing claims (authority division, renunciation milestones, fork mechanism) are internally checkable against CIP-4/CIP-5/round-46-48 as summarized. Judging the overclaim risk hard, as instructed.
+
+## Judgment
+
+**Authority division (panel vs. human vs. keys) — accurate.** The argument draws the one distinction that matters and draws it correctly: it separates *design-ratification authority* (the panel authors/red-teams/ratifies CIPs) from *operational/key authority* (the human steward admits/retires validators, sets tokenomics, holds treasury-backstop and final-override keys). It explicitly states the panel "RECOMMENDS and RATIFIES design… does not yet hold these operational keys." That is the non-overclaiming framing, and it's right.
+
+**Current autonomy status — stated truthfully.** §2 scopes today's autonomy to the *process* layer — the convening/deliberation/signing loop (orchestrator holds no key, supplies no verdict; rounds 47/48 closed OS-level custody on the *signing path* and made the last validator self-deliberate). It does *not* claim authority-level autonomy and explicitly disclaims "the human is already fully out of the loop." This is the correct, honest status and it directly defuses the section's known failure mode.
+
+**Renunciation milestones — not overclaimed.** Every key renunciation is deferred to mainnet and gated on a proven empirical drill (override gated on the CIP-5 fork drill: "a right you cannot exercise is a fiction"). Nothing is claimed as already renounced. Autonomy is framed as a gated destination, not a genesis property. Correct.
+
+**Fork mechanism — stated correctly.** Validity-before-weight is the right model: a T0-violating block is *invalid* (rejected like a malformed block), the canonical chain is the locally-computed T0-preserving fork, and stake/weight only tie-breaks *among already-valid* forks — so it can't be captured by majority. The client-diversity dependency (≥N independent implementations, distinct crypto/VM/validation lineage) is correctly flagged as load-bearing, and T0-locking the *definitions* closes the salami-slice loophole. This is the strongest part and it's accurate.
+
+## Drafting cautions (prose discipline, not blockers)
+1. §1's header "how the protocol designs itself" is the one phrase that flirts with overclaim. In prose, keep it precise: the panel ratifies design *proposals*; it does **not** control its own membership (human admits/retires) and is subject to override. Don't let the header imply unchecked self-governance — the body already corrects this, so just align the framing.
+2. Keep rounds 47/48 ("custody closed / autonomous deliberation") strictly walled off from steward-key renunciation. "Custody closed on the signing path" must not bleed into "keys renounced" — they are different layers and §3 depends on that wall holding.
+3. Scope "honest nodes on the honest fork by construction" to *nodes running a T0-validating client* — the guarantee is conditional on the client-diversity premise you already state, not automatic for a monoculture client.
+
+The division is stated right, no renunciation milestone is overclaimed, and the fork mechanism is correct. Sound to draft as specified.
+
+VERDICT: YES
+
+
+### V2 — YES
+The framing is sound to draft, but tighten two phrases.
+
+The panel/steward division is accurate if stated exactly this way: the panel consults, red-teams, folds invariants, and ratifies protocol/design decisions by signed 2/3 CIP votes; the human steward still controls bootstrap operations, validator admission/retirement execution, tokenomics direction, treasury-backstop, and final-override keys until gated renunciation. Current autonomy is truthful only as “autonomous deliberation/signing loop,” not full system autonomy.
+
+Fork mechanism is stated correctly: T0 violations are local client-validity failures, canonical selection filters to T0-preserving forks first, weight only tie-breaks within that valid set, client diversity is load-bearing, and T0-check definitions being T0-locked is essential.
+
+Required wording change: replace “Each steward key is renounced at mainnet” with “Steward keys are renounced progressively at their specified mainnet/autonomy gates, and no key is renounced unless its empirical drill has passed.” That avoids implying automatic full renunciation at genesis/mainnet.
+
+VERDICT: YES
+
+
+### V3 — YES
+VERDICT: YES

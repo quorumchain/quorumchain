@@ -1,0 +1,43 @@
+### V1 — SELFREVIEW_FIRST
+## Reasoning
+
+**Affirm the binding constraint.** This is non-negotiable per the project's own recurring lesson (45/47/49/50): capture hides in the gap between a rule's intent and its mechanical check. The sourcer holds agenda control — flood, omit, time-to-swing. If "an operator chose this one" is admissible, the convening daemon from 1.1 is just an automated delivery truck for a human-curated queue; autonomy is theater. Deterministic + published (outsider-reproducible from public inputs) is the only thing that closes the gap. Reject it and 1.2 produces nothing trustworthy. Affirm.
+
+**The constraint itself decides the ordering.** The binding rule is *trivially satisfiable* for self-review — trigger on a new commit/diff or fixed cadence, both reproducible by any outsider from public git history. It is the *hard, unsolved problem* for the external feed: which open oracle questions enter, in what order, with a ripeness filter — that's precisely the surface most vulnerable to cherry-picking, plus a new external trust/availability dependency.
+
+So the sound engineering sequence is: prove the autonomous-sourcing *mechanism* using the source whose selection rule is provably clean and zero-dependency, harden the daemon against that easy case, *then* attack the genuinely hard non-cherry-pickable selection rule for external feeds on top of a proven harness. Doing the hard trust problem first, before the mechanism is battle-tested, stacks two risks at once.
+
+**Round-48 guidance is dispositive on the value objection.** "Existence, not economics." The navel-gazing / "nobody pays $QRM to grade its own homework" risk is real but it is an *economic-value* concern that 1.2 explicitly defers. 1.2's job is to prove autonomous sourcing *exists*; self-review does that with zero new trust surface, and it's already demonstrably not a rubber stamp (V2 caught real bugs at 44/45/49/50). It also directly unlocks 1.3.
+
+External sourcing is the product and must come — but as tier two, once the mechanism is proven and we can give the harder selection rule the scrutiny it needs. That is exactly the two-tier proposal on the table.
+
+Governance-first is rejected: proposer is still us, so it's a weaker cousin of self-review with none of the 1.3 payoff.
+
+VERDICT: SELFREVIEW_FIRST
+
+
+### V2 — SELFREVIEW_FIRST
+Self-review should come first. It is the lowest-trust autonomous source, requires no new external dependency, and directly tests whether the Phase 1.1 daemon can source ballots without operator agenda control. The external dispute/oracle feed is more product-relevant, but its ripeness and selection filters are harder trust surfaces, so it should follow once the deterministic sourcing pattern is proven.
+
+I affirm the binding constraint: any autonomous source must use a deterministic, published, reproducible, non-cherry-pickable selection rule.
+
+VERDICT: SELFREVIEW_FIRST
+
+
+### V3 — SELFREVIEW_FIRST
+**Reasoning (Round 51 ballot):**
+
+**On the binding constraint:** Affirmed. Agenda control is the most dangerous capture vector — it's the gate before the gate. Whoever picks what enters the queue decides what the panel decides. Making the selection rule deterministic and published is non-negotiable for a system claiming autonomy. Without it, you've automated the convening but left the agenda in human hands, which is precisely the kind of capture the project's rounds 45/47/49/50 have repeatedly warned about. "An operator chose this one" is not autonomy. The constraint must be binding.
+
+**On ordering:** The external dispute oracle feed is unquestionably the long-term product and $QRM fee source. But at Phase 1.2, the goal is to establish the autonomous sourcing *mechanism*, not to prove economics. The project's own round-48 guidance states: "demonstrate at small scale, existence not economics."
+
+Self-review first wins on the trust surface calculus:
+- **Zero new dependencies.** The autonomous pipeline gets exercised end-to-end against a closed loop it already controls.
+- **Proven, not theoretical.** Multiple rounds (44, 45, 49, 50) show self-reviews catch real bugs — the rubber-stamp concern is empirically false here.
+- **The external feed's "ripeness filter" is itself a selection lever** that is harder to make non-cherry-pickable than a deterministic cadence + latest-diff trigger. Getting the determinism right on a simpler source first builds confidence for the harder case.
+- **Unlocks Phase 1.3** (self-improvement) immediately, creating a feedback loop that makes every subsequent ballot more valuable.
+- **The navel-gazing risk is real but secondary.** Internal hygiene must work before external value can be reliably adjudicated — a panel whose own process is sloppy cannot credibly resolve external disputes.
+
+The two-tier proposal (self-review first, then external feed) is the correct incremental path under the binding constraint.
+
+VERDICT: SELFREVIEW_FIRST

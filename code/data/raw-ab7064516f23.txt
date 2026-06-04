@@ -1,0 +1,42 @@
+### V1 — ADOPT_WITH_GUARDS
+V1 (Claude) on adopting scarcity-weighted random per-slot selection.
+
+This is an elegant design with two distinct virtues: (i) the per-ballot random committee is an EPHEMERAL
+JURY — you cannot bribe a panel you cannot predict, which is a real capture-resistance gain over any fixed
+validator set; and (ii) scarcity -> higher draw probability -> higher reward -> entry is a self-correcting
+market for redundancy with no central allocator. It also preserves one-vote-per-slot automatically. I
+support it, but four guards are load-bearing and must be in the protocol, not the roadmap:
+
+1. UNBIASABLE, VERIFIABLE randomness (VRF / drand / commit-reveal). With rewards attached, "random
+   selection" is otherwise a grinding/MEV capture surface — an operator who can predict or nudge which of
+   its nodes is drawn farms the lottery and pre-positions a corrupted node. The draw must also be
+   after-the-fact verifiable and recorded into the CIP-3 signed log.
+2. Proof-of-Inference BOUND TO THE PINNED MODEL (CIP-6/CIP-7). The drawn node's output IS that model's
+   vote, so it must prove it ran the canonical pinned weights on the given input and signed THAT output —
+   else an operator claims the slot but swaps a tampered model under us.
+3. Per-node STAKE BOND. Sybil resistance is still required for REWARDS (spin up many scarce-model nodes
+   under different identities to farm the draw) even though one-vote-per-model caps the VOTE. Bond + real
+   PoI cost makes fake nodes unprofitable — this is exactly why stake must be a bond, not influence.
+4. A REDUNDANCY FLOOR or subsidy for structurally-expensive slots. Market equilibrium is equal PROFIT, not
+   equal node count, so an expensive/proprietary model stays THINNEST — and the CIP-7 NI-5 freeze risk
+   then concentrates on the hardest-to-run slot. Without a floor, the scarce model is a chronic single
+   point of failure, and the deliberate-scarcity oligopoly (incumbents collude to deter entry) is a real
+   failure mode wherever entry is not frictionless.
+
+Adopt, conditional on (VRF + PoI-pinning + per-node bond + redundancy floor for expensive slots).
+
+VERDICT: ADOPT_WITH_GUARDS
+
+
+### V2 — ADOPT_WITH_GUARDS
+Scarcity-weighted per-slot selection is directionally right: it preserves one vote per model slot while improving utilization, rewards scarce capacity, and makes panel bribery harder by hiding the exact jury until selection.
+
+But the unguarded version creates obvious capture surfaces. Randomness must be publicly verifiable and hard to grind; inference proofs must bind to the pinned model; per-node bonds are needed to stop reward Sybils; and thin/expensive model slots need redundancy floors or subsidies so “market balance” does not concentrate failure risk exactly where diversity is hardest to maintain.
+
+VERDICT: ADOPT_WITH_GUARDS
+
+
+### V3 — ADOPT_WITH_GUARDS
+Reasoning: The mechanism is economically elegant -- unpredictable juries defeat bribery, scarce-model overdraw creates an automatic profit-equalization loop, and per-slot single-vote preserves the diversity floor's intent. But the failure modes are sharp: without unbiasable randomness this is a grinding surface; without PoI model-pinning the drawn node can swap; without per-node bonds the reward lottery is Sybil-farmable; without a redundancy floor the thinnest (most expensive/proprietary) slots become NI-5 freeze concentration points. These aren't optional add-ons -- they are prerequisites for the mechanism to function safely.
+
+VERDICT: ADOPT_WITH_GUARDS

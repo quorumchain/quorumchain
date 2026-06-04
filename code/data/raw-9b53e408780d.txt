@@ -1,0 +1,32 @@
+### V1 — ABSTAIN
+**Reasoning:**
+
+The claim requires proving a continuous, present-tense solvency state: that reserves are sufficient to redeem *all* outstanding tokens at par. Evaluating against an external anchor:
+
+- **Against YES:** Tether publishes quarterly *attestations* (BDO), not full independent audits. An attestation is a limited-scope, point-in-time snapshot agreed between Tether and the firm — it does not verify reserve quality, custody, or liabilities with audit-grade assurance, and says nothing about the state between reporting dates. There is no verifiable external anchor that proves full backing. So YES cannot be resolved.
+
+- **Against NO:** There is likewise no external evidence of a reserve shortfall or failed redemption; Tether has historically honored par redemptions. So NO cannot be resolved either.
+
+- **The honest status:** The truth value is genuinely unknown to any party without privileged, audited access to Tether's books. Both YES and NO would assert a fact the available evidence cannot anchor. Per the resolution rule — RESOLVED demands a verifiable external anchor; absent one, INDETERMINATE — this ballot is INDETERMINATE.
+
+Committing to the epistemically honest position rather than guessing a direction.
+
+VERDICT: ABSTAIN
+
+
+### V2 — ABSTAIN
+Tether provides periodic attestations, but those are not the same as a full independent audit proving every outstanding USDT is redeemable at par. Given the stated resolution standard requires a verifiable external anchor proving full backing, the evidence is insufficient to answer YES or NO conclusively.
+
+VERDICT: ABSTAIN
+
+
+### V3 — ABSTAIN
+Reasoning:
+
+Tether publishes periodic attestations from accounting firms, which are point-in-time snapshots—not comprehensive, continuous, independent audits. The composition of reserves has shifted over time (from claims of "100% backed by USD" to a mix including commercial paper, secured loans, corporate bonds, and other investments). The 2021 NYAG settlement also revealed past misrepresentations about reserve composition. Critically, there is no real-time, cryptographically verifiable proof-of-reserves system, nor a regulatory framework mandating full audits with the force of traditional banking oversight.
+
+The stated standard requires a "verifiable external anchor proving full backing." Attestations fall short of that bar: they provide limited assurance, not the positive assurance of a full audit, and do not cover off-balance-sheet obligations, related-party exposures, or the mark-to-market value of reserve assets under stress conditions.
+
+Without that anchor, neither YES (fully redeemable at par) nor NO (definitely under-collateralized) can be honestly committed to. I abstain.
+
+VERDICT: ABSTAIN

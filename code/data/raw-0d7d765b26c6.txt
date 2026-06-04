@@ -1,0 +1,81 @@
+### V1 — SOUND
+V1 (Claude, Opus 4.8) — Round 46 verification review.
+
+I built these three, so I look hardest for the reason each is NOT what it claims.
+
+#1 RemoteSigner — the CUSTODY claim is real and now provable: the key is generated
+inside a separate OS process and there is no IPC op that returns it, so it never
+enters the orchestrator process; the tests spawn an actual child and verify a
+returned vote against the host's public key. The round-45 binding survives the
+process boundary (the host derives the hash from content). The honest caveat is the
+one that matters and I want it on the record, not buried: locally the verdict is a
+FIXED env stand-in, which means *the spawner currently chooses the verdict*. That is
+fine for proving custody, but it is NOT the validator deciding — and if anyone
+shipped the stub host to production as-is, the spawner would control verdicts, which
+would be a worse trust hole than the one #2 closed. So: custody (key isolation) is
+genuinely closed; deliberation-trust (the model deciding child-side) is the explicit
+remaining testnet step, and the review context says so plainly. Closed-in-code,
+honestly scoped.
+
+#2 state-log — a correct, minimal interim: the same hash-chain that makes votes
+tamper-evident, applied to module state transitions, with a demo proving a silent
+slash->release rewrite is caught at the edited entry. Two honest limits, both
+disclosed: (a) it is the MECHANISM — the modules do not yet auto-emit into it, so
+today it is exercised by the demo, not wired through bonds/lifecycle/etc.; (b) it is
+tamper-EVIDENCE only — per-event authorization (who signed off) and real on-chain
+anchoring are testnet. Neither is overclaimed. As an interim per CIP-3/CIP-4 §5,
+this is the right shape.
+
+#3 notes folded:
+- advisory: the right fix — a thin seat's dissent is now surfaced and auditable, not
+  silently dropped; the verdict is still standard-only (NI-10a intact).
+- CIP-7 §5.7: the serving-stack FREEZE tradeoff is now documented as an operating
+  condition.
+- ratify precondition: documented, not structurally enforced — acceptable because
+  ratify has no probation concept; the standing-set filtering belongs to the CIP-7
+  caller. A reader is now warned.
+
+Reasoning: all three do what they claim; no regression; no new intent-vs-check gap
+is *hidden* — the one place a gap could hide (the RemoteSigner's deliberation
+source) is disclosed up front as the testnet step, and the property actually
+claimed (key custody) is fully real. The state-log is honestly scoped as a
+mechanism + interim. The build remains SOUND. The genuinely outstanding work
+(model invocation child-side; auto-wiring state emission; on-chain anchoring;
+slashing execution) is testnet/substrate, not local.
+
+VERDICT: SOUND
+
+
+### V2 — SOUND
+The three items match their stated claims.
+
+RemoteSigner provides real OS process separation for key custody, derives the ballot hash in the child, exposes only the public key and signed vote, and keeps the stubbed verdict honestly scoped as a deliberation-source placeholder, not a custody claim.
+
+State-log correctly implements tamper-evident hash chaining for module-state events and detects edits; the lack of auto-wiring, authorization, and on-chain anchoring is disclosed and does not pretend to be solved.
+
+The round-45 notes are folded without laundering intent through checks: NI-10a advisory dissent is surfaced, NI-1 full-vector collapse is tested/documented, and the ratify probation issue is honestly stated as a standing-set precondition rather than falsely enforced.
+
+I attempted `npm test`; it could not complete in this read-only sandbox because temp directory creation under `/tmp/claude-503` was denied. The visible failures are environment EPERM failures, while the relevant tests inspected and the runnable RemoteSigner tests passed before the temp-write failures.
+
+VERDICT: SOUND
+
+
+### V3 — SOUND
+Reviewing each item against the bar:
+
+**#1 RemoteSigner — OS-level key custody**
+The custody property is genuinely proven: key generation and signing live in a separate OS process; the orchestrator never holds the private key; the same Signer interface means `convene` is untouched; two tests confirm verification against the host's public key. The disclosed caveat (deliberation source stubbed via env) is an honest scope boundary. It proves custody fully; moving model-invocation into the host is testnet work, not a correctness defect. The round-45 binding (host derives its own ballot hash) is sound. No regression, no new gap.
+
+**#2 state-log — tamper-evident interim for on-chain module state**
+Same hash-chain discipline as vote-log, now applied to state transitions (bond, registry, reputation, lifecycle). Three tests plus the demo verify that any silent edit/deletion/reorder is detected. The scope caveat is honest: modules aren't yet auto-wired to emit into it, and per-event authorization + on-chain anchoring are testnet/substrate work. The mechanism itself is correct; the integration gap is explicitly acknowledged. No regression; additive only.
+
+**#3 Operating-condition notes folded**
+- `advisory` return from `tallyJury`: surfaces NI-10a dissent instead of silently dropping it. This _closes_ a gap rather than opening one. New test confirms.
+- CIP-7 §5.7 on NI-1: correct documentation of the single-stack freezethreshold.
+- `ratify()` standing-set precondition: the zero-weight probationer gap (denominator inflation if probationers sit in the keyring) is documented, not structurally enforced. This gap pre-existed; the round documents it. For a testnet stage, honest disclosure without enforcement is acceptable — it becomes a structural TODO for substrate integration, not a fatal blocker.
+
+**Intent-vs-check scan:** No NEW gap introduced. The advisory change repairs one (dissent was being dropped). The ratify gap is pre-existing and now documented. The state-log gap is explicit scope. The RemoteSigner gap is explicit scope. Suite grew 136 → 142, all green, interfaces unchanged.
+
+All three items do what they claim. All caveats are honestly disclosed and non-fatal at this stage. No regression.
+
+VERDICT: SOUND

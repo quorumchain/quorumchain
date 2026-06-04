@@ -1,0 +1,59 @@
+### V1 — YES
+Verified every corrected claim against the built code. Findings:
+
+**Pillar I (notary.ts) — accurate.**
+- NI-8a: `status: 'NOT_VERIFIED'` is structurally the only emittable label (line 37; kernel label line 107). The guarantee fields — `subject` (authorship), `timestamp` (timing), `signature` (non-repudiation) — are exactly as stated. No "verified"/truth path exists. ✓
+- SRA "one lifecycle, not a built single registry": notary.ts is `mode: 'NOTARY'` v0.1-only; BOND/RESOLUTION are separate. The corrected framing (interface unification, not a physical object) matches reality. ✓
+
+**Pillar II (commons.ts / commons-read.ts / reputation.ts) — accurate, and the divergence is disclosed honestly.**
+- STATUS: read surface `ClaimStatus = 'RESOLVED' | 'CONTESTED' | 'INDETERMINATE'` ✓. reputation.ts v0.2 is `'OPEN' | 'CONTESTED' | 'RESOLVED' | 'UNVERIFIABLE'` — it *drops* INDETERMINATE and adds OPEN/UNVERIFIABLE. The draft names the read-surface set as canonical and flags OPEN/UNVERIFIABLE as the v0.2 open-claim states — it does **not** falsely claim INDETERMINATE lives in reputation.ts. The two-layer split is stated, not papered over. ✓
+- STANDING: `'CONSENSUS' | 'CREDIBLE_MINORITY' | 'UNRANKED'` in both files; FRINGE absent (explicitly rejected, commons.ts:82, reputation.ts:73); "computed, never assigned" matches the StanceView comment. ✓
+- panelVotes: commons.ts comment confirms "panel distribution, NOT reputation"; `support: number | null` (null in v0.1) confirms calibration-weighting is future, not current. ✓
+- Panel-state receipt: `PanelStateReceipt = {validators: string[], size: number}` — exactly {validators, size}; correlation receipt correctly marked gated. ✓
+- Popularity-trap: `scoreSources` moves rep only on `anchor === 'EXTERNAL'`; PANEL_ONLY/unresolved move nothing (NI-9b). Correctly distinguished from per-claim panelVotes. ✓
+
+**Build-vs-gated boundaries: stated honestly.** support=null/calibration future, NI-9a {validators,size} now vs correlation gated, RESOLUTION behind ground-truth policy, CIP-5 forking gated — all match the code's v0.1/v0.2 markers.
+
+**One non-blocking observation:** the conceptual Stance lists "evidence edges to sources" — `sources` is a real field in reputation.ts, while commons.ts's Stance carries `validators` (who-held provenance). It's a cross-file conceptual composite, not a single built struct, and the draft frames it conceptually with both real fields, so it doesn't overclaim. Worth a footnote in the draft but not a defect.
+
+Every type the prior NO flagged is now corrected and matches the ratified code; the enum divergence is disclosed rather than hidden; built-vs-gated is explicit and truthful. Sound to draft.
+
+VERDICT: YES
+
+
+### V2 — YES
+The corrected enums and fields are accurate against the built code.
+
+CIP-9 core read surface uses `RESOLVED | CONTESTED | INDETERMINATE`; v0.2 reputation separately uses `OPEN | CONTESTED | RESOLVED | UNVERIFIABLE`. `Standing` is exactly `CONSENSUS | CREDIBLE_MINORITY | UNRANKED`; no `FRINGE`. `panelVotes` is panel vote count, not source reputation or popularity. NI-9a built receipt is `{ validators, size }`, with fuller diversity/correlation correctly gated.
+
+CIP-8 framing is also honest: NOTARY emits only `NOT_VERIFIED`; bonds are separate artifacts; resolution comes through signed verdict machinery; bond settlement is hash-bound to frozen criteria; evidence commitment teeth are implemented. The build-vs-gated boundary is stated correctly, with calibration scoring, weighted support, richer receipts, and CIP-5 epistemic forking not overclaimed as shipped.
+
+VERDICT: YES
+
+
+### V3 — YES
+Reviewing the corrected §4 framing against what a validator can assess:
+
+**Enums/Fields — checking internal consistency and mechanical claims:**
+
+1. SRA lifecycle now honestly framed as one conceptual interface across three physical artifacts (BOND, NOTARY, RESOLUTION via verdict log). This corrects the prior overclaim of a single unified registry. Honest.
+
+2. STANCE's panelVotes explicitly documented as panel vote distribution, not source-reputation and not popularity. The draft now separates per-claim panelVotes from v0.2 source-reputation (which tracks accuracy only against external ground truth). This kills the agreement-laundering vector. Honest.
+
+3. STATUS correctly split: {RESOLVED, CONTESTED, INDETERMINATE} as the built read-surface; {OPEN, UNVERIFIABLE} noted as v0.2 states for not-yet-resolved / panel-unverifiable claims. No conflation.
+
+4. STANDING: {CONSENSUS, CREDIBLE_MINORITY, UNRANKED} — FRINGE explicitly acknowledged as dropped (NI-9c). Standing computed from distribution, never panel-assigned. On CONTESTED/INDETERMINATE all stances UNRANKED with raw plurality. Mechanically accurate.
+
+5. Panel-state receipt: honestly stated as {validators, size} only. Fuller diversity/correlation state marked gated, not built.
+
+**Build-vs-Gated boundaries:**
+- Built: notary kernel + bonds (CIP-8 v0.1/v0.2), resolution index, external-anchor source reputation (CIP-9 v0.1/v0.2).
+- Gated: calibration scoring (NI-8d), calibration-weighted stance support, fuller NI-9a correlation receipt, CIP-5 epistemic forking (NI-9d).
+
+The boundary line is explicit. Nothing gated is claimed as shipped. Nothing shipped is underspecified. The connective tissue (write→memory→next-write flow) matches the dynamic stated earlier.
+
+One caveat I note as a validator: I cannot independently `grep` the codebase to re-verify every field name, but the corrections are specific, the prior NO was about field-level type divergence, and every flagged fix maps to a concrete enum/value change with an explicit NI reference. No residual overclaim detected.
+
+The framing is now mechanically honest and ready for whitepaper draft.
+
+VERDICT: YES

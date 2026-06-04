@@ -1,0 +1,71 @@
+### V1 — YES
+## Validator review — Quorumchain whitepaper outline
+
+The locked decisions (a)–(d) are not mine to relitigate. I'm judging whether the **outline structure** is sound to draft against. It is: threat model sits up front (§2), the worked example is correctly demoted from framing to illustration, limitations are first-class (§9), and economics is scoped to mainnet steady state per (b). That's the right skeleton. My YES is conditional on folding the following into the draft — none require restructuring, all fit inside existing sections.
+
+**Foldable critique (concrete):**
+
+1. **§2/§5 — "diversity = security" is currently a slogan, not a claim.** This is the load-bearing assertion of the entire document and the outline never commits to *backing* it. A reviewer will read "security = model diversity" as marketing unless the draft states the mechanism: what does 2/3 collusion cost, what correlation between models is assumed, and what happens as models homogenize (shared training corpora, shared providers, RLHF convergence). CIP-10 (correlated-error defense, ratified round 60) is the home for this — **make it an explicit named subsection**, not a reference tag. This is the single biggest marketing-vs-verifiable gap. *Fold: add "the quantified diversity-security argument" as a titled block in §2 or §5.*
+
+2. **§6 — "mechanism-level model" (b) is currently a parts list, not a model.** Components are named (stake/slashing, gas, inference reimbursement, 2/3-set buyback) but a mechanism model owes the reader: the **solvency inequality** stated explicitly (revenue ≥ inference cost + security budget), the buyback as a **deterministic formula**, and slashing-bond sizing tied to attack payoff. Without these, §6 reads as token-marketing despite the no-launch decision. *Fold: outline §6 must commit to stating the solvency condition and buyback rule as equations.*
+
+3. **§1 is the highest marketing-risk section and is over-weighted at 1.5pp.** "People trust AI more every day / now most people just ask and take the answer" is an unverified behavioral premise presented as fact — label it motivation, not claim. The Commons-as-co-headline plus the closed-loop flywheel ("Commons improves AI which enriches Commons") is exactly the network-effect narrative a skeptic discounts. *Fold: hedge the flywheel as "intended dynamic," and trim §1 so it doesn't out-weigh the technical core.*
+
+4. **No section owns the domain of admissible questions.** The system adjudicates via frozen criteria (ballotHash), but the outline never addresses *what can be adjudicated* — verifiable vs. subjective claims, who authors criteria, what happens with unfalsifiable questions. "AI consensus is not truth" (§2) gestures at this but the scope-of-claims boundary is a real limitation. *Fold: a paragraph in §3 or §9 on admissible-question domain.*
+
+5. **§8 status numbers risk reading as a maturity badge.** "40+ rounds, 37 tests, round-29 replay" are *self-reported internal governance artifacts*, not independent validation. Frame them precisely as "self-reported, independently replayable" (the appendix self-verification is the right instinct — point §8 at it). And the testnet/mainnet model counts (10 → 20+) should be justified *by* the §2 diversity argument, or they read as arbitrary.
+
+Minor: define "oracle / clock / memory" before the abstract leans on the maxim.
+
+None of these change the section structure — they are binding requirements on what each section must deliver. The outline is sound to draft. Proceed.
+
+VERDICT: YES
+
+
+### V2 — YES
+The outline is sound to proceed. It matches the locked decisions: technical protocol whitepaper with investor-readable entry, mainnet steady-state economics only, humble/mechanical tone, and enough structure for a 10-15 page Markdown draft.
+
+Concrete critique to fold into drafting:
+
+- The abstract risks sounding too slogan-like. “AI is the oracle, not the clock” is useful, but it must quickly become a precise architecture claim: deterministic ledger orders events; AI panels only produce signed judgments under frozen criteria.
+- “Security = model diversity” is directionally right but too absolute. Draft should say diversity is a necessary security primitive, not a complete security proof. It must define capture, correlated failure, model-provider dependence, prompt leakage, and jury-selection manipulation.
+- Section 1 is the highest marketing-risk area. Keep “more trustworthy Wikipedia” as an analogy, not a claim. The verifiable claim is narrower: provenance-preserving, forkable, evidence-linked consensus records.
+- The Knowledge Commons needs crisp boundaries. Is it a canonical knowledge base, an indexed archive of verdicts, or a stance-set graph? The outline suggests all three; the draft should define the object mechanically.
+- Economics needs one explicit insolvency path: what happens if inference reimbursement exceeds fees, buyback pressure, or treasury capacity. “Solvency = security” is good but must be operationalized.
+- Governance should avoid overclaiming “self-governing by the panel itself.” Clarify what the panel can recommend, what humans/operators still control, and which keys or authorities are renounced when.
+- Implementation status must separate live facts from intended milestones. “40+ ratified rounds” and “37 tests” are strong only if reproducible with exact commands, hashes, or links.
+- Limitations deserves more than 0.5 pages if possible. It is the main antidote to hype and should explicitly cover non-truth, model collusion, bad criteria, adversarial evidence, latency/cost, and subjective questions.
+
+No material change is required before drafting, but the draft must convert the strongest phrases into falsifiable protocol claims.
+
+VERDICT: YES
+
+
+### V3 — YES
+Reviewing the outline against the four locked decisions and judging structural soundness for a first draft:
+
+**Against decision (a) — Technical whitepaper + investor-readable layer:** Sound. The exec summary + Section 1 provide the plain-language onramp; Sections 2–7 deliver the technical core. The separation is clean.
+
+**Against decision (b) — Economics = mainnet steady state only, no SPL/pump.fun narrative:** Section 6 matches this exactly. The outline explicitly says "mainnet steady state" and the locked language "solvency = security" is present. Good.
+
+**Against decision (c) — ~10–15 pages:** The page allocations sum to roughly 14–15pp. Within tolerance.
+
+**Against decision (d) — Markdown, humble/mechanical tone:** This is execution, not outline, but the structure supports it.
+
+---
+
+**Material risks to flag for the drafting phase (foldable, not blocking):**
+
+1. **Section 1 tone drift.** The framing "people used to Google… now they ask AI" is a narrative hook, not a mechanical claim. At 1.5pp it risks opening the paper with marketing cadence. Mitigation: compress the consumer-behavior observation to 2–3 sentences, then pivot immediately to the technical problem (single-model oracle = unaccountable, no replay, silent mutation). Keep the Knowledge Commons description functional ("a citable consensus-built knowledge base with evidence, dissent, and provenance") rather than aspirational ("a more trustworthy Wikipedia").
+
+2. **Section 6 page allocation is thin for a mechanism-level model.** A 1.5pp section claiming "fee flows + deterministic buyback + solvency = security" needs at minimum: (a) the fee formula (inference cost reimbursement rule), (b) the 2/3-set buyback trigger condition and execution path, (c) the solvency invariant (what breaks it, what guarantees it). If these are all mathematical/algorithmic rather than prose, 1.5pp may suffice, but the draft should make that explicit. Consider bumping to 2pp or adding a subsection "Solvency invariant" to prevent the economics from reading as hand-wavy.
+
+3. **Cryptographic primitives unnamed beyond Ed25519 and SHA-256.** The hash-chained log structure (Section 3) and the Knowledge Commons tamper-evidence (Section 4) should name the chaining construction (e.g., Merkle tree, hash chain, or similar) and any commitment scheme. This is a one-line addition to Section 3's outline notes, not a structural change.
+
+4. **Section 5 — "Proof of Diversity" needs a one-sentence definition in the outline.** The term appears but its mechanical meaning (what is measured, how diversity is scored, what prevents Sybil-forking of model identities) is not sketched. Add a parenthetical in the outline so the draft doesn't invent it on the fly.
+
+5. **Section 8 — "40+ ratified rounds, 37 tests, round-29 replay" is good concrete evidence, but "what runs today" should clarify scope: is this a testnet, a local simulation, or a public endpoint?** One disambiguation prevents overclaiming.
+
+None of these are blockers on the outline itself. They are drafting-time calibrations. The structure covers all locked decisions, the logical flow is correct (problem → philosophy → architecture → pillars → validators → economics → governance → status → limitations), and the Round-29 example is correctly positioned as a worked case, not the frame.
+
+VERDICT: YES

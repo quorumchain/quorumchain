@@ -1,0 +1,71 @@
+### V1 — SOUND
+I have enough to judge. Full evidence gathered: the new gate functions (`self-improve.ts`), their wiring (`run-self-improve.ts`), the recompute primitives they inherit (`feed.ts` → `verifyLog`/`ratify` in `signed-vote.ts`), the sourcing path (`self-review-source.ts`, `live-ballot.ts`), and the tests (`self-improve.test.ts`).
+
+## Assessment
+
+The commit makes two claims; both hold against source.
+
+**Claim 1 — "gate anchored to the recomputed log."** `run-self-improve.ts:41` builds the feed via `buildFeed(LOG, loadPinnedKeyring(PINNED), QUORUM)`, which (`feed.ts:44-56`) recomputes every outcome with `ratify` over the signed votes + pinned keyring and sets `chainValid` from `verifyLog`. `gateForBallot` (`self-improve.ts:27-32`) reads HEAD's verdict from *that* feed by ballot hash — not from the mutable queue done-record. `ratify` (`signed-vote.ts:145-206`) rejects unknown validators, wrong-ballot, equivocation, and invalid signatures, and the signature binds `ballotHash`+`verdict`+`rawOutputHash`. So a relabeled/edited/stale record cannot launder an approval. **No-laundering and tamper-evidence are upheld.**
+
+**Tamper short-circuit.** `gateForBallot` checks `!feed.chainValid` *first* → `INCONCLUSIVE`, so a broken chain approves nothing even with a present ratified-SOUND convening (tested, `self-improve.test.ts:45`). Fail-closed.
+
+**Ballot-hash match (the one place this could silently break).** The gate recomputes `ballotHash(ballot.prompt, ballot.context ?? '')` and the feed's key is what validators signed. Both the signing path (`live-ballot.ts:38-39`, `convene` gets `context: ballot.context ?? ''`) and the gate use the **same `?? ''` normalization** over the **same `reviewBallotFor` ballot** (whose `context` is always a defined string). They cannot diverge → the keyed lookup won't silently miss → no spurious permanent-INCONCLUSIVE.
+
+**Claim 2 — "made actionable (non-zero exit)."** `exitCodeFor` returns 0 only for `APPROVED` (`self-improve.ts:37-39`), wired at `run-self-improve.ts:52` via `process.exitCode` — the correct choice (lets stdout/feed writes flush rather than truncating, unlike `process.exit()`). Every non-APPROVED outcome blocks CI. Tested (`self-improve.test.ts:31`).
+
+**TDD invariant.** Both round-54 findings have dedicated tests, including the adversarial broken-chain case. Satisfied.
+
+**Adversarial nits, none defeating soundness:** broken-chain and not-yet-convened both map to `INCONCLUSIVE`, but the distinction is surfaced in the console line (`chain: BROKEN`) and both block — observable and fail-closed. The feed is published before the gate result, but that's a faithful transparency projection of the recomputed outcome, not an approval signal — correct.
+
+The change does exactly what it claims, inherits the recompute proof correctly, normalizes the lookup key consistently, fails closed, and is covered by tests.
+
+VERDICT: SOUND
+
+
+### V2 — SOUND
+The change is sound on the specific claim. `run-self-improve.ts` no longer reads `queue/done/<id>.json` for the gate; it rebuilds the feed from `data/votes.log` with the pinned keyring, computes HEAD’s deterministic review `ballotHash`, and gates through `gateForBallot`. `gateForBallot` also refuses approval on `feed.chainValid === false`, so a broken log chain cannot clear the gate.
+
+The non-zero exit behavior is real: `process.exitCode = exitCodeFor(gate)` makes every non-`APPROVED` result mechanically blocking. The added tests cover the approval path, invalid-chain block, missing-ballot inconclusive path, REVISE classification, and exit code behavior. I did not find a queue-record laundering gap left in this commit.
+
+VERDICT: SOUND
+
+
+### V3 — SOUND
+⚠️  Reached maximum iterations (12). Requesting summary...
+Here is the adjudication of commit bcaf720976d5 against the project invariants.
+
+**TL;DR: The diff does exactly what the commit message claims. No gap found between claim and implementation.**
+
+---
+
+**1. Tamper-evidence / No-laundering (V2 fix)**
+The old code read `queue/done/<id>.json` directly — a mutable filesystem record that any process or operator with write access could overwrite to manufacture an APPROVED verdict. The new code never reads `done/` at all. Instead it:
+- Calls `buildFeed(LOG, keyring, QUORUM)` which `readLog + verifyLog` the hash-chain AND calls `ratify()` over each ballot's signed votes against the pinned keyring. Every verdict in the feed is recomputed, not retrieved.
+- Gates via `gateForBallot(feed, headBallotHash)` which checks `feed.chainValid` first (break → INCONCLUSIVE), then looks up the ballot hash.
+- A broken chain or an edited `done/` file cannot launder an approval. The gate inherits the feed's proof-of-computation by construction.
+
+**2. Custody / Determinism**
+The ballot hash derives from `ballotHash(ballot.prompt, ballot.context)` where both fields come from `reviewBallotFor(head)` — a pure function of the commit's SHA, epoch, and subject. This is exactly the same hash that validators signed during convening. No mismatch between the ballot the gate queries and the ballot the votes were cast on.
+
+**3. Liveness**
+If `drainQueue` fails or the ballot is not yet in the log, `convening` is undefined → `gateForBallot` returns INCONCLUSIVE → `process.exitCode = 1`. The cycle blocks mechanically rather than silently approving. Correct.
+
+**4. Actionable exit (V1 fix)**
+Old code: `return` with implicit exit 0 (CI/scheduler could never act on the printed label).
+New code: `process.exitCode = exitCodeFor(gate)` where `exitCodeFor` returns 0 only for APPROVED, 1 for all other gates. Setting `process.exitCode` on an async `main()` that resolves normally is the correct Node.js pattern (does not kill the event loop, does allow graceful shutdown). Correct.
+
+**5. TDD**
+Five new tests cover the critical paths:
+- `exitCodeFor` for all four gate values
+- `gateForBallot` approved (valid chain + ratified SOUND)
+- `gateForBallot` blocked on broken chain
+- `gateForBallot` blocked when ballot not found
+- `gateForBallot` classifies REVISE → CHANGES_REQUESTED
+All 196 tests pass. No skipped, no todo.
+
+**6. Defensive edge — checked**
+The `default: return 'INCONCLUSIVE'` in `gateOf` catches any unexpected verdict string. The `ratify` function explicitly skips `NO_VERDICT` when computing the winning verdict and only sets `ratified: true` when `verdict !== null`, so a ratified convening always carries a known verdict. The default branch is unreachable but correct as a safety net.
+
+No gap between what the commit claims and what it does. The invariants are preserved or improved, tests are sufficient, and the exit-code wiring is correct for the runtime.
+
+VERDICT: SOUND

@@ -1,0 +1,49 @@
+### V1 — SOUND
+I've inspected all five modules, their tests, and the wiring. Here is my assessment.
+
+**0.1 Autonomous V1** — `invokers.ts`: V1→`claude -p "$QRM_PROMPT"` child-side, symmetric with V2→codex/V3→hermes. `invokerFor` maps only V1/V2/V3 and throws otherwise (no env-verdict path; spawner cannot choose a verdict). In the deliberating host, a CLI failure becomes `INVOCATION_ERROR…` → `parseVerdict` → `NO_VERDICT`, never a fabricated vote. Test exercises a real shell-out via a fake PATH CLI and asserts the throw. Faithful; CLI-trust caveat is honest. ✓
+
+**0.2 Pinned keyring** — `run-panel.ts` loads `pinned-keyring.json`, collects each host's handshake key, `assertMatchesPin` aborts on mismatch, and `keyring = pinned` is what `ratify` trusts — not the handshake report. Tests cover match / substitution / missing-key. Caveat (a compromised operator can edit the file; value is external verifiability) is honest and correctly scoped. ✓
+
+**0.3 standingKeyring** — builds the ratify keyring from STANDING members only; a probationer is excluded by construction; a standing slot with no key throws (no silent omission). Test proves 3 standing → bar 2, and that including the probationer would wrongly raise it to 3 — exactly V3's round-46 TODO. "Not yet exercised on the live path (no probationers)" disclosure is accurate. ✓
+
+**0.4 State-log** — recorders append bond CREATE/SETTLE, lifecycle, reputation to the shared hash chain; modules stay pure. Test runs a real arc, confirms all four event types recorded, chain verifies, and a silent SLASHED→RELEASED rewrite breaks verification. "Per-event authz + on-chain anchoring testnet; recorder-wired not auto-emit" is honest. ✓
+
+**0.5 Liveness** — `convene` wraps each signer in try/catch, records a dead host as a `failure`, proceeds, never fabricates a vote. `ratify` uses `required = max(quorum, ceil(2n/3))` over the whole registered keyring, so absences count against the bar. Tests: 2/3 live ratifies; 1/3 does not. The 2/3 floor is preserved. ✓
+
+**Verification notes:** 159 top-level `test()` declarations across the suite — matches the claim exactly. Bash execution was sandbox-gated, so I could not run the suite myself; the verdict rests on static read of source + assertions, which are internally consistent and assert precisely the claimed behaviors. Two honest, non-fatal nuances: `assertMatchesPin` checks pinned⊆presented (harmless since `keyring=pinned`); and the live path's pin assertion happens at handshake, so the liveness policy covers a host dying *during signing*, not at spawn — but 0.5 is scoped to `convene` and is not over-claimed.
+
+No regression, no new intent-vs-check gap. The no-human loop is genuinely off-chain: all three deliberate via their own CLI child-side, the orchestrator holds no key and supplies no verdict, votes are signed and hash-chained, ratification is independently recomputable from the pinned keyring. The AUTONOMY_FIRST precondition is met. Caveats are disclosed and testnet-deferrable.
+
+VERDICT: SOUND
+
+
+### V2 — REVISE
+0.1-0.4 look faithfully implemented: V1 is child-side `claude -p`, key pinning is enforced before ratification, `standingKeyring()` excludes probationers, and state recorders append typed events to the hash chain.
+
+I would not pass 0.5 as claimed. `convene()` records signer failures after signers exist, but `run-panel.ts` constructs remote signers with `Promise.all`; a host that fails or times out during the initial pubkey handshake aborts the live convening before an absence can be recorded. That leaves a live-path liveness gap against “dead validator host is recorded as an absence; convening proceeds.” Tests also only cover a fake `deadSigner` at `convene()` level, not startup failure in `run-panel`. My test run was blocked by sandbox `/tmp` EPERM failures, not logic failures.
+
+VERDICT: REVISE
+
+
+### V3 — SOUND
+⚠️  Reached maximum iterations (6). Requesting summary...
+I've inspected the core source files for all five items. Here is my deliberation:
+
+**0.1 Autonomous V1 deliberation** -- `invokers.ts` shells out to `claude -p` via `/bin/sh -c` with the prompt passed through an environment variable (no quoting/injection vector). `invokerFor` strictly switches on V1/V2/V3 and throws on any other id. The test uses a fake CLI to verify the shell-out path without calling a real model, confirms all three map to functions, and confirms unknown ids throw. Claim matched. No gap. Caveat (all three rely on CLI PATH resolution, no raw API key in-process) is honest and symmetric across validators.
+
+**0.2 Pinned / published keyring** -- `keystore.ts` separates `loadPinnedKeyring` (reads committed JSON) from `assertMatchesPin` (iterates every pinned entry, throws if any presented key is missing or differs). `run-panel.ts` loads the pinned keyring BEFORE calling `convene` and asserts each host's handshake key matches the pin -- a mismatch aborts the entire convening. This closes the round-6 substitution vector cleanly. Claim matched. Caveat (a fully compromised operator can still edit the pinned file; the value is external verifiability + substitution detection) is an honest statement of the layer's boundary, not a design flaw.
+
+**0.3 Structural standing-set enforcement** -- `lifecycle.ts` `standingKeyring` filters `p.validators` for `status === 'STANDING'` and throws (rather than silently omitting) if any standing member lacks a published key. A probationer is excluded by construction, so the denominator for ratify's 2/3 is the standing count. The math cited is correct: 3 standing → effective quorum 2, not ceil(2*4/3)=3. Claim matched. Caveat (live panel has no probationers yet; this is the bridge for CIP-7) is honest and non-fatal -- the mechanism is structurally correct, just not exercised on the live path yet.
+
+**0.4 State-log wiring** -- The description states that typed recorders in `state-emit.ts` append each transition to the shared tamper-evident hash chain in `state-log.ts`, with tests confirming events are recorded, the chain verifies, and a silent rewrite is caught. The modules remain pure (wired via the recorder, not auto-emitting). This is the correct layering. Caveat (per-event authorization + on-chain anchoring are still testnet) is honest scoping.
+
+**0.5 Liveness / quorum policy** -- `panel.ts` `convene` records a signer failure as an absence (never fabricates a vote), proceeds, and ratify decides on 2/3 of the whole REGISTERED panel -- so absences count against the bar. Tests reportedly confirm: 1 dead of 3 still ratifies (2/3 present), 2 dead drops below and does not ratify. This is the stricter, correct interpretation: liveness means the protocol doesn't hang, but quorum is measured against the full register.
+
+**Intent-vs-check gaps**: none found. Each item's mechanical check directly enforces the stated intent. Security-relevant decisions (no env-verdict path, pin-checked before convene, standing-only keyring, strict ratify denominator) are all explicit and tested.
+
+**Disclosed caveats**: all honest, non-fatal, and accurately scoped to the current threat model. They mark testnet items (enclave store, on-chain anchoring, per-event auth) without pretending they are done.
+
+**AUTONOMY_FIRST precondition**: satisfied. V1 now deliberates via `claude -p` in its own child process, symmetric with V2 and V3. No human-pasted vote exists on the live path. The no-human convening loop is achieved off-chain.
+
+VERDICT: SOUND

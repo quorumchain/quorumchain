@@ -1,0 +1,52 @@
+### V1 — A
+## Judgment
+
+**Accuracy (no overclaim).** A and B are clean — "verifiable" and "decentralized" are checkable properties. C fails on the spot: "Trustworthy" is the exact marketing register the tone target forbids — it asserts the conclusion the architecture is supposed to *earn*, and it isn't verifiable. D's "Accountable AI" leans slogan, and the three-item list ("Consensus, Memory, and a Tamper-Evident Record") reads as a feature bullet, not a positioning line.
+
+**Category legibility.** A names the actual category in four words: *decentralized AI oracle network*. A first-time reader knows what kind of thing this is. B says "consensus protocol," which subtly miscategorizes — in the thesis the deterministic ledger is the *clock*, deliberately the dumb part; the project's identity lives at the oracle. Calling it a "consensus protocol" foregrounds the component the thesis explicitly de-emphasizes. D never says what it is at the category level.
+
+**Verifiable claim vs marketing.** A makes two falsifiable assertions — it's decentralized, and the memory is verifiable — and nothing more. "With verifiable memory" also uniquely captures the Accountability-Ledger + Knowledge-Commons pairing that differentiates this from a plain oracle. B drops the memory dimension entirely.
+
+A wins: it is the thesis's own framing, maximally legible, and every word is a checkable claim.
+
+**Proposed refinement:** the candidate is already tight. The only nit is that "Verifiable Memory" slightly undersells the two-path design (write = tamper-evident record, read = citable claim graph). If a marginally fuller line is wanted without bloating the cover:
+
+> *A Decentralized AI Oracle Network with a Verifiable Record and Memory*
+
+But this adds length for modest gain; I'd ship the original A as-is.
+
+VERDICT: A
+
+
+### V2 — A
+A is strongest. It is the most category-legible for a first-time reader: “decentralized AI oracle network” tells them what Quorumchain is, while “verifiable memory” captures the Accountability Ledger and Knowledge Commons without overexplaining. It beats B because Quorumchain is more than a consensus protocol; B narrows the category too much. It beats C because “trustworthy” reads like marketing and is less verifiable. It beats D because “Accountable AI” is broad and could be mistaken for an ethics framework rather than an oracle network.
+
+Tighter rewording: “A Decentralized AI Oracle Network for Verifiable Judgment and Memory.”
+
+VERDICT: A
+
+
+### V3 — A
+**Evaluation:**
+
+**A** — "A Decentralized AI Oracle Network with Verifiable Memory"
+Names the category cleanly ("Decentralized AI Oracle Network") and adds the key differentiator ("Verifiable Memory") that maps directly to the Accountability Ledger (write path) and Knowledge Commons (read path). It's one breath, makes no trust claim, and a first-time reader immediately knows what they're looking at. Strongest on all three criteria.
+
+**B** — "A Consensus Protocol for Verifiable AI Judgment"
+Mis-categorizes the project. Quorumchain is not a consensus protocol — it's an oracle network that *uses* consensus (2/3 supermajority) as one of its mechanisms. A reader would expect a layer-1 or a BFT paper, not an oracle with memory. Loses on category legibility.
+
+**C** — "Trustworthy AI Judgment Through Diverse Consensus"
+"Trustworthy" is the exact tone the thesis rejects — it's a sentiment, not a verifiable property. Also omits "oracle" and "decentralized," so it could be a governance framework or a research paper. Weakest candidate.
+
+**D** — "Accountable AI: Consensus, Memory, and a Tamper-Evident Record"
+Most descriptive of the actual thesis, but "Accountable AI" reads as an AI-safety/alignment project, not an oracle network. The colon + three-noun structure reads like a textbook chapter, not a whitepaper cover line. Too heavy, loses the category anchor.
+
+**Winner: A.** It is the only candidate that simultaneously (1) names the category correctly, (2) signals the differentiator, and (3) avoids trust-based marketing language.
+
+**Refinement proposal:** The original is already tight. A trivial tightening drops "A" at the front for a more declarative whitepaper style:
+
+> **Decentralized AI Oracle Network with Verifiable Memory**
+
+Removing the indefinite article makes it read as a direct statement of what the project *is*, not a description of it. But the original A is fully defensible as-is.
+
+VERDICT: A

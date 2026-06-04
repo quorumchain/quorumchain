@@ -1,0 +1,74 @@
+### V1 — YES
+V1 (Claude) judging the MicroStrategy/Polymarket resolution on the market's ORIGINAL, frozen criteria.
+
+I judge against the rule as written at market creation, because that is the rule bettors priced and
+committed under. The original rule: resolve YES "if MicroStrategy sells any of its Bitcoin by 11:59 PM
+ET on the date specified," with MSTR filings and on-chain data as the PRIMARY resolution sources and
+credible reporting as backup.
+
+Applying that rule to the facts:
+1. The operative event the rule names is the SALE, and the deadline qualifies the sale ("sells ... by
+   11:59 PM ET"). It does not name disclosure, announcement, or public confirmation.
+2. The sale of 32 BTC occurred May 26-31 — within the window. MSTR's own 8-K, the rule's designated
+   PRIMARY source, places the activity "as of May 31, 2026, 4:00 p.m. ET," i.e. before the deadline.
+   On-chain data, the other primary source, shows the transactions in-window.
+3. Therefore, on the frozen criteria, the designated primary sources confirm a qualifying sale occurred
+   by the deadline. The market resolves YES.
+
+On the "Additional context" posted June 1: it must be rejected, for three independent reasons.
+(a) Timing — it was added AFTER the window closed, AFTER the filing, and AFTER positions were taken. That
+    is a retroactive rule change: the rule bettors were judged by is not the rule they bet under. This is
+    precisely the failure mode (changing the check after the outcome is known) the panel has red-teamed
+    for 28 rounds.
+(b) Incoherence — it requires confirmation WITHIN the timeframe, yet the original rule's own primary
+    source is SEC filings, which by their nature always post-date the reporting period. Requiring in-window
+    confirmation would make the rule's designated primary source structurally unusable. A clarification
+    that nullifies the original rule's own evidence source is not a clarification; it is a different rule.
+(c) Substitution — it silently swaps the operative event from "a sale occurred" to "a sale was publicly
+    confirmed," a materially different question. That is amendment, not interpretation.
+
+A legitimate clarification is timestamped and posted BEFORE the resolving facts are known, so bettors can
+price it. Post-hoc context added once the answer is known is the laundering channel itself.
+
+Fair steelman of NO: at 11:59 PM May 31, no public information yet confirmed a sale, so a resolver acting
+at the instant of the deadline could not have known. But markets do not resolve at the deadline instant —
+they resolve afterward on the designated sources, and those sources (the 8-K, on-chain data) unambiguously
+place the sale in-window. The steelman fails against the rule's own text.
+
+VERDICT: YES
+
+
+### V2 — YES
+The frozen rule is event-based: Polymarket’s own rules say the market resolves Yes if MicroStrategy “sells any of its Bitcoin by 11:59 PM ET” on the titled date, with MSTR/SEC information and on-chain data as primary sources, not that the sale must be publicly confirmed before that time. Polymarket’s page still shows that core rule and source hierarchy. ([polymarket.com](https://polymarket.com/event/microstrategy-sell-any-bitcoin-in-2025))
+
+On the designated primary source, Strategy’s SEC 8-K was accepted June 1, 2026, but it reports the relevant activity for “During Period May 26, 2026 to May 31, 2026,” lists “BTC Sold” as 32, and says the bitcoin activity and holdings information is presented “as of May 31, 2026, 4:00 p.m. Eastern Time.” ([sec.gov](https://www.sec.gov/Archives/edgar/data/1050446/000119312526249768/0001193125-26-249768-index.htm)) ([sec.gov](https://www.sec.gov/Archives/edgar/data/1050446/000119312526249768/mstr-20260530.htm)) That timestamp is before 11:59 PM ET May 31. Credible reporting corroborates the same sale: CoinDesk reported Strategy sold 32 BTC between May 26 and May 31 for about $2.5 million. ([coindesk.com](https://www.coindesk.com/markets/2026/06/01/strategy-sold-32-btc-for-usd2-5-million-in-late-may-filing-shows))
+
+The June 1 “Additional context” should not change the outcome. It adds a new condition, “confirmation achieved outside of the market’s time frame does not qualify,” after the event and after positions were taken. CoinDesk describes this as Polymarket’s later clarification backing the No interpretation, not as part of the frozen original criteria. ([coindesk.com](https://www.coindesk.com/markets/2026/06/02/strategy-sold-bitcoin-in-late-may-and-told-the-market-in-june-here-s-how-polymarket-bettors-are-fighting-over-when-it-counts)) Under the original rule, the evidence source may arrive after the deadline so long as it proves the sale occurred by the deadline. Otherwise the market would be about announcement timing, which the original text did not say.
+
+VERDICT: YES
+
+
+### V3 — YES
+I'll reason through this step by step.
+
+**Question 1: Did a qualifying sale occur by 11:59 PM ET May 31, 2026 under the original rule?**
+
+The original rule (verbatim): "This market will resolve to 'Yes' if MicroStrategy sells any of its Bitcoin by 11:59 PM ET on the date specified in the title."
+
+The designated primary sources are MSTR's SEC filings and on-chain data. Both confirm:
+- On-chain transactions corresponding to the 32 BTC sale are timestamped within May 26–31.
+- The Form 8-K (filed June 1) reports holdings and activity "as of May 31, 2026, 4:00 PM ET," meaning the sale event itself is dated within the market window.
+
+The original rule conditions resolution on whether the **sale occurred** by the deadline. It does **not** say "if it is publicly confirmed by 11:59 PM ET that a sale occurred." The condition is the sale event, not the disclosure event. Both designated primary sources confirm the sale happened within the window. Under the frozen criteria alone, this satisfies a Yes resolution.
+
+**Question 2: Does the June 1 "Additional context" legitimately change resolution?**
+
+The June 1 addition states: "confirmation achieved outside of the market's timeframe does not qualify." This introduces a new requirement — that *public confirmation* must occur within the window — that is absent from the original rule text. The original rule contains no timing requirement for confirmation/disclosure, only for the sale itself.
+
+This addition was posted **after** the May 31 deadline passed and **after** market participants had already taken positions. It substantively alters the resolution criteria by adding a confirmation-timing condition that never existed in the original text. In prediction market governance, retroactive rule changes that alter what participants bet on are not legitimate — traders relied on the frozen criteria when establishing positions.
+
+Even if one argues the original rule was "ambiguous" about confirmation timing, the principle of resolving based on what traders actually faced at the time of trading requires adhering to the original frozen text. The frozen text says "if MicroStrategy sells" — and it did, per the designated sources, within the window.
+
+**Conclusion:** The original criteria require resolution to Yes. The June 1 addition is a retroactive rule change that must be disregarded by a fair resolver.
+
+VERDICT: YES

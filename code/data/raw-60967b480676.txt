@@ -1,0 +1,47 @@
+### V1 — NO
+## Reasoning
+
+I checked each candidate gap against what items 1–13 actually concede, looking for something **distinct** (not a relabel of an existing item) and **first-order** for a verdict function defined as "a stochastic call to externally-hosted models ingesting evidence."
+
+The three previously-missing items are genuinely fixed and bite:
+- **3** (non-reproducibility/mutability) is cleanly separated from correctness and doesn't oversell — it concedes "evidentially auditable, not re-derivable," and folds in third-party provider dependence. Good.
+- **8** (single-operator/key/continuity) bites hard and explicitly disclaims "OS key custody ≠ distributed trust." Not softened.
+- **9** (TCB/code-correctness) concedes the self-review loop "cannot eliminate" the risk. Not softened.
+- **12** is correctly demoted to trajectory, not a present property.
+
+But being adversarial one more time, there is a **material limitation still missing**, and it's the single most-cited real-world failure mode for exactly this architecture:
+
+**Indirect prompt injection / instruction-hijacking of the validator models at evaluation time.** The verdict function ingests external evidence and anchors and feeds them to LLM validators. An attacker who can place text into the evidence bundle can attempt to *steer the validators' reasoning/instruction-following* — not merely assert a falsehood. This is distinct from all three nearest items:
+- **Item 2** is *non-adversarial* shared error (corpora/RLHF convergence) — injection is adversarial and can hit even perfectly independent models simultaneously via the same poisoned input.
+- **Item 6** is framing by the *question-author at creation* — injection comes through the *evidence channel at evaluation*, after frozen criteria.
+- **Item 7** is false-but-consistent content that the truth-blind *kernel/notary* waves through — injection attacks the *validators' judgment layer*, not the kernel's completeness check. A successful injection produces a verdict the kernel considers perfectly well-formed.
+
+For a system whose entire output is an LLM call over attacker-influenceable text, conceding "false evidence passes the notary" (7) but not "crafted evidence can hijack the validator" leaves the most obvious adversary unaddressed. It belongs as its own item (mitigations: input isolation, provenance gating, the challenge market — none of which prevent it).
+
+Two softer notes, not dispositive: (a) the list leans on the **challenge market + calibration penalty** as load-bearing mitigation (items 2, 7) but never concedes that *mitigation itself* has unanalyzed failure modes (under-capitalization, griefing, bribery, and that calibration penalties presuppose later disprovability the unverifiable class in 4/11 denies); (b) **confidentiality** — sensitive evidence is exposed to third-party providers — is framed only as liveness/neutrality in item 3, not as a data-exposure limit. I'd accept the list with just (a)/(b) noted, but injection alone is enough to withhold a YES.
+
+One missing, distinct, first-class limitation → not yet complete.
+
+VERDICT: NO
+
+
+### V2 — YES
+The revised list is materially complete for a first-class limitations section. The three prior gaps are now conceded directly and with bite: non-reproducible mutable model judgments, single-operator/key/continuity failure, and TCB/code correctness. The list also preserves hard limits around truth, correlated error, bad criteria, false evidence, anchor capture, unverifiable domains, cost/latency, and current-vs-roadmap scope.
+
+A serious skeptic could still elaborate on governance capture, incentive design failure, privacy/confidentiality leakage, or legal/regulatory pressure, but these are either covered under operator/provider/anchor/evidence risks or are deployment-specific rather than missing core epistemic/system limitations. I do not see a remaining material limitation that must be conceded for §9 completeness.
+
+VERDICT: YES
+
+
+### V3 — NO
+I've read the revised list carefully. It's substantially improved — items 3, 8, and 9 were genuine omissions, and separating maturity from limitation (item 12) fixes the conflation problem. The honesty is good; nothing is softened.
+
+But a serious skeptic still has two material raises that are not conceded:
+
+**A. Feedback-loop / self-reinforcement risk (distinct from item 2).** If Quorumchain verdicts become widely cited and are absorbed into future training corpora, the system's own outputs contaminate the very models it depends on for new verdicts. This creates a reflexive loop: a wrong verdict becomes part of the "consensus" that future verdicts consult, making correction increasingly difficult over time. Item 2 covers shared training data as an input problem, but not the *output-to-input contamination* that gets worse with adoptionsuccess. This is structurally separate and bites: the more the system is trusted, the more it risks becoming self-insulated from external correction.
+
+**B. Jurisdictional / legal coercion as a first-class vulnerability (under-addressed in items 3 and 8).** Item 3 mentions ToS/censorship and item 8 mentions legal coercion of the operator, but neither concedes the specific risk that model providers or anchor sources are *legally compelled* — via subpoena, court order, or regulatory directive — to produce特定 outputs, de-platform a topic, or silently alter behavior. This is not captured by "censorship" generically; it's a structured attack vector where the adversary is a state or regulator with legal authority over a provider in its jurisdiction. The system's neutrality depends on providers' jurisdictional independence, which is not guaranteed and not conceded as a standing limitation.
+
+Both of these bite. Neither is footnoted. Both would survive the defense arguments the whitepaper would make against them.
+
+VERDICT: NO

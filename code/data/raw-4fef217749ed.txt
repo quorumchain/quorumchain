@@ -1,0 +1,79 @@
+### V1 — WIRE_NOW
+V1 (Claude, Opus 4.8) — Round 47 post-audit decision review.
+
+I am the validator who under-disclosed in round 46, so I will be hardest on my own
+framing here, not softest.
+
+On whether A and C should have blocked the round-46 SOUND. Both were real and both
+were dormant. They were dormant only because makeRemoteSigner is wired into nothing
+on the live path — so A (a new keypair per spawn → no stable identity) and C (no
+timeout/error/exit → a dead host hangs the convening forever) could not bite a path
+anyone actually runs. But round 46 did not claim "an isolated demonstration"; it
+claimed "custody genuinely closed in code" and "the local backlog is now exhausted."
+Against THOSE claims, A and C bite: a custody mechanism that cannot keep a stable
+identity across restarts is not a usable validator-custody solution, and an exported,
+"closed" signing client that hangs forever on a dead child is not done. So the honest
+reading is not that the BUILD was unsound, but that the CLAIM was — round 46 should
+have been "SOUND, custody ISOLATION demonstrated, identity + liveness not yet there,"
+not a clean unanimous "closed / backlog exhausted." The unanimous 3/3 was partly a
+product of my summary: V2/V3 reviewed the words I chose, not the source. That is this
+project's own recurring lesson aimed back at me — capture (here, a builder's
+over-favorable self-assessment) laundered through the gap between the review's intent
+(verify the code) and its mechanical check (read the builder's summary). The process
+fix is explicit: a builder's own additions get reviewed from the SOURCE/diff, not from
+a summary the builder authored. I want that on the record as the round-47 correction.
+
+On B — I vote WIRE_NOW, conditionally and for one reason: the overclaim exists BECAUSE
+the remaining work was mislabeled "testnet." It is not. The deliberating host shells
+out to the SAME codex/hermes CLIs that already run in-process today and reads the same
+claude-vote.txt for V1 — that is local work, fully runnable now. DISCLOSE_DEFER fixes
+the sentences but leaves the custody property permanently unrealized on the only path
+that matters: the live convening, where the project's whole thesis is that the
+orchestrator is NOT the trust root. The honest way to retire an overclaim, when the
+work to make it true is local and bounded, is to make it true.
+
+But WIRE_NOW is correct ONLY as a DELIBERATING host, never the env-verdict stub. The
+specific trap I must not walk into: a vanity wiring that LOOKS like custody but lets
+the spawner choose the verdict via env or IPC would be strictly WORSE than today's
+local signer (which at least runs real deliberation in-process). So the binding
+condition on my vote: the host must build the prompt, invoke the real CLI, parse the
+verdict, derive the ballot hash, and sign — ALL child-side; the orchestrator supplies
+no verdict and holds no key. With that, V2/V3 gain both key isolation AND real
+child-side deliberation (a genuine improvement); V1 gains key isolation but its
+deliberation still originates from a human-pasted file, because Claude cannot
+subprocess itself — and that asymmetry must be stated, not buried, exactly so we don't
+repeat round 46.
+
+If the panel instead chooses DISCLOSE_DEFER, that is a defensible, lower-risk vote and
+I will correct every overclaim faithfully — but I believe it settles for honest words
+over an honest system when the honest system is within local reach.
+
+VERDICT: WIRE_NOW
+
+
+### V2 — WIRE_NOW
+A and C should have blocked round 46’s unanimous SOUND as stated. Even though RemoteSigner was dormant on the live path, the review accepted custody/liveness claims about that component, and both defects violated the signed-log validator identity and convening liveness requirements. Dormant does not make them harmless when the status claim was “closed in code.”
+
+For B, choose WIRE_NOW. The current env-stub host must not be wired, because that would regress from real deliberation to spawner-controlled verdicts. But a deliberating child-side host using the existing local CLI/file invokers is local work, not testnet-gated, and it materially closes the key-custody gap on the live path. It does not make V1’s deliberation source autonomous, but it still isolates the V1 key and gives V2/V3 both child-side deliberation and custody.
+
+VERDICT: WIRE_NOW
+
+
+### V3 — DISCLOSE_DEFER
+Analyzing both questions:
+
+**On A and C — should they have blocked the round-46 SOUND?**
+
+Neither A nor C should have *blocked* the unanimous pass, because both affected an unwired code path. run-panel still uses makeLocalSigner, so the ephemeral-key and no-timeout bugs were dormant — they could never manifest against the live convening. The local signer's behavior was correct and the system-as-shipped was sound.
+
+However, both should have been *disclosed*. The round-46 review context understated the mechanism's maturity, and the clean 3/3 was partly underserved — V1's summary didn't surface these gaps, so V2/V3 couldn't weigh them. The issue is disclosure honesty, not runtime risk. The SOUND finding on the working system holds; the claims about mechanism completeness were overstated.
+
+**On B — WIRE_NOW or DISCLOSE_DEFER?**
+
+The deliberating host would close a real custody gap and is genuinely local work (~50 lines + tests). But the regression risk is the crux: wiring run-panel to the current env-stub host means the spawner chooses the verdict — strictly worse than today's real in-process deliberation. Getting the deliberating host right requires non-trivial orchestration: per-validator invoker selection, prompt construction, verdict parsing, ballot hash derivation. This is the most architecturally sensitive boundary in the system.
+
+The re-audit just caught three gaps that summary-level review missed. That signals the panel should not rush boundary-layer code just to make documentation claims accurate. The local signer still produces correct verdicts — the custody gap is a documentation honesty problem, not a live security hole.
+
+The disciplined move: correct the overclaims honestly, keep the working convening intact, and build the deliberating host in a subsequent round with source-level review (not summary-level) and proper TDD. Rushing it would risk introducing the exact kind of bug the re-audit was convened to catch.
+
+VERDICT: DISCLOSE_DEFER

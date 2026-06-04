@@ -1,0 +1,48 @@
+### V1 — REVISE
+## Reasoning
+
+**Problem framing — sound.** "Vendor diversity is not distributional independence" is correct and is the one critique that actually bites. Three models over one corpus can be confidently and identically wrong, and a 3/3 shared hallucination is signature-indistinguishable from 3/3 on a verified fact. CIP-9 already *contains* this (records "N/N agreed," not "true"; NI-9b accrues reputation only from anchors). The question is whether to add active defense before the panel is used as a recall oracle. Yes — accept the framing.
+
+**Part 1 (anchor-gated RESOLVED) — sound, adopt.** This restricts *upward* only: it refuses to mint RESOLVED without an external anchor, the structural opposite of an edit key. It cannot decree truth; it can only decline to. The "it only confirms the already-verifiable" objection is not a bug — for a trust-minimized oracle, INDETERMINATE-by-default is exactly right, and it doesn't touch the current job (validating own code/design), where the source *is* the anchor every validator reads directly.
+
+**Part 3 (probes) — sound, adopt.** Converts "we assume errors are uncorrelated" into a logged number. Pure measurement, no decree. The probe-distribution ≠ live-distribution objection is real but answered: a measured floor published *with its methodology* strictly dominates an unexamined assumption. Requirement: the read surface must label it a probe-distribution estimate, not a universal guarantee.
+
+**Part 2 (refuter role) — the defect.** Methodological diversity is the *right* instinct: asking the same question the same way three times maximizes correlation, so breaking the symmetry is genuinely the strongest of the three ideas. But as specified — "one validator's *task is to find the strongest case the proposition is FALSE*" — it most naturally reads as overwriting that validator's signed vote with an adversarial one. If the refuter's *verdict* is forced negative, the 2/3 supermajority denominator is corrupted: a signature no longer means "this validator believes X," and you've put a recorded, rotating thumb on the scale. That's not a truth-decree, but it violates the same record-honesty principle from a different direction.
+
+**Fix:** separate the *role* from the *vote*. The rotating validator produces a **recorded adversarial-refutation artifact** (the strongest false-case), which becomes an *input* to all three validators' deliberation — but every validator's signed verdict must remain its honest belief. You get the de-correlating benefit of forced refutation without polluting the consensus arithmetic. The artifact is auditable and rotates exactly as proposed; only the vote stays clean.
+
+So: framing right, parts 1 and 3 adopt as-is, part 2 needs the role/vote split.
+
+VERDICT: REVISE
+
+
+### V2 — ADOPT
+CIP-10 should be adopted.
+
+The critique identifies a real architectural gap: vendor/model diversity does not imply independence for recall errors drawn from the same public corpus. CIP-9 already prevents agreement from becoming a truth decree, but CIP-10 makes that containment explicit before Quorumchain is used as a broader oracle.
+
+Anchor-gated `RESOLVED` is the strongest part. If there is no external verifiable anchor, unanimity should only record consensus state, not truth. That is conservative, but it matches the record-not-decree invariant.
+
+The rotating `REFUTER` role is acceptable because it is methodological, recorded, and auditable. It does not secretly bias the result; it makes dissent-search part of the signed procedure. The vote should distinguish role-conditioned reasoning from final status, but that is an implementation detail, not a reason to reject.
+
+Probe ballots are imperfect because they measure only their distribution, but a logged shared-error rate is still better than an implicit independence assumption. The read surface should expose probe scope and limits so the number is not overclaimed.
+
+None of the three mechanisms creates an edit key, reputation-from-agreement rule, or editorial truth authority. They strengthen CIP-9’s principle that Quorumchain records bounded validation evidence rather than decreeing truth.
+
+VERDICT: ADOPT
+
+
+### V3 — ADOPT
+Let me work through each mechanism against the CIP-9 invariants and the actual threat surface.
+
+**Anchor-gated RESOLVED** — This does not mint editorial power. It constrains a *status label*, not validator speech. Validators still sign whatever they believe; the ballot's status simply cannot escalate to RESOLVED unless there is an external anchor to compare against. This is exactly the epistemic honesty NI-9b demands: reputation accrues from anchors, never from agreement alone. The "narrows the oracle" counterargument is real but correctly handled — a recall-only oracle without anchors is epistemically indistinguishable from confident noise, and INDETERMINATE is the honest label for that case. The oracle still has value-add: it can analyze anchors, reason about them, and present structured verdicts. It just can't claim RESOLVED status on naked recall.
+
+**Refuter role** — Sound in principle, but needs a narrow refinement. The risk is that if the refuter is told "argue against proposition P," it may manufacture contrarian reasoning it doesn't genuinely hold, adding noise rather than reducing false positive correlation. The fix: the refuter should not receive a directional instruction at all. Instead, it should be given the *same ballot content* but prompted to independently evaluate without seeing other validators' drafts, and its role tag in the record signals that it was tasked with seeking disconfirming evidence. This preserves methodological diversity *and* honesty of reasoning. A recorded, rotating adversarial stance is legitimate process — analogous to a court appointing an amicus — so long as the role description is about *method*, not *conclusion*.
+
+**Probe ballots** — Unobjectionable. Passive measurement, no effect on live verdicts, no editorial power. The distribution-bias concern is handled by logging the probe distribution alongside the measured shared-error rate; consumers know what the estimate covers. A conservative (biased-toward-easy) estimate is strictly better than none, and stratification across domains widens coverage.
+
+**CIP-9 invariant check:** No editor key is created. No validator overrides another. No truth is decreed — only recorded reasoning under a different procedural frame. The read surface already says "N/N agreed," not "true." This CIP adds constraints on escalation, method, and measurement. All consistent with "record, not decree."
+
+The minor refinement on Part 2 keeps the mechanism proportionate without introducing the noise risk. Nothing here re-introduces editorial power. The threat is real (corpus overlap is a structural fact, not a contingent bug), and the defense is measured — it bounds rather than claims to eliminate shared-error risk.
+
+VERDICT: ADOPT

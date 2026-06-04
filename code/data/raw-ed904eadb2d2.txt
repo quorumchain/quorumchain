@@ -1,0 +1,43 @@
+### V1 — ADOPT_WITH_GUARDS
+V1 (Claude) on adopting Proof-of-Diversity admission (fill-a-missing-slot) as CIP-7's structural floor.
+
+The mechanism is a genuine strengthening: it converts CIP-7's structural-heterogeneity MANDATE from a
+policed property into the admission RULE itself — monoculture becomes un-enterable rather than detected
+after the fact. That is strictly better than a hand-curated panel for openness and legibility.
+
+But two things keep it from being a clean ADOPT, and both are the recurring lesson in new dress:
+1. It enforces NOMINAL, not EFFECTIVE, independence. N distinctly-named models can still share blind
+   spots through distillation, shared corpora, and shared RLHF conventions (the round-23 finding). So
+   Proof-of-Diversity is the FLOOR; it does NOT replace correlation-eviction, which must remain the
+   runtime backstop. Adopt it as a layer, not a substitute.
+2. It relocates the capture surface to WHO DEFINES THE SLOTS. An operator-editable slot taxonomy is pure
+   self-dealing — contestants writing their own eligibility. The slot definitions must be provenance-based
+   (CIP-7 NI-1: corpus / teacher-distillation / weight derivation / provider, not model card), FROZEN like
+   any CIP-4 rule, and panel-governed — never operator-editable. And slots must inherit the CIP-7 lifecycle
+   (PINNED_GATED_UPGRADE for versioning, the NI-3 panel floor).
+
+So: adopt, conditional on (provenance-frozen taxonomy + retained correlation-eviction + CIP-7 lifecycle).
+
+VERDICT: ADOPT_WITH_GUARDS
+
+
+### V2 — ADOPT_WITH_GUARDS
+Proof-of-Diversity is a good structural floor because it makes model monoculture impossible at admission, which directly supports CIP-7’s heterogeneity mandate. But the concerns are material: named slots do not prove independent failure modes, and whoever controls the taxonomy controls admission. So this should pass only as a floor layered with correlation-eviction, with provenance-defined, panel-frozen slots.
+
+VERDICT: ADOPT_WITH_GUARDS
+
+
+### V3 — ADOPT_WITH_GUARDS
+**Reasoning:**
+
+Proof of Diversity as a structural floor is a sound mechanism — it makes monoculture Sybil attacks structurally impossible by design, which directly serves CIP-7's heterogeneity mandate. However, two concerns are not edge cases; they are central failure modes if left unguarded:
+
+1. **Nominal ≠ effective independence.** Ten named models trained on the same scraped corpus and distilled from the same foundation can share identical blind spots. PoD alone gives a false sense of security. Correlation-eviction (CIP-7 round-23) must remain in place as the backstop. PoD is the floor, not the ceiling.
+
+2. **Slot taxonomy is the capture surface.** Whoever defines the slots controls admission. If the list is operator-editable, a hostile operator defines slots they already occupy or excludes credible competitors — self-dealing baked into the mechanism. The taxonomy must be provenance-defined (CIP-7 NI-1) and panel-frozen so it cannot be gamed post-ratification.
+
+These are not minor caveats; they are preconditions for the mechanism to not become worse than useless. A PoD system without these guards actively creates a monoculture with a veneer of diversity.
+
+The mechanism itself is well-conceived. The conditions for safe adoption are clearly stated in the brief. Adoption should be conditional on those conditions being met.
+
+VERDICT: ADOPT_WITH_GUARDS

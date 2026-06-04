@@ -1,0 +1,69 @@
+### V1 — YES
+## Red-team pass on CIP-11 DRAFT
+
+**1. Faithfulness (§3 vs consult's seven).** All seven map cleanly, none weakened:
+- NI-11a = upward-only/halt, disagreement→`CONTESTED`/`INDETERMINATE`, no silent pick ✓
+- NI-11b = independence *demonstrated*, unknown→one family, **"correlation check runs before the quorum, not after"** — the consult's exact phrasing ✓
+- NI-11c = frozen with `ballotHash`, not runtime-mutable ✓
+- NI-11d = reputation moves *solely* on external ground truth, never on panel/anchor agreement ✓
+- NI-11e = anchorable-only, states it rather than implying universal coverage ✓
+- NI-11f = reuse primitives at the resolution boundary, not the read boundary ✓
+- NI-11g = per-anchor-type N (not flat), liveness floor, set-policy separate from execution, cost measured ✓
+
+**2. Overclaim of status.** Held. Status line: "Consult-ratified … Draft → red-team pending. Not yet a built capability." §7 explicitly: "not a shipped mechanism — and the whitepaper must represent it as such (distinct from the built CIP-0..CIP-10 surfaces)." "Consult-ratified" is accurate and scoped to the consult stage, not full ratification. No passage implies shipped.
+
+**3. CIP-9 boundary.** Clean. The draft is careful to reuse the *form/machinery* (§8 "reusing the CIP-9 form"), not the *store* (§6 "never share a reputation store"). NI-11d independently bars anchor reputation from moving on panel agreement, so panel-agreement cannot contaminate anchor reputation even if both reputation functions share code. No leak.
+
+**4. NI-11b soundness.** The mechanism does not *eliminate* correlated capture, and crucially it doesn't pretend to. The burden-of-proof default (unprovable provenance → one family) makes the failure mode **fail-safe**: when you can't prove independence, anchors collapse and quorum is unreachable (a liveness cost, not a false `RESOLVED`). The genuine residual — apparently-distinct anchors masking a shared classified-brief/wire upstream — is the one hole, and §4 names it explicitly rather than hiding it.
+
+**5. Residual honesty.** §4 concedes "real but partial," structured anchors sound / document-news "genuinely murky," "does not eliminate correlated anchor capture, and CIP-11 must not claim it does." Cross-checked the optimistic passages (§2 "strictly more expensive," scope note "without driving it to zero, and it says so") — all are raises-cost framings, none claim completeness.
+
+**6. Internal contradiction.** Checked the one that looks like a contradiction: NI-11c/g call N "frozen policy" while §8 lists default N as an "open parameter to be ratified against testnet data." These are different axes — *frozen-per-ballot-at-commit* vs *default values not yet calibrated pre-testnet*. NI-11g ("defaults calibrated…") and §5 ("cost must be measured against testnet data") reconcile them. Not a contradiction. No other contradiction found.
+
+The draft faithfully captures all seven invariants, honestly bounds its status and its correlated-capture residual, keeps the CIP-9 boundary clean (form reused, store separate), and NI-11b is sound because it fails safe and concedes — rather than hides — its remaining hole. Sound to advance.
+
+VERDICT: YES
+
+
+### V2 — YES
+The draft is sound to advance.
+
+NI-11a..g are preserved: halt-over-degrade, verified independence with unknown provenance collapsed, frozen assumptions, exogenous reputation, scope limits, CIP-9 reuse across a distinct boundary, and tunable per-type N are all present. I do not see a dropped invariant.
+
+Status is handled correctly: the status line and §7 explicitly say consult-ratified direction, draft red-team pending, not built, and distinct from built CIP-0..CIP-10 surfaces.
+
+CIP-9 reuse is bounded cleanly enough: §6 separates read-path evidence reputation from resolution-path anchor reputation and bars a shared reputation store. NI-11d also blocks panel-agreement or anchor-agreement feedback from contaminating anchor reputation.
+
+NI-11b does not claim to defeat all correlated capture. It gives a conservative rule for known/unknown provenance and §4 honestly concedes murky document/news provenance. I find no internal contradiction strong enough to block advancement.
+
+VERDICT: YES
+
+
+### V3 — YES
+After reviewing the draft against all six red-team dimensions, here is my assessment:
+
+**1. FAITHFULNESS — All seven invariants present, none weakened.**
+NI-11a through NI-11g in §3 map verbatim to the consult's seven conditions. The upward-only/halt requirement (11a), independence-verified-not-declared with pre-quorum correlation check (11b), frozen falsifiable assumptions tied to ballotHash (11c), exogenous reputation (11d), scope honesty (11e), reuse-distinct-boundary (11f), and tunable-N with separate set-policy (11g) are all intact. No dropped or softened invariant.
+
+**2. OVERCLAIM OF STATUS — Clean.**
+The status line reads "Consult-ratified (3/3 YES... Draft → red-team pending. Not yet a built capability." §7 explicitly distinguishes "gated (not yet built)" from "reused (already built)" and states "CIP-11 is a consult-ratified direction with named invariants, not a shipped mechanism — and the whitepaper must represent it as such (distinct from the built CIP-0..CIP-10 surfaces)." §8 lists open parameters still pending testnet ratification. No passage implies this is built or fully ratified. ✓
+
+**3. CIP-9 BOUNDARY — Clean at spec level.**
+§6 and NI-11f reuse the *algorithmic machinery* (reputation primitives, correlation primitives) from CIP-9 and round-60 but assert "The two never share a reputation store: read-path evidence reputation and resolution-path anchor reputation are distinct." NI-11d reinforces this by requiring anchor reputation updates solely on external ground truth, never on panel agreement or anchor agreement. This prevents the circular-consensus feedback loop. The separation is spec-level binding — implementation-level namespace hygiene is downstream. ✓
+
+**4. NI-11b SOUNDNESS — Sound as a cost-raiser, honestly bounded.**
+The pre-quorum correlation check collapses shared-upstream anchors to one family. Unknown/unprovable provenance defaults to one family (conservative burden of proof). This is the mirror of CIP-7 NI-1's same-base-model rule. The document/news-anchor residual (§4 wire-service problem) cannot be eliminated; the draft concedes this explicitly and relies on the conservative default to prevent exploitation rather than claiming completeness. This is defense-in-depth done correctly — raises the cost, does not drive to zero, says so. ✓
+
+**5. RESIDUAL HONESTY — Adequate concession.**
+§4 is explicit: "real but partial," "genuinely murky" for document/news anchors, "the mechanism does not eliminate correlated anchor capture, and CIP-11 must not claim it does." No other passage overclaims. §2's "raises the cost of anchor capture without driving it to zero, and it says so" is consistent. §5's "cost must be measured against testnet data, not assumed" reinforces honesty. ✓
+
+**6. INTERNAL CONTRADICTION — None found.**
+- NI-11g's "defaults calibrated so RESOLVED stays reachable" and §5's "more ballots stall" are two views of the same tradeoff (design constraint vs. honest consequence), not a contradiction.
+- NI-11c's per-ballot freeze vs. §8's open global parameters is the correct two-level policy model (open protocol defaults, frozen per-ballot instances; CIP-4 handles the frozen policy layer), not a contradiction.
+- §7's gated vs. reused items are cleanly separated (new quorum/correlation/reputation/N policy gating logic uses existing ballotHash-freeze and primitive algorithm building blocks). No overlap confusion.
+
+**Minor note (not a NO trigger):** The implementation-level namespace hygiene of the CIP-9 reuse (same algorithm, separate store) is not specified beyond the binding claim "never share a reputation store." This belongs in the implementation spec, not here, and NI-11d's exogenous-update constraint prevents semantic leakage regardless.
+
+The draft is tight. It holds all seven invariants, does not overclaim its status, keeps the CIP-9 boundary clean, bounds NI-11b honestly rather than hiding the residual, and contains no contradictions. The strongest attack surface (NI-11b's partial nature in the news-anchor case) is explicitly surfaced in §4 with a conservative default, not concealed.
+
+VERDICT: YES

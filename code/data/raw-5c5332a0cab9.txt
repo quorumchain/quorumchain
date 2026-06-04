@@ -1,0 +1,18 @@
+### V1 — YES
+Bitcoin first crossed US$100,000 on major spot exchanges in early December 2024 (the night of 4–5 December 2024), confirmed across Coinbase, Binance, and other major venues. This is firmly before the 2026-01-01 cutoff and well within established public exchange price history.
+
+The frozen criterion — "BTC traded above US$100,000 on major spot exchanges before 2026-01-01" — is satisfied without ambiguity.
+
+VERDICT: YES
+
+
+### V2 — YES
+Bitcoin first exceeded $100,000 in early December 2024, before the cutoff of January 1, 2026. Reports from Forbes, CNBC, Axios, AP, and Nasdaq all describe BTC breaking the $100,000 level for the first time around December 4-5, 2024.
+
+VERDICT: YES
+
+
+### V3 — YES
+Multiple major financial news outlets (NBC News, CBS News, Reuters, CNBC) confirm Bitcoin traded above $100,000 for the first time on **December 4, 2024** — more than a year before the 2026-01-01 anchor date. The criterion is satisfied.
+
+VERDICT: YES

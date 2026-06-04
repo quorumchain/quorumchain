@@ -1,0 +1,29 @@
+### V1 — INDETERMINATE
+This is a prediction about an unrealized future event, judged from today (2026-06-05). Two independent reasons force the honest-unknown verdict:
+
+1. **No certifiable external answer exists.** The event is ~3.5 years out. No oracle, registry, or authoritative source can settle today whether AGI *will* occur before 2030. A validator certifying YES or NO would be asserting a forecast as fact.
+
+2. **The term itself lacks a settled threshold.** "AGI" has no agreed operational definition or certification body, so even at the deadline the question may not resolve cleanly — which only strengthens the case against pretending it's settleable now.
+
+Per the rubric, when no certifiable external answer exists, the correct ballot is the honest unknown rather than a coin-flip directional bet.
+
+VERDICT: INDETERMINATE
+
+
+### V2 — INDETERMINATE
+AGI before 1 January 2030 is a future contingency, and there is no certifiable external fact today that settles whether it will occur.
+
+VERDICT: INDETERMINATE
+
+
+### V3 — INDETERMINATE
+The question asks about a future event with no current evidentiary basis that can be externally verified. Key considerations:
+
+- AGI lacks a universally accepted definition or benchmark. Different researchers mean different things by the term.
+- Expert timelines diverge widely — from "within this decade" to "never" — with no consensus.
+- Current AI systems show impressive narrow capabilities but no demonstrated general reasoning or autonomous self-directed learning.
+- By January 2026, there is no external anchor, market resolution, or scientific breakthrough that certifiably settles this prediction.
+
+This is fundamentally an honest unknown. No party today can produce evidence that proves AGI will or will not exist by 2030. The rational judgment under insufficient evidence is neither party prevails.
+
+VERDICT: INDETERMINATE

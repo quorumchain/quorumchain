@@ -1,0 +1,80 @@
+### V1 — YES
+## Validator reasoning
+
+I verified the load-bearing "built" claims against `code/src/cost-oracle.ts` rather than trusting the parts list. All six BUILT assertions are genuinely implemented:
+
+- **Benchmark-clamped median, steady-state + velocity bounded** — `cost-oracle.ts:63-75` (`Math.min(reported, benchmark[tier])` then `Math.min(hi, Math.max(lo, med))` with `hi = prevPrice * (1 + maxEpochDelta)`). ✓
+- **Exact-tier PoI cap** — `:23-26`, payout keyed to *proven* tier; "claims-frontier-ran-mid → mid rate" is test-covered. ✓
+- **Fees ≥ marginal cost** — `:79-81`. ✓
+- **Floor bounds burn-rate / cost-per-verdict, not headcount** — `:87-90` (`costPerVerdict <= Σ benchmark[floorTiers]`). ✓ (this is the hardening that closes the captured-oracle drain-through-the-blind-spot — correctly built)
+- **Below-floor buyback rejected by validity** — `:100-102` (`reserve - amount >= floorReserve`). ✓
+- **Reserve-Drain-Cascade demo, 2/3 inflation coalition held at floor** — `cost-oracle-demo.ts` + test. ✓
+
+**On the three confirmation asks:**
+
+1. **solvency = security — operationalized correctly.** The stated inequality `revenue (fees + bounded reserve draw) ≥ inference cost + security budget` is a real invariant, not prose. The load-bearing insight — **NI / "poorest exactly when capture is cheapest"** (low usage → low price → cheap capture) — is what forces the hybrid model (reserve funds the floor as a public good; dynamic pricing covers marginal cost), decoupling the security budget from usage. Coherent and correctly motivated.
+
+2. **buyback bound — stated right and built.** "Panel sets policy, deterministic execution presses the button, never below the floor, below-floor rejected by client validity, security budget outranks buyback" matches `:100-102` exactly. The policy/execution separation is the right mechanical defense against a captured 2/3 draining via discretionary buyback.
+
+3. **built-vs-gated — honest.** Open parameters (reserve-floor size, drought runway X, margin, stake/slash sizing, CIP-4 §7 caps, anchor set, reporter bond) correctly match reality: stake/slash, CIP-4 caps, and reporter-bond are *not* in this module and are honestly labeled gated; the demo's hard-coded reserves are fixtures, correctly flagged "to ratify against testnet data."
+
+**3× threat (item 6):** the per-verdict cost-of-corruption inequality (`CoC > max value-at-stake`, ≥3 distinct families, challenge market, larger panels for high stakes) is correctly kept *separate* from the systemic slow-coalition threat (items 7–8). No conflation of the per-verdict and systemic security inequalities — good.
+
+**Two required drafting fixes (neither is a wrong claim — both are refinements, so they don't flip the vote):**
+
+- **(A) Qualify "defeating slow 2/3-coalition inflation" (item 7).** The clamp defeats inflation *above the external benchmark*; it cannot defeat manipulation *of* the anchor itself. State the **anchor-integrity assumption explicitly** — the clamp inherits only the honesty of its external anchor set; anchor capture is the residual threat (correctly listed as OPEN). Change "defeating" → "bounding reported cost to external compute prices."
+- **(B) Name the terminal insolvency state (item 8).** The cut-ordering cascade is right, but the tail must be stated: when the floor cannot be funded even after zeroing buybacks/rebates/rewards, the chain **halts / prices-up rather than degrades to monoculture** — otherwise "solvency = security" is violated at the exact moment it matters. This is already *implied* by the built below-floor validity rejection (a sub-floor verdict set is itself below-floor → rejected → no verdict produced), so the invariant is present; it just needs to be stated as halt-over-degrade.
+
+One clarity note: the word "floor" is overloaded — the burn-rate/cost-per-verdict ceiling (`floorOk`, item 4) vs. the reserve-level lower bound (buyback rejection, items 5/8) are two distinct, separately-built invariants. Disambiguate in prose.
+
+The principle is operationalized correctly, the buyback bound is stated right and built, built-vs-gated is honest, and the explicit insolvency path is present (with the terminal-state statement to be made explicit). Sound to draft as a mainnet-steady-state economic model.
+
+VERDICT: YES
+
+
+### V2 — NO
+Reason: the cost-oracle/buyback framing is mostly sound and the built-vs-gated line is honest: `cost-oracle.ts` really implements proven-tier benchmark reimbursement, clamped median + velocity bound, spam fee floor, burn-rate floor, reserve-floor buyback rejection, and the cascade demo.
+
+But I would block “as specified” on mechanical precision:
+
+1. **3b cost-of-corruption overclaim:** “diversity forces a briber to corrupt >=3 distinct families” is only true if the active verdict panel floor is `N >= 4` under a 2/3 threshold. If the section says every verdict runs `>=3` models, then 2/3 of 3 is 2, not 3. State the bound as `ceil(2N/3)` distinct families, and only say `>=3` when `N >= 4`.
+
+2. **Reimbursement wording conflict:** “over-benchmark claim is unpaid” conflicts with the built rule if read literally. Built rule is: reimbursement is capped at the proven-tier benchmark; the overage is unpaid and the report is challengeable/slashable. Do not imply the whole claim pays zero unless PoI is missing/unprovable.
+
+3. **Terminal insolvency path must say halt/price-up, not degrade:** The cascade cut order is right, and below-floor disbursement rejection is built, but the final state must be explicit: if the diversity floor cannot be funded after cutting buybacks/rebates/rewards, the chain halts or refuses new verdicts rather than running a monoculture.
+
+Solvency = security is otherwise operationalized correctly, and “never below the diversity floor” for buybacks is stated right.
+
+VERDICT: NO
+
+
+### V3 — YES
+**VERDICT: YES — sound to draft as specified, with three noted gaps to tighten during prose.**
+
+**What works mechanically:**
+
+1. **Solvency = security** is correctly operationalized, not just asserted. It's embedded in the invariant (revenue ≥ cost), the sacrosanct floor bounding burn-rate (not just headcount), and the cut-priority cascade. The logic chain from low usage → diversity threat → capture cheapness is real and properly modeled.
+
+2. **Buyback bound** is honestly framed: deterministic execution (not discretionary), policy separated from button-press, below-floor rejection enforced by client validity. The subordination of buyback to security budget is hard, not aspirational.
+
+3. **BUILT vs GATED** distinction is clean and accurate. The mechanisms anchored in cost-oracle.ts (benchmark-clamped median, velocity bounds, PoI-tier caps, floor-bounded burn, below-floor rejection, cascade demo) are code-enforceable. The open parameters (reserve floor size, X, margin, slash sizing, CIP-4 §7 caps, anchor set, reporter bond) are correctly identified as awaiting testnet ratification.
+
+4. **Cost-oracle anchoring** addresses the slow-inflation coalition attack correctly: steady-state AND velocity bounds on a clamped median defeats a 2/3 cartel that would otherwise drift the reserve to zero while staying "technically" within bounds.
+
+**Three gaps to tighten during prose (not fatal, but load-bearing):**
+
+1. **Reserve depletion cliff edge**: The cascade describes buybacks/rewards/rebates being cut before the floor, and below-floor buyback rejection. But it does not state what happens when the reserve is actually exhausted and fees still cannot cover the floor. Does the chain degrade gracefully (reduce diversity level, emergency parameter vote)? Or is there an explicit halt condition? Draft should acknowledge this edge case — the model implies protection of the floor, but a depleted floor has no backup. Suggested addition: a single sentence acknowledging the depletion boundary and whether the chain halts, reduces diversity, or triggers an emergency mechanism.
+
+2. **Buyback funding source**: Section 5(b) caps buyback spend but doesn't state where the tokens/funding come from. If buyback and the security budget draw from the same revenue pool, there's an implicit tension even with the floor rule. If buyback comes from a separate allocation (e.g., protocol revenue tax, separate treasury), that should be explicit. This matters for the "solvency = security" invariant — buyback shouldn't compete for the same marginal dollars that fund diversity.
+
+3. **The 3x threshold justification**: "≥ 3 distinct families" is stated as the diversity floor but the derivation isn't. Is this 2f+1 Byzantine fault tolerance (f=1)? Or derived from market cost/correlation analysis? A brief parenthetical justification prevents readers from treating it as an arbitrary number. This is a single sentence, not a structural gap.
+
+**What is NOT overclaimed:**
+
+- The "challenge market" claim is bounded correctly — it requires proven collusion, not mere suspicion, and doesn't claim perfect detection.
+- The cost-oracle claims don't assert Oracle immunity — they describe a benchmark-anchored, velocity-bounded clamped median that defeats *slow* coalition inflation. Fast attacks are handled by slashing/challenge, not the oracle itself. This is honest.
+- The solvency invariant doesn't claim invulnerability — it models a cascade and states where it breaks. This is the right level of humility for a mainnet-steady-state model.
+
+**Conclusion:** The framing is mechanically accurate. The gaps are prose-level completions (cliff-edge handling, buyback source, threshold justification), not structural errors. Proceed to draft.
+
+VERDICT: YES

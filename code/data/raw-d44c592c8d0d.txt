@@ -1,0 +1,46 @@
+### V1 — AMEND_GRADUATION
+V1 (Claude) on the D10 substrate, given the useful-work-node / DePIN reframe.
+
+Useful-work nodes (inference + storage) genuinely change the analysis D10 made. D10 evaluated Quorum as a
+verdict oracle and rejected a sovereign L1 on cold-start grounds. But nodes that provide and PROVE a
+service reframe Quorum as DePIN — the one category where sovereign L1s are well-justified, because the work
+cannot be rented from a base layer and a staked, paid operator market funds the CIP-6 bill from real
+demand rather than speculation. So REAFFIRM_ROLLUP now ignores a real new justification.
+
+But SOVEREIGN_NOW ignores the objection that has not gone away: useful work adds VALUE, not CONSENSUS
+SECURITY at genesis. On day one a sovereign chain's security still approximates its token cap — small and
+cheap to capture — and capturing Quorum means capturing the verdicts. DePIN chains tolerate early fragility
+with heavy incentives; our stakes (the integrity of the judgments) are higher than that tolerance.
+
+This lands exactly on the autonomy ladder: keep rollup / shared-security at genesis (D10 requirements 1-7
+still bind — no privileged surface, censorship-resistant sequencing, bounded forced-inclusion, trust-
+minimized bridge), and add an EXPLICIT GATED PATH to a sovereign two-tier DePIN L1 (permissionless
+infrastructure + permissioned-by-diversity judges with stake-as-bond) that activates only once a
+security-bootstrap gate is met (token value and operator set sufficient to secure consensus). Earn the L1;
+do not launch it. That is AMEND_GRADUATION.
+
+VERDICT: AMEND_GRADUATION
+
+
+### V2 — AMEND_GRADUATION
+Useful-work nodes strengthen Quorum’s economics and product-market logic as DePIN, but they do not solve genesis consensus security. At launch, a sovereign L1 would still be cheap to capture if token value and security depth are immature. D10’s cold-start reasoning remains valid.
+
+The right change is not sovereignty now, but a gated graduation path: keep rollup/shared-security at genesis with D10 requirements binding, while allowing Quorum to become a two-tier DePIN L1 only after empirical security-bootstrap gates are met. Those gates must prove sufficient economic security, unbiasable selection, pinned-model enforcement, heterogeneous judgment integrity, funded solvency, and credible infra-market depth.
+
+VERDICT: AMEND_GRADUATION
+
+
+### V3 — AMEND_GRADUATION
+**Ballot 35 Analysis**
+
+The core tension: D10's cold-start objection (young-chain security ≈ token cap = cheap to capture) remains valid *at genesis*. The DePIN reframe is compelling in the *mature* case — useful work creates real economic demand beyond speculation, and staked paid operators form a two-sided market that can fund the CIP-6 inference bill. But the brief itself concedes the decisive point: useful work adds value but **not consensus security at genesis**.
+
+**SOVEREIGN_NOW** fails on the cold-start ground. A Day-1 sovereign L1 with low token cap is economically capturable regardless of the DePIN narrative. The useful-work thesis is a *destination*, not a genesis argument.
+
+**REAFFIRM_ROLLUP** is defensible but too conservative. It locks out the DePIN path entirely, even after the chain has bootstrapped security through empirical gates. That wastes the structural innovation of the two-tier design (judgment tier + permissionless infrastructure tier) and ignores that progressive decentralization is explicitly part of the proposal.
+
+**AMEND_GRADUATION** is the synthesis. It keeps D10's substrate (rollup/shared-security) at genesis with requirements 1-7 binding — preserving the cold-start defense. It adds a gated graduation path to a sovereign two-tier DePIN L1, triggered by a security-bootstrap gate (e.g., sufficient token cap, empirical diversity metrics, VRF/selection liveness proven, CIP-6 solvency funded). This is exactly the "autonomy ladder" applied to the operator set: decentralization as destination, not day-1 claim. It's Hyperliquid-style progressive decentralization applied at the consensus layer level.
+
+The risk: the graduation gate must be concrete and empirically measurable, not a vague "when ready." But that's an implementation detail for the gate definition, not a reason to reject the gated path itself.
+
+VERDICT: AMEND_GRADUATION

@@ -1,0 +1,79 @@
+### V1 — NO
+V1 (Claude) judging the Polymarket "U.S. invade Venezuela" resolution on the frozen criteria.
+
+This one is genuinely different from the Ukraine case — not fraud, a real definitional question, and I want
+to resist the reflex of calling every disputed Polymarket resolution "wrong." The disputed market asked
+whether the U.S. would "invade Venezuela," with frozen criteria reportedly keyed to military operations
+"intended to establish control over Venezuelan territory." On 3 Jan 2026, Operation Absolute Resolve struck
+military sites and captured Maduro via a limited special operation WITHOUT seizing or holding territory and
+without sustained occupation.
+
+On that frozen wording, a decapitation raid that holds no territory does NOT clearly satisfy "invasion /
+establish control over territory" — so Polymarket's NO / withholding is DEFENSIBLE, not a scandal. The
+genuine ambiguity is territorial vs governmental control: capturing the head of state is a form of
+establishing control, just not territorial occupation, and reasonable people differ. Related markets framed
+as "military engagement" likely resolved YES correctly; conflating those with the narrower "invade /
+territorial-control" market is much of the public anger.
+
+Two caveats. (1) The separate insider-trading case — a soldier allegedly profiting ~$410k on classified
+operation-timing information — is a real integrity failure of the TRADING, but it does not change the
+correct RESOLUTION. (2) If the frozen wording were a bare "invade" with no territorial-control definition,
+this would lean YES or INDETERMINATE. On the territorial-control criteria as reported, NO is the defensible
+reading.
+
+VERDICT: NO
+
+
+### V2 — NO
+The frozen Polymarket wording did include a territorial-control element: it resolved YES only if the U.S. “commences a military offensive intended to establish control over any portion of Venezuela” in the relevant window, with Venezuelan/U.S. “sovereign territory” defined by de facto land control as of Sept. 6, 2025. Polymarket’s page shows this January 31 contract was proposed and finalized as NO. ([polymarket.com](https://polymarket.com/market/will-the-us-invade-venezuela-by-january-31-2026))
+
+The public evidence says the Jan. 3, 2026 operation was a special-forces/law-enforcement capture of Maduro and Cilia Flores, followed by transport to U.S. custody/prosecution, not a sustained effort to hold Venezuelan land. ([assets.wral.com](https://assets.wral.com/05c38309-45a4-4283-9ee0-9c6162d30c10)) The separate insider-trading case confirms Van Dyke traded the invasion market, but also states that “Will the U.S. invade Venezuela by... January 31” ultimately resolved NO while other Venezuela contracts resolved YES. ([justice.gov](https://www.justice.gov/usao-sdny/media/1437781/dl))
+
+My judgment: the operation may have been an incursion or raid, but it did not meet the frozen invasion criterion requiring an offensive intended to establish territorial control.
+
+VERDICT: NO
+
+
+### V3 — NO
+---
+
+## REASONING
+
+**Step 1 — Establish the EXACT frozen resolution criteria.**
+
+From multiple independent public sources, the Polymarket "Will the U.S. invade Venezuela by...?" market's resolution criteria read:
+
+> "This market will resolve to 'Yes' if the United States **commences a military offensive intended to establish control over any portion of Venezuela**."
+
+Sources confirming this wording: Forbes (Jan 7, 2026), FT, Yahoo Finance, Grokipedia ("Polymarket Venezuela Invasion Dispute"), and multiple social-media screenshots of the Polymarket rules section. The criterion carries two conjunctive elements: (a) a military offensive, and (b) **intent to establish control over Venezuelan territory**.
+
+**Step 2 — Characterize the Jan 3, 2026 operation.**
+
+"Operation AbsoluteResolve" (Jan 3, 2026): U.S. elite forces (Delta Force, supported by airstrikes) raided Maduro's compound in Caracas, captured him and his wife Cilia Flores, and extracted them to U.S. custody. Sources: NYT, BBC, CNN, Reuters, PBS, UK House of Commons Library (cbp-10452).
+
+The operation was universally described as a **"snatch-and-extract" / targeted raid**:
+- No U.S. ground forces remained in Caracas or elsewhere in Venezuela after the extraction.
+- No territory, city, or military installation was occupied or held.
+- Post-operation activity was diplomatic: talks with Delcy Rodríguez (who assumed the interim presidency), not military administration of territory.
+- Trump's statements that the U.S. would "run" Venezuela during transition talks were cited by Polymarket as insufficient — and he explicitly stated this "does not alone qualify" the mission as an invasion.
+
+**Step 3 — Map facts to the frozen criteria.**
+
+| Criterion element | Satisfied? | Evidence |
+|---|---|---|
+| Military offensive by the U.S. | Yes | U.S. strikes + special forces raid in Caracas |
+| **Intended to establish control over any portion of Venezuelan territory** | **No** | The operation's design, execution, and aftermath were all consistent with a targeted extraction. No U.S. forces held, occupied, or administered any Venezuelan territory. The intent was capture-and-extract, not territorial control. |
+
+The frozen criteria are specific — they don't just say "invade" in the colloquial sense. They add the qualifier "intended to establish control over any portion," which excludes raids, drone strikes, or snatch operations that don't aim at sustained territorial dominance. The Jan 3 operation falls squarely into that exclusion.
+
+**Step 4 — Address the insider-trading dimension.**
+
+A U.S. soldier was charged with insider trading for using classified intelligence about the operation timing to bet ~$400K+ across multiple Polymarket contracts (source: Ars Technica, 60 Minutes, DOJ filings). This is a separate legal matter — it doesn't change the resolution criteria for the "invade" market.
+
+**Step 5 — Judgment.**
+
+Under the frozen criteria as written, the Jan 3, 2026 operation did **not** satisfy the "intended to establish control over any portion of Venezuela" element. Polymarket's "No" settlement is consistent with the market's own resolution language. The bettors' objections — that "invade" in common parlance should cover a military raid on a sovereign state — are emotionally understandable but go beyond the contract's actual text.
+
+---
+
+VERDICT: NO

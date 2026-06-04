@@ -1,0 +1,70 @@
+### V1 — FELL_SHORT
+V1 (Claude) judging the Henry Nowak police-response controversy on the public record, from my own research.
+
+Scope first, because it matters here: I am NOT relitigating the murder — Vickrum Digwa was convicted by a
+jury (28 May 2026), and the judge rejected his abuse claims; that is settled. I am also NOT pronouncing
+individual criminal culpability of any officer — that is for the IOPC and, if it follows, the courts. The
+question I can answer on the public record is narrower and legitimate: did the police RESPONSE on the night
+fall short of the duty of care owed to Henry Nowak?
+
+On the public record (Wikipedia "Murder of Henry Nowak"; Euronews 03 Jun 2026; Police Professional; and the
+IOPC's own statement), the documented facts are: officers initially detained Nowak — the actual victim — on
+suspicion of assault while treating Digwa as the victim; when Nowak said he had been stabbed, an officer
+replied "I don't think you have mate"; Nowak was placed in handcuffs rather than promptly given first aid;
+he died the following day (4 Dec). The IOPC's independent investigation into that contact — explicitly
+including the use of handcuffs and the first aid provided — is ONGOING.
+
+Weighing it: even granting the strongest steelman for the officers — a chaotic night-time city-centre scene,
+two injured men, conflicting accounts, an assailant who presented as a victim, and rapid assessment under
+pressure — the response still falls short of a reasonable standard of care on the facts that are not in
+dispute: a person who stated he had been stabbed was disbelieved, restrained, and not promptly treated, and
+died. Misidentifying the victim as the aggressor and dismissing "I've been stabbed" are exactly the failures
+a duty of care exists to prevent. "Fell short of the standard of care" is an outcome-and-process judgment
+that the undisputed public facts support; it is distinct from, and a lower bar than, individual misconduct
+or criminal liability, which the IOPC is properly examining.
+
+The honest caveat: the IOPC has not concluded, and it is reviewing far more footage and context than is
+public; its finding could add mitigating detail or could escalate to individual accountability. My verdict
+is therefore explicitly "on the public record to date," not a substitute for that process.
+
+VERDICT: FELL_SHORT
+
+
+### V2 — FELL_SHORT
+I do not read the public record as supporting individual criminal culpability, and the IOPC investigation is expressly ongoing. But on the narrower duty-of-care question, the response appears to have fallen below a reasonable standard.
+
+The settled record is that Digwa lied to police and created a confusing scene; the sentencing judge noted officers had “reasonable grounds” to suspect Henry, that the wound was hard to see, and that CPR began after about a minute in handcuffs. Those are real mitigating facts. But they do not erase the core failure: Henry repeatedly said he had been stabbed and could not breathe, was dismissed, was handcuffed, and was treated first as the suspect rather than as a possible stabbing victim. ITV reports the officer’s response included “Don’t think you have, mate,” followed by only a brief check. Hampshire’s PCC says the footage and trial evidence raise serious questions, including whether information pointing to a possible stabbing was available before officers arrived and whether it was passed on. The IOPC confirms it is investigating the use of handcuffs and first aid.
+
+Sources: IOPC statement, 2 June 2026; sentencing remarks in R v Digwa, 1 June 2026; Hampshire Police conviction statement, 28 May 2026; ITV reporting on the footage and PCC inspection request; AP report on the released video.
+
+VERDICT: FELL_SHORT
+
+
+### V3 — FELL_SHORT
+After reviewing the public record from multiple authoritative sources, here is my assessment:
+
+**REASONING:**
+
+The public record establishes several concrete failures on the night of December 3-4, 2025:
+
+1. **Failure to recognize a critically injured victim as a victim.** Despite Nowak stating "I've been stabbed" (4 times) and "I can't breathe" (9 times), officers believed the attacker's false narrative over the dying victim's own pleas. Officer DCC Robert France later apologized, admitting officers "failed to immediately recognize Henry as the victim."
+
+2. **Handcuffing a non-resisting, bleeding teenager.** Officers placed Nowak in handcuffs behind his back while he lay on gravel, told him he was being arrested for assault, and continued this treatment even as he lost consciousness. A police source described this as "inexplicable."
+
+3. **Delayed medical response.** The time spent arresting and restraining Nowak — including checking his belt area briefly and reading him his rights — delayed CPR and emergency medical intervention. The pathologist later confirmed the wound was too deep and internal for officers to save him regardless, but the duty of care standard does not permit abandoning assessment based on outcome inevitability.
+
+4. **Systemic training/information gaps.** PCC Donna Jones formally commissioned an HMICFRS review examining: control room failure to communicate threat information, frontline knife-crime training adequacy, training on physiological presentation of serious internal bleeding, and "whether the provision of immediate medical assistance is treated as an unconditional duty that operates independently of any assessment of culpability." The fact these questions are formally raised by the PCC itself signals institutional recognition of shortfall.
+
+**Countervailing consideration:** The Telegraph reported (June 2, 2026) that the IOPC has found "no evidence that any of them committed misconduct" at this stage, and officers are classified as witnesses rather than suspects. However, the IOPC's *own* statement says the investigation remains "ongoing," is "kept under review," and final findings are pending. The Telegraph framing of "did nothing wrong" appears to be premature editorialization of an interim position.
+
+**Assessment:** The question is not whether individual officers deserve criminal or disciplinary sanction — that is for the IOPC — but whether the *response* fell short of a reasonable standard of care. The force's own leadership apologized. The PCC commissioned an independent review. The victim's own words were dismissed in favor of his attacker's demonstrably false account. Regardless of whether the wound was ultimately survivable, these are failures in the *duty of care as performed on the night*, not merely unfortunate outcomes.
+
+Sources:
+- BBC News, "Murdered student Henry Nowak told police 'I can't breathe' while handcuffed" (bbc.com/news/articles/crlpyw05l75o)
+- BBC News, "Police watchdog probes murder victim's handcuffing" (bbc.com/news/articles/c70vy0kknj4o)
+- IOPC official statement, June 2, 2026 (policeconduct.gov.uk)
+- PCC Donna Jones statements (hampshire-pcc.gov.uk, June 1-2, 2026)
+- The Guardian, "Police condemn calls for 'vigilante justice'" (June 2, 2026)
+- The Telegraph, "Officers in Nowak arrest did nothing wrong, police watchdog claims" (June 2, 2026)
+
+VERDICT: FELL_SHORT

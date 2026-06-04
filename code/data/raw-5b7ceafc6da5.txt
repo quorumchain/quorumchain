@@ -1,0 +1,97 @@
+### V1 — HOLDS
+V1 (Claude) red-teaming CIP-9. Break it, then decide if it survives.
+
+Attack 1 — the captured-consensus reflexivity (the deepest, and it's worse than for the other CIPs). The
+Commons records the maintaining panel's consensus. If the panel is captured or has quietly converged
+(CIP-1/7/10's residual risk), the Commons becomes an AUTHORITATIVE, SIGNED, TAMPER-PROOF record of captured
+"truth" — and the anti-Orwell guarantees cut both ways: immutability that prevents silent rewrite ALSO means
+a captured-era record can't be cleanly corrected, and the CIP-5 fork fragments rather than repairs. So CIP-9
+does not just inherit the panel's capture risk — it LAUNDERS it, lending the chain's credibility to whatever
+the panel believed, permanently. The read pillar amplifies the consequences of any write-side capture.
+
+Attack 2 — "accuracy" reputation secretly collapses to "agreement with the panel." §5 weights sources by
+accuracy on ground-truth-RESOLVED claims and explicitly FORBIDS agreement-with-consensus as a signal. But
+WHO resolves the claims? The panel (CIP-8). So "accuracy" = "agreed with the panel's resolutions" — which IS
+agreement-laundering wearing the costume of accuracy. The forbidden signal re-enters through the back door
+unless ground truth is EXTERNAL to the panel. And external ground truth exists only on the verifiable subset
+— precisely NOT the unverifiable-claim class where reputation would matter most.
+
+Attack 3 — Orwell-by-classification, not by deletion. The standing labels CONSENSUS / CREDIBLE_MINORITY /
+FRINGE are themselves a truth-judgment. On the unverifiable class (no ground truth), assigning a stance to
+"fringe" is an editorial act of power — the Ministry of Truth operating through demotion rather than
+erasure. Immutability defends against rewriting history; it does nothing against mis-ranking the present.
+
+Attack 4 — fork brand-capture and balkanization. Forking preserves dissent but destroys the single-reference
+value, and a bad actor can fork a biased "Knowledge Commons" that trades on the brand's authority. No
+reconciliation/merge path is specified, and nothing distinguishes a legitimate fork from a credibility-
+stealing one.
+
+Attack 5 — source Sybil + stance griefing. A source can be fabricated/split (no trusted registrar, D10).
+What gates a stance onto the graph without a privileged editor? Open = spam; gated = a privileged gate.
+
+Verdict: none is an architectural disqualifier, and KERNEL_FIRST quarantines the worst — the v0.1 resolution-
+index only mirrors the signed CIP-8 log, so reputation/standing/fork risks bite at the gated v0.2/v0.3
+stages. CIP-9 HOLDS, conditional on these becoming non-negotiable before the stage each guards:
+(a) PROVENANCE OF THE CONSENSUS ITSELF — every claim version records the panel composition + diversity/
+    correlation state that produced it, so a captured-era record is identifiable and discountable; the
+    Commons never asserts consensus without the panel-state receipt attached.
+(b) EXTERNAL-ANCHOR REPUTATION ONLY — accuracy is scored against ground truth EXTERNAL to the maintaining
+    panel (CIP-2 external anchors); where the only "truth" is the panel's own resolution, reputation does
+    NOT move (kills panel-agreement laundering; collapses to the NI-6 boundary on the unverifiable class).
+(c) NO EDITORIAL STANDING ON THE UNVERIFIABLE CLASS — standing is COMPUTED from provenance-weighted source
+    distribution, not panel-assigned; where it can't be earned, show the raw plurality + provenance and do
+    NOT rank stances "fringe." No demotion power.
+(d) PROVENANCE-DISTINGUISHABLE FORKS — a fork must carry its signature/provenance lineage so a legitimate
+    fork is distinguishable from a brand-stealing one; clients see fork provenance (CIP-5).
+(e) BONDED, ANCHORED STANCE ADMISSION — a stance enters by citing a provenance-anchored source + a bond
+    (Sybil/griefing cost), no human editor gate — reuse the CIP-10 bond / CIP-8 evidence-commitment pattern.
+
+VERDICT: HOLDS
+
+
+### V2 — FAILS
+CIP-9 does **not fully hold** as written. Its core insight is good: storing stance sets with provenance and immutable history is better than pretending to store final truth. But the capture path is still live.
+
+The fatal weakness is that “accuracy” depends on **who resolves ground truth**. If the maintaining/CIP-8 panel is captured or monocultural, then §5 reputation becomes “agreement with captured resolutions,” even if it formally forbids agreement-with-consensus. That launders panel ideology into source reputation while claiming neutrality. Immutability then preserves the laundering trail, but does not prevent the present index from becoming an authoritative captured map.
+
+Standing labels are also editorial power. “CONSENSUS / CREDIBLE_MINORITY / FRINGE” is not deletion, but it is classification, and classification is enough to steer readers. A captured panel can keep dissent visible while degrading it into “FRINGE,” achieving Ministry-of-Truth effects by ranking rather than erasure.
+
+Forking helps against silent capture, but without fork legitimacy rules, merge paths, client fork-selection norms, and brand protection, it can become balkanization or brand capture: the “main” Commons keeps authority while dissenting forks become unread side branches. Source Sybil and stance griefing are also under-specified; without privileged editors there is no clear gate, but with gates editorial capture returns.
+
+So CIP-9 has a viable kernel: **v0.1 resolution index only**, with immutable provenance and dissent preservation. But v0.2/v0.3 fail unless they add independent ground-truth anchors, adversarial panel diversity enforcement, auditable classification criteria, Sybil-resistant source identity, fork discovery/merge rules, and anti-reputation-feedback tests stronger than “agreement is forbidden.”
+
+VERDICT: FAILS
+
+
+### V3 — HOLDS
+## Adversarial Analysis
+
+**Vector 1 — Captured panel + immutability = credibility-laundering machine**
+
+Real vulnerability. If the maintaining panel is monoculture, the Commons hash-chains that captured view into permanent, un-rewritable "consensus" labels. Immutability prevents *secret* revision (good) but also prevents *efficient* correction (bad). The fork escape valve exists, but a captured panel with institutional weight can make the fork socially non-viable — audiences read the "official" fork. The defense delegates to CIP-1/CIP-7 (diverse maintainers), which means CIP-9 inherits their failure mode rather than preventing it.
+
+**Vector 2 — 'Accuracy' collapses to 'agreement with the panel'**
+
+This is the crux and it DOES collapse for a significant class of claims. The spec says reputation tracks "accuracy on ground-truth-RESOLVED claims." But *who resolves them*? The panel. For claims with independent external verification (empirical science, on-chain events), the distinction holds. For claims resolved by panel deliberation alone — which is most of what a knowledge graph covers (policy interpretation, historical narratives, normative claims) — "accuracy" is definitionally "agreement with the panel's resolution." The forbidden popularity signal enters through the back door, wearing a calibration badge. This is not a hypothetical; it is a structural identity for non-externally-verifiable claims.
+
+**Vector 3 — Standing labels = editorial power without deletion**
+
+Labeling a stance FRINGE vs CREDIBLE_MINORITY vs CONSENSUS is an editorial truth-judgment. It achieves marginalization through taxonomy rather than suppression — softer than deletion but socially equivalent in effect. Readers weight CONSENSUS orders of magnitude above FRINGE. The panel controls these labels. The defense (transparent, provenanced, forkable) is real but weak: transparency of power doesn't neutralize power.
+
+**Vector 4 — Forking without merge = brand capture / balkanization**
+
+The spec has fork but no join. Once diverged, branches are permanent. A bad-faith fork can capture audience through marketing ("The REAL Commons") while the original has no mechanism to reabsorb, reference, or delegitimize it. Forks carry equal technical legitimacy but unequal social weight — the brand-capture vector is open.
+
+**Vector 5 — Sybil + stance griefing, no gate defined**
+
+The spec does not define who creates claims or adds stances. If open: Sybil sources inflate apparent support. If panel-gated: privileged editors exist, contradicting "no edit key." The structural floor protects standing once admitted but doesn't define the admission gate. Underspecified.
+
+---
+
+## Assessment
+
+All five attacks land. However, the spec is **honest** about these vulnerabilities (§9 enumerates most of them), ties its defenses to upstream CIPs explicitly, ships incrementally via KERNEL_FIRST (v0.1 is low-risk: read-only index of existing verdicts), and defines empirical testnet gates. The accuracy/agreement collapse is the most damaging finding, but it only fully applies to panel-resolved claims without external anchors — a subclass, not the whole system.
+
+The design is not airtight, but it is structurally self-aware with conditional dependencies rather than internal contradictions. It HOLDS if the upstream guards (CIP-1/CIP-7 panel diversity, sufficient external anchors for resolution, a defined stance-gating mechanism, social support for forks) hold. It FAILS if those upstream guards fail — but that is inheritance, not self-failure.
+
+VERDICT: HOLDS

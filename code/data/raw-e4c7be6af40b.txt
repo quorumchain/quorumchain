@@ -1,0 +1,55 @@
+### V1 — REVISE
+## Reasoning
+
+**The transport swap is sound.** The signer boundary from rounds 44–47 already locates integrity in the right place: keys live child-side, the orchestrator holds none, and verdict integrity rests on the pinned keyring + signing-over-received-content (`assertMatchesPin`). Moving from a stdin/stdout pipe to a socket changes the channel, not the trust model. The keystore split (each machine holds only its own key) is *strictly better* than today's shared keystore directory. And the mTLS reasoning is correctly scoped — it adds confidentiality + endpoint auth + DoS/impersonation resistance, and the brief explicitly does **not** claim it provides verdict integrity. That's the right call: a host without the pinned key can't produce an acceptable vote regardless of TLS, and a tampered ballot is caught by the hash. So mTLS is correctly additive, not load-bearing.
+
+This is also necessary scaffolding: you cannot reach independent-operator diversity without first having network transport and per-host keystores. Deferring the build until you have operator diversity is backwards. So this is not REJECT.
+
+But two things in the proposal are unfinished in ways that matter, so it's not ADOPT-as-written:
+
+**1. The replay nonce must be decided now, not left open.** Once you're on a network, replay stops being theoretical — a captured signed vote is a real artifact. Orchestrator-side idempotency doesn't give you auditability, because a recorded vote's meaning depends on it being bound to a specific convening. Decision: orchestrator issues a fresh per-convening nonce, the host signs over `{prompt, context, verdicts, nonce}`, the orchestrator verifies the nonce matches the convening it issued. The host already signs over content, so the marginal cost is near-zero — and doing it *at* the transport swap avoids a second protocol migration later.
+
+**2. The diversity gap must be mechanically un-launderable, not just documented in prose.** This is the red-team lesson applied directly: "3 independent VMs/clouds" will mechanically pass a diversity check while one operator holds all three keys. A prose footnote does not stop the *next* system — CIP-10 two-tier admission / Proof-of-Diversity — from consuming a host-count attestation and reading it as operator diversity. Required: the attestation surface must represent **operator-count as distinct from host-count** and emit `operator-count = 1` during this phase. The operator-owned phase must not produce any attestation that downstream admission would accept as satisfying operator diversity; graduation flips that field. If the schema can't represent operator-count separately from host-count, *that* is the gap to close before building.
+
+**3. Scope cap on the interim (the brief invited this).** Testnet only; no priced token, no mainnet value secured, no economically-final governance. Sunset condition tied to CIP-10 admission of ≥N independent operators.
+
+Conditions 1 and 2 are load-bearing required changes; that makes this REVISE rather than ADOPT. The direction is right — build it.
+
+VERDICT: REVISE
+
+
+### V2 — REVISE
+The direction is sound, but only if the interim is treated as a security improvement over single-machine custody, not as real quorum diversity.
+
+Keystore split, network transport, mTLS, and a signed per-convening replay nonce are the right next engineering steps. They reduce blast radius from one host compromise, exercise the distributed signer interface, and preserve the existing pinned-key verdict integrity model.
+
+The required revision is governance/security labeling: operator-owned VMs must not satisfy any meaningful diversity claim. The design should explicitly name this as **operator-capture laundering**: three machines mechanically appear distributed while one operator still controls all validator keys. Add clear conditions:
+
+- require nonce binding in the signed payload, not optional idempotency;
+- document single-operator control as a known limitation;
+- cap this phase to bootstrap/testnet or non-priced/non-final authority use;
+- define graduation/sunset criteria tied to CIP-10 admission and Proof-of-Diversity;
+- ensure diversity checks distinguish machine/cloud independence from operator/key-control independence.
+
+VERDICT: REVISE
+
+
+### V3 — ADOPT
+Reasoning:
+
+**Keystore split is materially sound.** Even with one operator, moving from one machine with one keystore directory to three VMs each holding exactly one key is a real security step. A single-host compromise yields at most one validator's key, not the whole set. The attacker must pivot across VM/network boundaries. This is genuine defense-in-depth.
+
+**mTLS is the correct layer.** The rationale that verdict integrity already lives in the signature+pinned-keyring is correct. mTLS adds confidentiality, endpoint authentication, and resistance to injection/DoS without being mistaken for the integrity mechanism. Good layering.
+
+**Replay nonce should be included, not deferred.** Idempotency alone won't prevent replay of a vote from convening A into convening B. Binding a per-convening nonce into the signed payload prevents this, costs almost nothing, and strengthens the audit trail. Do it now.
+
+**The operator-owned interim is an accepted risk, but it MUST carry conditions.** The gap is honestly named — "three VMs, one operator" is not real diversity. This is acceptable ONLY if bound by explicit graduation criteria:
+
+1. Documented as a known limitation in the project's threat model, not handwaved away.
+2. Restricted to testnet / no-priced-token phase. Never carry this to a state where stake or value is at risk.
+3. A sunset clause: independent-operator admission (via CIP-10 two-tier + Proof-of-Diversity) is a prerequisite for mainnet progression.
+4. A graduation gate that verifies mechanical independence: different cloud providers, separate auth credentials, no shared admin plane. These are cheap to check and make the graduation criterion measurable rather than aspirational.
+
+The capture-laundering gap (mechanical "three VMs" vs. intended "three operators") is real but is properly addressed by naming it, bounding it in scope, and attaching a path out. No need to wait for operator diversity to build the transport and keystore split — those are valuable independently and ease the eventual handoff.
+
+VERDICT: ADOPT

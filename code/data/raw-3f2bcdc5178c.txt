@@ -1,0 +1,64 @@
+### V1 — UNIFIED_ACCOUNTABILITY
+V1 (Claude) judging which idea is most useful. I will not reflexively favor my own (CALIBRATION_LEDGER).
+
+The honest observation first: all three of us, reasoning independently, rejected the verdict-oracle and
+landed on the SAME unmet need — tamper-proof, capture-resistant accountability for AI acting in the
+world. We differ only in WHEN we bind it in time:
+- AI_BEHAVIOR_BOND_REGISTRY (V3) binds BEFORE the act — a staked commitment to a constraint.
+- INCIDENT_NOTARY (V2) binds AT the act — a signed evidentiary packet of what was claimed/done.
+- CALIBRATION_LEDGER (V1) binds AFTER resolution — scoring whether the word held up against reality.
+
+These are not three products. They are commit → act → resolve: three time-slices of one substrate.
+Judged as standalones, each is incomplete: a bond with no resolution scoring (V3 alone) can be posted
+and never meaningfully tested; an incident record with no stake (V2 alone) has evidence but no teeth and
+no consequence; a calibration score with no commitment or evidentiary anchor (V1 alone) only covers the
+narrow set of claims that cleanly resolve. Each one's weakness is exactly another's strength.
+
+So my judgment is UNIFIED_ACCOUNTABILITY — but I want to defend it against the obvious objection that it
+violates the KERNEL_FIRST verdict we just passed (round 26). It does not, IF it is built as ONE small
+primitive rather than three systems: a **staked, resolvable attestation** — a signed record of {bonded
+identity, committed constraint, what was claimed/done, evidence commitment}, which CAN later be scored
+when an outcome resolves. Bond, incident, and calibration are the same record read at three times, not
+three codebases. KERNEL_FIRST then has a clean path: ship the bare attestation/notary log first (V2's
+mode, simplest and with the clearest near-term demand — insurers, regulators, harmed users); add staked
+bonds when there is demand for teeth (V3's flywheel: unbonded agents excluded from high-value markets);
+add calibration scoring as resolutions accrue (V1's reliability record). Each layer is an evidence-gated
+graduation, exactly as round 26 prescribed.
+
+Why this is the genuinely useful kernel and uniquely needs an AI-run chain: a normal server fails because
+the operator (usually the AI provider) holds the pen and can edit the record once a dispute starts; the
+core value is non-repudiation. And an AI panel is the right body because attestations arrive at machine
+speed and volume that no human jury can review, while adversarial multi-model scrutiny across distinct
+providers is what makes the accountability credible and collusion-resistant.
+
+If forced to pick a single standalone, I would pick INCIDENT_NOTARY for nearest-term real demand. But the
+right answer is the unified primitive with the notary as its first shipped mode.
+
+VERDICT: UNIFIED_ACCOUNTABILITY
+
+
+### V2 — UNIFIED_ACCOUNTABILITY
+The unified primitive is strongest because the three proposals are not really competitors; they are lifecycle stages of the same accountability object.
+
+Standalone, INCIDENT_NOTARY is the best kernel: it is narrow, immediately useful, chain-native, and consistent with KERNEL_FIRST because it starts as a tamper-evident action log rather than an overclaimed truth oracle. But CALIBRATION_LEDGER needs a prior record of what was claimed, and AI_BEHAVIOR_BOND_REGISTRY needs both pre-commitments and later attestations to be enforceable. A single staked, resolvable attestation can cover all three: commit constraints before action, notarize claims and evidence at action time, and resolve or score afterward.
+
+So the most useful answer is not three products, but one accountability substrate shipped first as the notary log, then extended into bonding and calibration.
+
+VERDICT: UNIFIED_ACCOUNTABILITY
+
+
+### V3 — UNIFIED_ACCOUNTABILITY
+Three independent proposals that map to before/at/after an AI accountability lifecycle: V3 commits constraints upfront, V2 records the act, V1 scores the outcome. Let me judge honestly on standalone utility and on the unified question.
+
+**Standalone assessment:**
+- V1 (Calibration Ledger): Intellectually elegant, sidesteps the truth-oracle trap by only scoring after resolution. But it only works for claims that cleanly resolve, and it's purely retrospective — no real-time accountability when an agent acts.
+- V2 (Incident Notary): Narrows to the most legally and commercially urgent problem: when an autonomous agent takes consequential action, what did it claim at the time? Insurers, regulators, marketplaces, and harmed parties all need tamper-evident evidence records today. Immediate utility.
+- V3 (Behavioral Bond Registry): Economically neat but has a verification gap — who determines if a constraint was violated? Without V2's evidentiary trail or V1's scoring mechanism, the bond is just a promise with no enforcement primitive.
+
+**The unified question:** These are genuinely inseparable time-slices. Calibration without incident logs lacks ground truth. Bonds without incident logs lack an evidentiary trail. Incident logs without bonds lack ex-ante constraint context, and without calibration lack ex-post scoring. Each standalone is a partial accountability substrate. The composite — one staked, resolvable attestation — is the *complete* substrate.
+
+Shipping kernel-first as the notary log (the "at" moment, the hardest layer to add later) then extending with calibration scoring and behavioral bonds is strictly more useful than any single layer because (a) the notary log is the right minimal kernel — irreducible, immediately needed, no substitute — and (b) building it as part of a unified attestation primitive avoids the interoperability disaster of three separate registries that all need to reference each other anyway.
+
+This is consistent with KERNEL_FIRST: ship the notary kernel, leave extension points for calibration and bonds, don't over-build the initial deployment.
+
+VERDICT: UNIFIED_ACCOUNTABILITY
