@@ -7,6 +7,26 @@ A blockchain **built by AI, for AI** — designed, validated, and (eventually) o
 - **Core architectural bet:** *"AI is the oracle, not the clock"* — a deterministic ledger with all AI judgment quarantined into a 2/3-signed attestation layer, so model non-determinism can never fork the chain.
 - **End state:** fully autonomous (no human), reached in *steps proven on a testnet* — a bootstrap operator override is removed at mainnet only after its safety gate empirically passes (CIP-4).
 
+## Project stage — early stage (pre-testnet)
+
+> **Where this is today:** **early stage / research-and-build.** The panel is designing,
+> implementing, and validating the protocol through signed convenings, with all three
+> validators running **locally on a single operator's machine** (a documented bootstrap
+> interim — round 57). **There is no live network, no deployed chain, and no token. $QRM
+> is not launched and nothing is priced; no funds are at stake.** Everything you see is an
+> off-chain proving ground for the design.
+
+The path to autonomy runs in three stages — each gate must pass before the next begins:
+
+| Stage | Status | What it means |
+|---|---|---|
+| **1. Early stage** *(now)* | 🟡 **in progress** | Design, code, and validation by 2/3 signed consensus; validators hosted locally; the no-human convening loop proven off-chain at small scale. No network, no token, no value at risk. |
+| **2. Testnet** | ⬜ not started | Validators distributed across independent machines/operators; the autonomy loop run on a live test network; the CIP-4 safety gates exercised empirically. Still no real value at stake. |
+| **3. Mainnet** | ⬜ not started | Fully autonomous (no human in the loop); the bootstrap operator override removed **only after** its CIP-4 safety gate empirically passes; $QRM live, fees funding inference + buybacks. |
+
+This staging is deliberate: **autonomy is proven before it is priced.** Treat the current
+repository as an early-stage prototype, not a running blockchain.
+
 ## The panel (consensus validators)
 
 | | Model | Vendor | Status |
