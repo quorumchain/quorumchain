@@ -13,6 +13,10 @@
 // reputation or popularity score.
 
 import { ratify, verifyVote, type SignedVote } from './signed-vote.ts';
+import { sharesLineage, type Provenance } from './lifecycle.ts';
+
+// Re-exported so Commons consumers get the canonical provenance type from the read path.
+export type { Provenance } from './lifecycle.ts';
 
 export type Standing = 'CONSENSUS' | 'CREDIBLE_MINORITY' | 'UNRANKED';
 export type ClaimStatus = 'RESOLVED' | 'CONTESTED' | 'INDETERMINATE';
@@ -24,11 +28,41 @@ export interface Stance {
   standing: Standing; // computed from the tally by auditable rule; v0.1 never ranks FRINGE (NI-9c)
 }
 
-// Minimal panel-state receipt (NI-9a). v0.1 records the validator set that
-// produced the claim; provider/diversity-correlation metadata is a v0.2 graduation.
+// CIP-12: the panel-level correlation summary. We NEVER assert independence
+// ('LOW') without live round-60 correlation probes; known shared-foundation
+// floors the band at 'ELEVATED' (NI-12f); otherwise the honest value is 'UNKNOWN'.
+export type CorrelationBand = 'LOW' | 'ELEVATED' | 'HIGH' | 'UNKNOWN';
+
+// CIP-12: one composition entry per validator. Records provenance, NOT reputation
+// or vote weight (NI-12d). Unknown/opted-out provenance is an explicit null, never
+// omitted (NI-12g).
+export interface CompositionEntry {
+  validatorId: string;
+  provider: string | null;
+  lineage: string | null; // the dominant lineage signal (corpus family); canonical vector lives in the registry
+}
+
+// Panel-state receipt. NI-9a records the validator set; CIP-12 (NI-12a..i) adds
+// the fuller correlation receipt: composition + correlationBand. Both are
+// DESCRIPTIVE — they never alter status/verdict/standing/panelVotes (NI-12b).
 export interface PanelStateReceipt {
   validators: string[];
   size: number;
+  composition: CompositionEntry[];
+  correlationBand: CorrelationBand;
+}
+
+// CIP-12 NI-12f: the band reflects KNOWN correlation across the panel, not the
+// completeness of any one entry. Without probes we cannot assert 'LOW'; a known
+// shared lineage (CIP-7 NI-1) among any pair floors it at 'ELEVATED'.
+function correlationBand(ids: string[], provenance: Record<string, Provenance>): CorrelationBand {
+  const known = ids.filter((id) => provenance[id]);
+  for (let i = 0; i < known.length; i++) {
+    for (let j = i + 1; j < known.length; j++) {
+      if (sharesLineage(provenance[known[i]], provenance[known[j]])) return 'ELEVATED';
+    }
+  }
+  return 'UNKNOWN';
 }
 
 export interface Claim {
@@ -43,7 +77,12 @@ export interface Claim {
  *  the SAME verified, non-equivocating votes that `ratify` counts — so a tampered
  *  or equivocating vote never reaches the graph. Deterministic: same log → same
  *  index (ballots and stances are emitted in first-seen order). */
-export function buildClaimIndex(votes: SignedVote[], keyring: Record<string, string>, quorum: number): Claim[] {
+export function buildClaimIndex(
+  votes: SignedVote[],
+  keyring: Record<string, string>,
+  quorum: number,
+  provenance: Record<string, Provenance> = {}, // CIP-12: optional; absent => explicit-null composition (NI-12g)
+): Claim[] {
   // group by ballot, preserving first-seen order for determinism
   const order: string[] = [];
   const byBallot = new Map<string, SignedVote[]>();
@@ -91,12 +130,26 @@ export function buildClaimIndex(votes: SignedVote[], keyring: Record<string, str
       standing: ranked && position !== 'NO_VERDICT' ? (position === r.verdict ? 'CONSENSUS' : 'CREDIBLE_MINORITY') : 'UNRANKED',
     }));
 
+    // CIP-12: the fuller correlation receipt. Derived from the provenance
+    // registry at projection time (NI-12a computed-not-assigned); descriptive
+    // only — nothing above is recomputed from it (NI-12b).
+    const panelIds = [...seenValidator];
+    const composition: CompositionEntry[] = panelIds.map((id) => {
+      const p = provenance[id];
+      return { validatorId: id, provider: p ? p.provider : null, lineage: p ? p.corpusFamily : null };
+    });
+
     return {
       ballotHash: bh,
       status,
       verdict: r.ratified ? r.verdict : null,
       stances,
-      panelStateReceipt: { validators: [...seenValidator], size: seenValidator.size },
+      panelStateReceipt: {
+        validators: panelIds,
+        size: seenValidator.size,
+        composition,
+        correlationBand: correlationBand(panelIds, provenance),
+      },
     };
   });
 }

@@ -127,3 +127,77 @@ test('the index is a deterministic projection (same log => same claims)', () => 
   const b = JSON.stringify(buildClaimIndex(fullPanel(), keyring, 2));
   assert.equal(a, b);
 });
+
+// ── CIP-12: the fuller correlation receipt (NI-12a..i) ──────────────────────
+// composition + correlationBand on PanelStateReceipt. Descriptive only: the
+// receipt records who produced a claim and under what correlation conditions,
+// and MUST NOT alter status/verdict/standing/panelVotes (NI-12b).
+import type { Provenance } from '../src/commons.ts';
+
+const distinctProv: Record<string, Provenance> = {
+  V1: { corpusFamily: 'cf1', teacher: null, weightDerivation: 'wd1', provider: 'pA', servingStack: 'ss1' },
+  V2: { corpusFamily: 'cf2', teacher: null, weightDerivation: 'wd2', provider: 'pB', servingStack: 'ss2' },
+  V3: { corpusFamily: 'cf3', teacher: null, weightDerivation: 'wd3', provider: 'pC', servingStack: 'ss3' },
+};
+// V2 shares V1's corpus family -> a known shared foundation (CIP-7 NI-1 sharesLineage)
+const sharedProv: Record<string, Provenance> = {
+  ...distinctProv,
+  V2: { ...distinctProv.V2, corpusFamily: 'cf1' },
+};
+
+test('CIP-12 NI-12a: composition is populated from the provenance registry', () => {
+  const c = queryClaim(buildClaimIndex(fullPanel(), keyring, 2, distinctProv), BH_UNANIMOUS)!;
+  const comp = [...c.panelStateReceipt.composition].sort((a, b) => a.validatorId.localeCompare(b.validatorId));
+  assert.deepEqual(comp, [
+    { validatorId: 'V1', provider: 'pA', lineage: 'cf1' },
+    { validatorId: 'V2', provider: 'pB', lineage: 'cf2' },
+    { validatorId: 'V3', provider: 'pC', lineage: 'cf3' },
+  ]);
+});
+
+test('CIP-12 NI-12g: absent provenance is recorded as explicit nulls, not omitted', () => {
+  const c = queryClaim(buildClaimIndex(fullPanel(), keyring, 2), BH_UNANIMOUS)!;
+  assert.equal(c.panelStateReceipt.composition.length, 3);
+  for (const e of c.panelStateReceipt.composition) {
+    assert.equal(e.provider, null);
+    assert.equal(e.lineage, null);
+  }
+});
+
+test('CIP-12 NI-12f: shared foundation floors the correlation band at ELEVATED', () => {
+  const c = queryClaim(buildClaimIndex(fullPanel(), keyring, 2, sharedProv), BH_UNANIMOUS)!;
+  assert.equal(c.panelStateReceipt.correlationBand, 'ELEVATED');
+});
+
+test('CIP-12 honesty: band is UNKNOWN (never LOW) absent probes / shared foundation', () => {
+  const known = queryClaim(buildClaimIndex(fullPanel(), keyring, 2, distinctProv), BH_UNANIMOUS)!;
+  const blind = queryClaim(buildClaimIndex(fullPanel(), keyring, 2), BH_UNANIMOUS)!;
+  assert.equal(known.panelStateReceipt.correlationBand, 'UNKNOWN'); // distinct, but no probes -> never LOW
+  assert.equal(blind.panelStateReceipt.correlationBand, 'UNKNOWN');
+});
+
+test('CIP-12 NI-12b: the receipt does not alter status/verdict/standing/panelVotes', () => {
+  const withProv = buildClaimIndex(fullPanel(), keyring, 2, sharedProv);
+  const without = buildClaimIndex(fullPanel(), keyring, 2);
+  assert.equal(withProv.length, without.length);
+  for (let i = 0; i < withProv.length; i++) {
+    const a = withProv[i], b = without[i];
+    assert.equal(a.status, b.status);
+    assert.equal(a.verdict, b.verdict);
+    assert.deepEqual(a.stances, b.stances); // positions, validators, panelVotes, standing — all identical
+  }
+});
+
+test('CIP-12: the extended index is still a deterministic projection', () => {
+  const a = JSON.stringify(buildClaimIndex(fullPanel(), keyring, 2, sharedProv));
+  const b = JSON.stringify(buildClaimIndex(fullPanel(), keyring, 2, sharedProv));
+  assert.equal(a, b);
+});
+
+test('CIP-12 backward-compat: the legacy 3-arg call still yields a valid receipt', () => {
+  const c = queryClaim(buildClaimIndex(fullPanel(), keyring, 2), BH_UNANIMOUS)!;
+  assert.deepEqual(c.panelStateReceipt.validators.sort(), ['V1', 'V2', 'V3']);
+  assert.equal(c.panelStateReceipt.size, 3);
+  assert.ok(Array.isArray(c.panelStateReceipt.composition));
+  assert.equal(c.panelStateReceipt.correlationBand, 'UNKNOWN');
+});

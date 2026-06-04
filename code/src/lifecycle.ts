@@ -57,7 +57,9 @@ function collidingDimension(a: Provenance, b: Provenance): (typeof LINEAGE_DIMEN
   return null;
 }
 
-const sharesLineage = (a: Provenance, b: Provenance): boolean => collidingDimension(a, b) !== null;
+// Exported for CIP-12 (the correlation receipt) — single-sources the NI-1
+// "what counts as correlated" rule so the read path cannot drift from it.
+export const sharesLineage = (a: Provenance, b: Provenance): boolean => collidingDimension(a, b) !== null;
 
 /** Distinct STANDING lineages (NI-1), over the FULL provenance vector. Slots that
  *  share any provenance dimension are merged into one family (connected components),
