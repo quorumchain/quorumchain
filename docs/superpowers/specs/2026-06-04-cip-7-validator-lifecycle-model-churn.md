@@ -101,6 +101,8 @@ These remain genuinely open but are **parameters within the invariants above**, 
 - Exact **standby-pool count** (the *rule* — ≥ provider count — is fixed by NI-5).
 - **Interaction with the metacognition pillar** — calibration is the shared currency of 7c and 7d; whether metacognition becomes its own CIP and how its calibration record feeds the probation gate (the standing open thread from rounds 17–18).
 
+**NI-1 distinctness scope (operating condition, noted round 45).** The implementation (`code/src/lifecycle.ts`) counts distinct standing families as connected components over the *full* provenance vector — two slots sharing **any** dimension (corpus, teacher, weight-derivation, provider, **or serving stack**) merge into one family. This is the conservative, faithful reading of NI-1, but it has a real operational consequence: a deployment in which every validator runs the **same serving stack** (e.g. all on one inference runtime) counts as a **single family** and can never reach the ≥4 floor — the panel would `FREEZE` (read-only, NI-5) rather than run under-diversified. That is arguably *correct* (true independence requires serving-layer diversity too), but operators must provision genuine serving-stack diversity, not just distinct model weights. Whether serving-stack overlap should weigh less than corpus/weight overlap is a parameter question within NI-1, due before β-gate.
+
 ---
 
 ## 6. Testnet gates (empirical, per the autonomy ladder)

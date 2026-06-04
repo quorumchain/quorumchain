@@ -18,6 +18,8 @@
 // here changes to gain true custody separation.
 // Zero dependencies.
 
+import { spawn } from 'node:child_process';
+import { createInterface } from 'node:readline';
 import { ballotHash, signVote, type SignedVote, type ValidatorKey } from './signed-vote.ts';
 
 export interface Signer {
@@ -49,4 +51,49 @@ export function makeLocalSigner(params: {
       return signVote({ validatorId, privateKeyPem, ballotHash: bh, verdict, rawOutput });
     },
   };
+}
+
+/** A Signer whose private key lives in a SEPARATE OS PROCESS (the host script at
+ *  `hostPath`). This is the OS-level custody isolation the boundary pointed at: the
+ *  orchestrator spawns the host, reads only its PUBLIC key, and asks it to sign
+ *  ballots by content over stdio — the private key never enters this process. Same
+ *  `Signer` interface as the local signer, so `convene` is unchanged; `close()`
+ *  shuts the host down. */
+export interface RemoteSigner extends Signer {
+  close(): void;
+}
+
+export function makeRemoteSigner(params: { validatorId: string; hostPath: string; env?: Record<string, string> }): Promise<RemoteSigner> {
+  const child = spawn(process.execPath, [params.hostPath], {
+    env: { ...process.env, ...params.env, QRM_VALIDATOR_ID: params.validatorId },
+    stdio: ['pipe', 'pipe', 'inherit'],
+  });
+  const pending = new Map<number, (msg: Record<string, unknown>) => void>();
+  let nextId = 1;
+  createInterface({ input: child.stdout! }).on('line', (line) => {
+    let msg: Record<string, unknown>;
+    try { msg = JSON.parse(line); } catch { return; }
+    const resolve = pending.get(msg.id as number);
+    if (resolve) { pending.delete(msg.id as number); resolve(msg); }
+  });
+  const rpc = (req: Record<string, unknown>): Promise<Record<string, unknown>> =>
+    new Promise((resolve) => {
+      const id = nextId++;
+      pending.set(id, resolve);
+      child.stdin!.write(JSON.stringify({ id, ...req }) + '\n');
+    });
+
+  // one-time handshake: fetch the host's PUBLIC key (the private half stays in the child)
+  return rpc({ type: 'pubkey' }).then((res) => ({
+    validatorId: params.validatorId,
+    publicKeyPem: res.publicKeyPem as string,
+    async signBallot(prompt: string, context: string, verdicts?: string[]) {
+      const res = await rpc({ type: 'sign', prompt, context, verdicts });
+      return res.vote as SignedVote;
+    },
+    close() {
+      child.stdin!.end();
+      child.kill();
+    },
+  }));
 }

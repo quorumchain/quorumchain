@@ -134,7 +134,13 @@ export function supermajorityThreshold(n: number): number {
  *  the caller's quorum and the 2/3 supermajority of the registered panel, so a
  *  caller may demand a stricter threshold but can never weaken below 2/3. Absent
  *  validators count against the bar — 2/3 is of the whole registered panel, not of
- *  whoever showed up. */
+ *  whoever showed up.
+ *
+ *  PRECONDITION (operating condition, round 45): `keyring` must be the STANDING
+ *  validator set. The 2/3 denominator is `|keyring|`, so a probation member — which
+ *  carries ZERO quorum weight (CIP-7 NI-3) — must NOT appear in it, or it would
+ *  inflate the denominator and wrongly raise the bar. The live wiring passes the
+ *  standing set; callers integrating with CIP-7 must filter probationers out first. */
 export function ratify(
   expectedBallotHash: string,
   votes: SignedVote[],

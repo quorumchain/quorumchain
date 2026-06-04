@@ -139,6 +139,21 @@ test('NI-10a HARD: a thin seat can never be the swing vote, even when the standa
   assert.equal(withThin.decisiveSlots.includes('model-C'), false);
 });
 
+test('NI-10a: a thin seat dropped from the verdict is still SURFACED as advisory (auditable dissent)', () => {
+  const r = reg([
+    op('a1', 'model-A'), op('a2', 'model-A'),
+    op('b1', 'model-B'), op('b2', 'model-B'),
+    op('c1', 'model-C'), // lone -> thin
+  ]);
+  const j = drawJury(r, 'seed-advisory');
+  const t = tallyJury(j, { 'model-A': 'NO', 'model-B': 'NO', 'model-C': 'YES' });
+  assert.equal(t.verdict, 'NO'); // decided by the standard seats
+  // model-C's YES does not move the verdict, but it is NOT silently dropped — it is recorded as advisory
+  assert.ok(t.advisory.some((a) => a.slot === 'model-C' && a.vote === 'YES'));
+  // when standard seats decide, no standard seat appears as advisory
+  assert.ok(!t.advisory.some((a) => a.slot === 'model-A' || a.slot === 'model-B'));
+});
+
 test('NI-10a bootstrap: when EVERY slot is thin, the thin seats decide (no standard seat to defer to)', () => {
   const r = reg([op('a1', 'model-A'), op('b1', 'model-B'), op('c1', 'model-C')]); // all lone -> all thin
   const j = drawJury(r, 'seed-boot');

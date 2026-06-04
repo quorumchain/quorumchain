@@ -114,6 +114,7 @@ export interface TallyResult {
   verdict: string | null;
   weighted: Record<string, number>;
   decisiveSlots: string[]; // slots whose removal would change the verdict
+  advisory: { slot: string; vote: string }[]; // thin seats excluded from the verdict — recorded, never silently dropped
 }
 
 /** Weighted tally of one jury's votes with the HARD NI-10a guarantee: a thin slot
@@ -145,7 +146,8 @@ export function tallyJury(jury: Jury, votesBySlot: Record<string, string>): Tall
   // The deciding set: standard seats govern. Only when there are none (every slot
   // thin) do thin seats decide — so a thin seat is structurally never a swing vote.
   const standardSeats = jury.seats.filter((s) => !s.thin);
-  const deciding = standardSeats.length > 0 ? standardSeats : jury.seats;
+  const thinExcluded = standardSeats.length > 0;
+  const deciding = thinExcluded ? standardSeats : jury.seats;
 
   const weighted = weigh(deciding);
   const verdict = winnerOf(weighted);
@@ -153,5 +155,12 @@ export function tallyJury(jury: Jury, votesBySlot: Record<string, string>): Tall
     .filter((s) => winnerOf(weigh(deciding.filter((x) => x.slot !== s.slot))) !== verdict)
     .map((s) => s.slot);
 
-  return { verdict, weighted, decisiveSlots };
+  // When thin seats were excluded from the verdict, their votes are still SURFACED
+  // as advisory (NI-10a is "never decisive", not "silenced" — the dissent stays
+  // auditable, and is also recorded verbatim in the signed vote log).
+  const advisory = thinExcluded
+    ? jury.seats.filter((s) => s.thin && votesBySlot[s.slot] !== undefined).map((s) => ({ slot: s.slot, vote: votesBySlot[s.slot] }))
+    : [];
+
+  return { verdict, weighted, decisiveSlots, advisory };
 }

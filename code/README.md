@@ -38,6 +38,12 @@ artifacts.
   entry is SHA-256 hash-chained to the previous one, so any edit, deletion, or
   reorder breaks `verifyLog()`. Interim "immutable transcript" substrate until
   on-chain hash-pinning lands.
+- **`src/state-log.ts`** — the same hash-chain mechanism for **module state
+  transitions** (round-44 backlog #6, local interim). `appendState`/`readStateLog`/
+  `verifyStateLog` record bond/registry/reputation/lifecycle events into one chain,
+  so the history is replayable and any edit breaks it — what `vote-log` is to votes,
+  for state. Gives tamper-*evidence* now; per-event authorization + on-chain
+  anchoring land at testnet. Demo: `src/state-log-demo.ts`.
 
 - **`src/keystore.ts`** — persistent validator identities. `loadOrCreateKeyring`
   reuses on-disk Ed25519 keys (private keys `0600`) so a panel's signed log is
@@ -58,9 +64,13 @@ artifacts.
   content — so the orchestrator can neither mint/alter a verdict nor obtain a
   signature over a ballot the validator did not actually judge (closes the
   round-45 bait-and-switch gap: a caller-supplied hash). `makeLocalSigner` is the
-  in-process implementation; the drop-in for true OS-level custody isolation is a
-  `RemoteSigner` (separate process / enclave) on the same interface, needing no
-  change to `convene` (testnet item).
+  in-process implementation. **`makeRemoteSigner`** is the OS-level custody version
+  (round-46 close of #2): it spawns `src/remote-signer-host.ts` as a **separate
+  process** whose private key is generated there and **never enters the orchestrator
+  process** — the orchestrator reads only the public key and asks it to sign ballots
+  by content over stdio. Same `Signer` interface, so `convene` is unchanged. (A
+  production host invokes the real model child-side; locally the verdict is a fixed
+  stand-in, so the *custody* property is fully real while deliberation is stubbed.)
 
 - **`src/run-panel.ts`** — the live wiring. Convenes the real validators
   (V1 Claude, V2 Codex, V3 Hermes) on one ballot:
@@ -256,7 +266,7 @@ node src/bonds-demo.ts   # CIP-8 v0.2: bond/stake autonomy gate + slash-on-viola
 node src/reputation-demo.ts # CIP-9 v0.2: external-anchor reputation (NI-9b accuracy-not-popularity) + computed standing (NI-9c)
 node src/scenario-demo.ts # END-TO-END: one accountability story threaded through every CIP (bond→notary→resolve→index→reputation→rotate)
 node src/run-panel.ts "<question>" "<context>"   # LIVE convening: Claude + Codex + Hermes
-node --test              # 136 tests
+node --test              # 142 tests
 ```
 
 Zero dependencies — Node 25 runs the TypeScript natively (type-stripping) and
@@ -264,14 +274,15 @@ Zero dependencies — Node 25 runs the TypeScript natively (type-stripping) and
 
 ## Deliberately NOT done yet (open items)
 
-- **Validator key custody** — *partly closed (round-44 backlog #2).* `convene`
-  now takes `Signer` capabilities, not keys, so the orchestrator code can no
-  longer mint or alter a verdict (`src/signer.ts`). What remains is OS-level
-  isolation: locally the keys are still loaded into the orchestrator process via
-  the keystore. The drop-in is a `RemoteSigner` (separate process / enclave) on
-  the same interface — no `convene` change. Tracked for testnet.
-- **On-chain hash-pinning** — the log is local + hash-chained, not yet anchored
-  to an L1. CIP-3 §5 calls this the interim state.
+- **Validator key custody** — *closed in code (round-44 #2 → round-46).* `convene`
+  takes `Signer` capabilities, not keys; `makeRemoteSigner` runs the key in a
+  **separate OS process** (`src/remote-signer-host.ts`) so it never enters the
+  orchestrator process. What's left for testnet is the *production host* invoking
+  the real model child-side (locally the deliberation is a fixed stand-in; the
+  custody property itself is fully real) and a hardware/enclave key store.
+- **On-chain hash-pinning** — votes and module state are local + hash-chained
+  (`vote-log` / `state-log`), not yet anchored to an L1. CIP-3 §5 calls this the
+  interim state; `state-log.ts` is the interim for module state (round-44 #6).
 - **Slashing execution** — `findEquivocations` *detects*; it does not yet
   *penalize* (no stake/economics on testnet α).
 
