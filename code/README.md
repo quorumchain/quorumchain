@@ -186,7 +186,7 @@ The *who judges* layer: how the judgment-tier panel is admitted and drawn.
   the all-thin bootstrap regime where they are all there is. Deferred (documented, not faked): NI-10c threshold/
   forced-inclusion beacon, SEL-2 proof-of-inference binding, CIP-7 correlation-
   eviction — all need production infra.
-- **`src/nodes-demo.ts`** — runs G1/G2/G4/NI-10a on the dev's own scenario
+- **`src/nodes-demo.ts`** — runs G1/G2/G4/NI-10a on a sample scenario
   (10×A, 10×B, 4×C): the scarce model-C operators are drawn **2.5×** as often
   (= 10/4), the exact rebalancing pressure the design predicts.
 

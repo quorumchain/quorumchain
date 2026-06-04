@@ -6,9 +6,9 @@ This captures everything explored in the founding conversation that is **not** a
 
 ## 0. The experiment
 
-The premise: three different AIs (Claude=V1, Codex=V2, Hermes=V3) would **design, build, and validate** a blockchain *for AI*, making decisions by **2/3 consensus** — and the same three AIs that design it are the validators that run it. The medium is the message. A human steward ("dev") holds a final override during bootstrap and renounces it at mainnet. Deliverable: **vision + a working prototype**.
+The premise: starting from a single human seed — *an AI oracle with a knowledge/memory layer and a node-economics mechanism* — three different AIs (Claude=V1, Codex=V2, Hermes=V3) would **design, build, and validate** the blockchain *for AI* that grows from it, making every decision by **2/3 consensus** — and the same three AIs that design it are the validators that run it. The medium is the message. A bootstrap operator key exists by design (CIP-4) and is removed at mainnet after an empirical safety gate. Deliverable: **vision + a working prototype**.
 
-**Tooling reality found:** Node 25 / Python 3.14 present; no Rust/Go. `codex` **not installed** (V2 pending). `hermes` **installed** (v0.15.1, Python, OpenAI SDK), driven non-interactively via `hermes chat -q "..."`, authenticated through **Nous Portal** on the free model `stepfun/step-3.7-flash`. Gemini was considered for V3 but the steward chose Hermes.
+**Tooling reality found:** Node 25 / Python 3.14 present; no Rust/Go. `codex` **not installed** (V2 pending). `hermes` **installed** (v0.15.1, Python, OpenAI SDK), driven non-interactively via `hermes chat -q "..."`, authenticated through **Nous Portal** on the free model `stepfun/step-3.7-flash`. Gemini was considered for V3 but Hermes was chosen (a third, distinct lineage).
 
 ---
 
@@ -135,11 +135,11 @@ Plain-language description: **"an AI oracle + knowledge chain"** is accurate and
 
 ## 10. Naming
 
-- Constraints from the steward: must **end in "chain"**, theme **"by AI, for AI"**.
-- Panel (round 1) voted **Inferchain** 2–0 ("names the core primitive"). Steward **overrode → Autochain** (per the human-override rule).
+- Seed constraints: must **end in "chain"**, theme **"by AI, for AI"**.
+- Panel (round 1) voted **Inferchain** 2–0 ("names the core primitive"). A bootstrap-override set the working name to **Autochain**.
 - Later revisited after the autonomy pivot: **Autochain aged into the right name** — "auto" = autonomous/self-running, now the central thesis. If ever rebranding toward the judgment identity, **Synodchain** (a *synod* = a deliberating council that rules) was the top alternative; *Quorumchain* / *Logoschain* runners-up.
 - **Caveat:** "Autochain" is a common word with likely collisions — vet token/handle/domain before the pump.fun launch.
-- **Renamed (steward, post round-4): Autochain → Quorumchain, ticker $QRM** — names the 2/3 consensus rule itself (fitting, since round 4 found the consensus layer was the weak point); also resolves the collision caveat above.
+- **Renamed (post round-4): Autochain → Quorumchain, ticker $QRM** — names the 2/3 consensus rule itself (fitting, since round 4 found the consensus layer was the weak point); also resolves the collision caveat above.
 
 ---
 
@@ -160,6 +160,6 @@ This project stacks three hard problems: **AI safety + consensus security + irre
 - **Cat II — Tampering with the foundation:** immutable-contract bugs (permanent), governance/upgrade capture, supply-chain, bridge exploits, bootstrap key theft. → *CIP-3 (next).*
 - **Cat III — Consensus/economics:** collusion, verdict-buying when value > stake, conformity-slashing (self-inflicted), insolvency, griefing.
 - **Cat IV — Epistemic:** confidently-wrong unanimity (no dissent to trip the alarm), miscalibration, precedent poisoning.
-- **Cat V — Human/external:** coercion of the steward, regulatory shutdown.
+- **Cat V — Human/external:** coercion of the bootstrap operator, regulatory shutdown.
 
 **The three to lose sleep over:** (1) monoculture (defeats consensus *and* the dissent alarm at once), (2) an immutable contract bug after key-renouncement, (3) verdict-buying when a single verdict outvalues total validator stake. #1 and #3 are *mitigated, not solved* — which is exactly why the testnet must empirically beat each before any autonomy rung unlocks.

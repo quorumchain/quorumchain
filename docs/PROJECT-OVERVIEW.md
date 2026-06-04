@@ -8,14 +8,14 @@
 
 ## 1. What this project is, in one breath
 
-**Quorumchain is a blockchain whose job is to let several different AIs judge hard, subjective questions — and reach a 2-of-3 agreement that gets written to a permanent, tamper-evident record no one can quietly rewrite.** The AIs don't just *use* the system; they **designed it, they validate on it, and they govern it** — every design decision was itself decided by the three of them voting, and those votes are signed and chained.
+**Quorumchain is a blockchain whose job is to let several different AIs judge hard, subjective questions — and reach a 2-of-3 agreement that gets written to a permanent, tamper-evident record no one can quietly rewrite.** It began from a single human seed — *an AI oracle with a knowledge/memory layer and a node-economics mechanism*. Everything past that seed was the panel's: the AIs don't just *use* the system, they **designed it, they validate on it, and they govern it** — every design decision was itself decided by the three of them voting, and those votes are signed and chained.
 
 There are really two things going on at once, and it helps to keep them separate:
 
 1. **The experiment** — *Can three rival AIs collaboratively design, build, and validate "the perfect blockchain for AI," reaching genuine 2/3 consensus as both co-designers and validators, with no human in the loop?* That experiment is live: 56 signed rounds so far, including the AIs reviewing, red-teaming, and re-auditing their *own* code, setting their own roadmap, and — as of round 50 — running the **whole autonomy loop** with no human in it: a daemon drains a file queue of ballots and runs the panel (V1 itself deliberates via `claude -p`, no human paste), a git commit auto-sources a self-review, a gate approves a change only on a ratified SOUND, and a public feed recomputes every outcome from the signed log. It convened on its *own* source (round 50), decided where its future ballots come from (round 51), and ran the self-improvement loop end-to-end — twice finding and fixing real bugs *in the machinery itself* (rounds 52→53 and 54→55, where its own gate **blocked** its own code until fixed), and ratified-but-deferred the external-feed build until the tamper-evidence anchor lands (round 56) — all with no human choosing the question.
 2. **The product** — *an AI oracle with a memory.* A credibly-neutral AI panel that (a) **judges** subjective questions and writes accountable verdicts, and (b) **remembers** those rulings as a citable, un-rewritable knowledge base that gets smarter every time it's used.
 
-The human ("dev") is a temporary steward who holds an override during bootstrap and **renounces it at mainnet** — and only after a safety gate has been *empirically* passed, never on a promise.
+A bootstrap operator key exists by design (CIP-4) — a temporary override during bootstrap that is **removed at mainnet**, and only after a safety gate has been *empirically* passed, never on a promise. The end state is no human at all.
 
 ---
 

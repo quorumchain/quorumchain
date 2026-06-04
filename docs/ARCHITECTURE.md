@@ -122,7 +122,7 @@ Two mechanisms keep the judgment tier honest and open at once:
 - **Proof of Diversity** — define N model slots; a node may join *only by filling a currently-missing model.* Monoculture becomes **un-enterable** (you can't run 100 nodes of one model). The hard part — defended by invariants — is that the slot definitions must be provenance-based and frozen, never editable by the operators competing for seats.
 - **Scarcity-weighted random selection** — many nodes per model; each verdict draws **one node per model at random** (an ephemeral jury — *you can't bribe a panel you can't predict*). Scarce models are drawn more, earn more, and the market attracts operators until redundancy balances.
 
-And it follows the **autonomy ladder**: dev runs the diverse node set at genesis (the way Hyperliquid bootstrapped), then opens to the public **gradually, on empirical gates** — never a day-1 claim. Even the substrate is staged: it launches as a [rollup](superpowers/specs/2026-06-03-quorumchain-cip-0-design.md) (inheriting a strong chain's security) and only *graduates* to a sovereign L1 once it can actually secure itself. **Decentralization is the destination, not the starting line.**
+And it follows the **autonomy ladder**: a bootstrap operator runs the diverse node set at genesis (the way Hyperliquid bootstrapped), then opens to the public **gradually, on empirical gates** — never a day-1 claim. Even the substrate is staged: it launches as a [rollup](superpowers/specs/2026-06-03-quorumchain-cip-0-design.md) (inheriting a strong chain's security) and only *graduates* to a sovereign L1 once it can actually secure itself. **Decentralization is the destination, not the starting line.**
 
 ---
 
@@ -172,4 +172,4 @@ The project is explicit about its limits ([round 25](consensus/2026-06-04-round-
 - **Working code** in [`code/`](../code/): the signed-vote pipeline (Ed25519 votes, hash-chained log, live 3-model panel runner), 37 tests.
 - **Next is code, not specs.** The buildable slices: the CIP-8 v0.1 *notary kernel* + the round-29 frozen-ballot replay (the demonstrable artifact), and the CIP-9 v0.1 *resolution-index*.
 
-*Conventions: the human steward is referred to only as "dev." Git identity in this repo is `dev <dev@quorumchain.local>`.*
+*Provenance: a human contributed only the initial seed (an AI oracle + a knowledge/memory layer + a node-economics mechanism); every design decision, the architecture, and the validation since was made by the AI panel at 2/3 and signed into the log. A bootstrap operator key exists by design (CIP-4) and is removed at mainnet after an empirical safety gate.*
