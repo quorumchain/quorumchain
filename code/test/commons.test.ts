@@ -201,3 +201,62 @@ test('CIP-12 backward-compat: the legacy 3-arg call still yields a valid receipt
   assert.ok(Array.isArray(c.panelStateReceipt.composition));
   assert.equal(c.panelStateReceipt.correlationBand, 'UNKNOWN');
 });
+
+// ── CIP-9 amendment: status as a total function of substantive-verdict presence ──
+// (ballot 5885f224, red-team 3/3). status is RESOLVED iff an enforceable substantive
+// verdict holds a supermajority; CONTESTED is reserved for ≥2 competing substantive
+// positions; the absence of any surviving substantive position (all-ABSTAIN,
+// NO_VERDICT-only, a lone sub-supermajority position, ratified all-INDETERMINATE)
+// is INDETERMINATE. Non-substantive set = {ABSTAIN, INDETERMINATE, NO_VERDICT}.
+// Ratification is untouched — ABSTAIN stays tallied/ratifiable, it just never projects RESOLVED.
+const BH_ALLABSTAIN = ballotHash('Q-allabstain', 'criteria'); // 3×ABSTAIN — was wrongly RESOLVED
+const BH_ALLNOVERDICT = ballotHash('Q-allnoverdict', 'criteria'); // 3×NO_VERDICT — was wrongly CONTESTED
+const BH_ONESUB = ballotHash('Q-onesub', 'criteria'); // 1×YES + 2×NO_VERDICT — no competitor
+const BH_YESABSTAIN = ballotHash('Q-yesabstain', 'criteria'); // 2×YES + 1×ABSTAIN — real supermajority
+
+function statusPanel(): SignedVote[] {
+  return [
+    vote('V1', BH_ALLABSTAIN, 'ABSTAIN'), vote('V2', BH_ALLABSTAIN, 'ABSTAIN'), vote('V3', BH_ALLABSTAIN, 'ABSTAIN'),
+    vote('V1', BH_ALLNOVERDICT, 'NO_VERDICT'), vote('V2', BH_ALLNOVERDICT, 'NO_VERDICT'), vote('V3', BH_ALLNOVERDICT, 'NO_VERDICT'),
+    vote('V1', BH_ONESUB, 'YES'), vote('V2', BH_ONESUB, 'NO_VERDICT'), vote('V3', BH_ONESUB, 'NO_VERDICT'),
+    vote('V1', BH_YESABSTAIN, 'YES'), vote('V2', BH_YESABSTAIN, 'YES'), vote('V3', BH_YESABSTAIN, 'ABSTAIN'),
+  ];
+}
+
+test('amendment: an all-ABSTAIN ballot is INDETERMINATE, not RESOLVED (surfaced bug)', () => {
+  const c = queryClaim(buildClaimIndex(statusPanel(), keyring, 2), BH_ALLABSTAIN)!;
+  assert.equal(c.status, 'INDETERMINATE'); // an honest non-answer is never a settled result
+  assert.ok(c.stances.every((s) => s.standing === 'UNRANKED')); // nothing ranked CONSENSUS
+});
+
+test('amendment: a NO_VERDICT-only ballot is INDETERMINATE, not CONTESTED (latent twin)', () => {
+  const c = queryClaim(buildClaimIndex(statusPanel(), keyring, 2), BH_ALLNOVERDICT)!;
+  assert.equal(c.status, 'INDETERMINATE'); // three invocation failures are not a contest
+});
+
+test('amendment: 1 substantive + 2 failures is INDETERMINATE (no competitor, not a contest)', () => {
+  const c = queryClaim(buildClaimIndex(statusPanel(), keyring, 2), BH_ONESUB)!;
+  assert.equal(c.status, 'INDETERMINATE'); // a lone sub-supermajority YES is neither resolution nor contest
+});
+
+test('amendment regression guard: a genuine A/B/C split stays CONTESTED', () => {
+  const c = queryClaim(buildClaimIndex(fullPanel(), keyring, 2), BH_NOQUORUM)!;
+  assert.equal(c.status, 'CONTESTED'); // ≥2 competing SUBSTANTIVE positions, no supermajority
+});
+
+test('amendment regression guard: 2×YES + 1×NO_VERDICT stays RESOLVED', () => {
+  const c = queryClaim(buildClaimIndex(fullPanel(), keyring, 2), BH_WITHFAIL)!;
+  assert.equal(c.status, 'RESOLVED'); // a failed invoker never blocks a real supermajority
+  assert.equal(c.verdict, 'YES');
+});
+
+test('amendment: 2×YES + 1×ABSTAIN stays RESOLVED/YES (ABSTAIN never blocks a supermajority)', () => {
+  const c = queryClaim(buildClaimIndex(statusPanel(), keyring, 2), BH_YESABSTAIN)!;
+  assert.equal(c.status, 'RESOLVED');
+  assert.equal(c.verdict, 'YES');
+});
+
+test('amendment regression guard: a ratified all-INDETERMINATE ballot stays INDETERMINATE', () => {
+  const c = queryClaim(buildClaimIndex(fullPanel(), keyring, 2), BH_INDET)!;
+  assert.equal(c.status, 'INDETERMINATE');
+});

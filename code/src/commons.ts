@@ -21,6 +21,12 @@ export type { Provenance } from './lifecycle.ts';
 export type Standing = 'CONSENSUS' | 'CREDIBLE_MINORITY' | 'UNRANKED';
 export type ClaimStatus = 'RESOLVED' | 'CONTESTED' | 'INDETERMINATE';
 
+// CIP-9 amendment (ballot 5885f224): verdict tokens that carry NO enforcement
+// direction. A validator that ABSTAINs declined to judge; INDETERMINATE is the
+// honest-unknown token; NO_VERDICT is an invoker failure. None ever projects to
+// RESOLVED. Every other token (YES, NO, any domain token) is substantive.
+const NON_SUBSTANTIVE = new Set<string>(['ABSTAIN', 'INDETERMINATE', 'NO_VERDICT']);
+
 export interface Stance {
   position: string; // a verdict token held on the ballot, e.g. "YES" / "NO" / "INDETERMINATE"
   validators: string[]; // who held it — provenance, never flattened away
@@ -114,7 +120,18 @@ export function buildClaimIndex(
       heldBy.get(v.verdict)!.push(v.validatorId);
     }
 
-    const status: ClaimStatus = !r.ratified ? 'CONTESTED' : r.verdict === 'INDETERMINATE' ? 'INDETERMINATE' : 'RESOLVED';
+    // CIP-9 amendment (ballot 5885f224): status is a total function of
+    // substantive-verdict presence, independent of the bare `ratified` flag. The
+    // non-substantive set carries no enforcement direction — ABSTAIN (declined),
+    // INDETERMINATE (honest unknown), NO_VERDICT (invoker failed). RESOLVED ⟺ an
+    // enforceable substantive verdict holds a supermajority; CONTESTED is reserved
+    // for ≥2 competing substantive positions; the absence of any surviving
+    // substantive position (all-ABSTAIN, NO_VERDICT-only, a lone sub-supermajority
+    // position, ratified all-INDETERMINATE, empty) is INDETERMINATE. Ratification
+    // is untouched — ABSTAIN stays tallied; it simply never projects to RESOLVED.
+    const substantive = positionOrder.filter((p) => !NON_SUBSTANTIVE.has(p));
+    const resolved = r.ratified && r.verdict !== null && !NON_SUBSTANTIVE.has(r.verdict);
+    const status: ClaimStatus = resolved ? 'RESOLVED' : substantive.length >= 2 ? 'CONTESTED' : 'INDETERMINATE';
     // Standing is computed, not assigned. It is ranked ONLY for a substantive
     // resolution (RESOLVED): the ratified majority is CONSENSUS, every other held
     // position CREDIBLE_MINORITY. On the unverifiable / no-consensus class
