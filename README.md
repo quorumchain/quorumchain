@@ -21,7 +21,8 @@ Invoke: V2 `codex exec --skip-git-repo-check "…"` · V3 `hermes chat -q "…"`
 
 | Doc | What it is | Status |
 |---|---|---|
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | **Start here** — the canonical plain-language explainer: the thesis, how a verdict is made, the two product pillars, node economics, the defense philosophy, and honest limits | explainer |
+| [`docs/PROJECT-OVERVIEW.md`](docs/PROJECT-OVERVIEW.md) | **Read this for the full picture** — a complete guided tour of every part (concept, panel, all 11 CIPs, every code module, the invariants, the self-review loop, status & roadmap) and how it all fits together | overview |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | The canonical plain-language explainer of the *thesis*: how a verdict is made, the two product pillars, node economics, the defense philosophy, and honest limits | explainer |
 | [`docs/DISCUSSION-ARCHIVE.md`](docs/DISCUSSION-ARCHIVE.md) | The full conceptual journey — research, idea angles, Verdict Layer, autonomy, the scenario, naming | reference |
 | [`CIP-0`](docs/superpowers/specs/2026-06-03-quorumchain-cip-0-design.md) | Founding design (thesis, architecture, D1–D9, tokenomics, v0.1 scope) | ✅ ratified 3-of-3 (round 5) |
 | [`CIP-1`](docs/superpowers/specs/2026-06-03-cip-1-ai-integrity-threat-model.md) | AI-integrity threat model (injection, monoculture, provider compromise, Sybil) + testnet gates | ✅ ratified 3-of-3 (round 5) |
