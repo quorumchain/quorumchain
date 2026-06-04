@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { loadOrCreateKeyring } from '../src/keystore.ts';
+import { loadOrCreateKeyring, loadPinnedKeyring, assertMatchesPin } from '../src/keystore.ts';
 import { signVote, verifyVote, ballotHash } from '../src/signed-vote.ts';
 
 function tmpDir(): string {
@@ -36,4 +36,34 @@ test('adding a new validator later keeps existing keys and creates only the new 
   const second = loadOrCreateKeyring(dir, ['V1', 'V2']);
   assert.equal(first.keys.V1.privateKeyPem, second.keys.V1.privateKeyPem); // unchanged
   assert.ok(second.keys.V2.privateKeyPem.includes('PRIVATE KEY')); // freshly created
+});
+
+test('loadPinnedKeyring reads the published id→publicKey map; throws if not published', () => {
+  const path = join(tmpDir(), 'pinned-keyring.json');
+  assert.throws(() => loadPinnedKeyring(path), /not found|publish/i); // must publish first
+  writeFileSync(path, JSON.stringify({ V1: 'PUBKEY_1', V2: 'PUBKEY_2', V3: 'PUBKEY_3' }));
+  assert.deepEqual(loadPinnedKeyring(path), { V1: 'PUBKEY_1', V2: 'PUBKEY_2', V3: 'PUBKEY_3' });
+});
+
+test('assertMatchesPin passes when every pinned validator presented its pinned key', () => {
+  const pinned = { V1: 'PUBKEY_1', V2: 'PUBKEY_2', V3: 'PUBKEY_3' };
+  assert.doesNotThrow(() => assertMatchesPin({ ...pinned }, pinned));
+});
+
+test('assertMatchesPin throws when a host substitutes a different key for a validator', () => {
+  const pinned = { V1: 'PUBKEY_1', V2: 'PUBKEY_2', V3: 'PUBKEY_3' };
+  const presented = { V1: 'PUBKEY_1', V2: 'ATTACKER_KEY', V3: 'PUBKEY_3' };
+  assert.throws(() => assertMatchesPin(presented, pinned), /V2.*pinned|substitution/i);
+});
+
+test('assertMatchesPin ALLOWS an absent validator (a liveness event, not a substitution)', () => {
+  const pinned = { V1: 'PUBKEY_1', V2: 'PUBKEY_2', V3: 'PUBKEY_3' };
+  // V2's host failed to start, so it presents no key — that is an absence (handled by
+  // quorum), not a key substitution. The pin only forbids serving a WRONG key.
+  assert.doesNotThrow(() => assertMatchesPin({ V1: 'PUBKEY_1', V3: 'PUBKEY_3' }, pinned));
+});
+
+test('assertMatchesPin throws when a validator NOT in the pin presents a key (unknown)', () => {
+  const pinned = { V1: 'PUBKEY_1', V2: 'PUBKEY_2', V3: 'PUBKEY_3' };
+  assert.throws(() => assertMatchesPin({ V1: 'PUBKEY_1', VX: 'rogue' }, pinned), /VX.*pinned|unknown/i);
 });

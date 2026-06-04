@@ -63,28 +63,50 @@ export interface RemoteSigner extends Signer {
   close(): void;
 }
 
-export function makeRemoteSigner(params: { validatorId: string; hostPath: string; env?: Record<string, string> }): Promise<RemoteSigner> {
+export function makeRemoteSigner(params: { validatorId: string; hostPath: string; env?: Record<string, string>; timeoutMs?: number }): Promise<RemoteSigner> {
+  const timeoutMs = params.timeoutMs ?? 30_000;
   const child = spawn(process.execPath, [params.hostPath], {
     env: { ...process.env, ...params.env, QRM_VALIDATOR_ID: params.validatorId },
     stdio: ['pipe', 'pipe', 'inherit'],
   });
-  const pending = new Map<number, (msg: Record<string, unknown>) => void>();
+  type Waiter = { resolve: (msg: Record<string, unknown>) => void; reject: (err: Error) => void; timer: ReturnType<typeof setTimeout> };
+  const pending = new Map<number, Waiter>();
   let nextId = 1;
+  let dead: Error | null = null; // set once the host can no longer answer (error/exit)
+
+  // Liveness floor: if the host crashes, fails to spawn, or exits, every in-flight
+  // request rejects at once and all future ones fail fast — a dead validator process
+  // can never hang the convening (the local signer turns failures into NO_VERDICT;
+  // this is the remote equivalent).
+  const failAll = (err: Error) => {
+    dead = err;
+    for (const [, w] of pending) { clearTimeout(w.timer); w.reject(err); }
+    pending.clear();
+  };
+  child.on('error', (e) => failAll(new Error(`remote signer host failed to start: ${e.message}`)));
+  child.on('exit', (code, signal) => failAll(new Error(`remote signer host exited before answering (code=${code}, signal=${signal})`)));
+
   createInterface({ input: child.stdout! }).on('line', (line) => {
     let msg: Record<string, unknown>;
     try { msg = JSON.parse(line); } catch { return; }
-    const resolve = pending.get(msg.id as number);
-    if (resolve) { pending.delete(msg.id as number); resolve(msg); }
+    const w = pending.get(msg.id as number);
+    if (w) { clearTimeout(w.timer); pending.delete(msg.id as number); w.resolve(msg); }
   });
   const rpc = (req: Record<string, unknown>): Promise<Record<string, unknown>> =>
-    new Promise((resolve) => {
+    new Promise((resolve, reject) => {
+      if (dead) return reject(dead); // host already gone — never wait
       const id = nextId++;
-      pending.set(id, resolve);
+      const timer = setTimeout(() => {
+        pending.delete(id);
+        reject(new Error(`remote signer host timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
+      if (typeof timer.unref === 'function') timer.unref();
+      pending.set(id, { resolve, reject, timer });
       child.stdin!.write(JSON.stringify({ id, ...req }) + '\n');
     });
 
   // one-time handshake: fetch the host's PUBLIC key (the private half stays in the child)
-  return rpc({ type: 'pubkey' }).then((res) => ({
+  return rpc({ type: 'pubkey' }).catch((err) => { child.kill(); throw err; }).then((res) => ({
     validatorId: params.validatorId,
     publicKeyPem: res.publicKeyPem as string,
     async signBallot(prompt: string, context: string, verdicts?: string[]) {

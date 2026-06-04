@@ -25,9 +25,11 @@ import {
   completeRotation,
   correlationEvict,
   auditSubstitutions,
+  standingKeyring,
   STANDING_FLOOR,
   type Validator,
 } from '../src/lifecycle.ts';
+import { supermajorityThreshold } from '../src/signed-vote.ts';
 
 function v(id: string, corpusFamily: string, calibration = 0.8, status: 'STANDING' | 'PROBATION' = 'STANDING'): Validator {
   return {
@@ -43,6 +45,22 @@ function v(id: string, corpusFamily: string, calibration = 0.8, status: 'STANDIN
 function basePanel() {
   return seedPanel([v('A', 'corpus-A'), v('B', 'corpus-B'), v('C', 'corpus-C'), v('D', 'corpus-D')]);
 }
+
+test("standingKeyring excludes probationers, so ratify's 2/3 denominator is not inflated (NI-3, round-46 V3 TODO)", () => {
+  const p = basePanel();
+  const r = proposeUpgrade(p, 'A', { version: 'A@v2', calibration: 0.9, provenance: { corpusFamily: 'corpus-A', teacher: null, weightDerivation: 'corpus-A-base', provider: 'A', servingStack: 'A-stack' }, fingerprintIndependent: true });
+  assert.equal(r.ok, true); // slot A now holds a PROBATION version (zero quorum weight)
+  const keys = { A: 'PK_A', B: 'PK_B', C: 'PK_C', D: 'PK_D' };
+  const kr = standingKeyring(r.panel, keys);
+  assert.deepEqual(Object.keys(kr).sort(), ['B', 'C', 'D']); // the probationer is structurally excluded
+  // ratify's denominator is |keyring|: 3 standing → bar 2; including the probationer would wrongly raise it to 3
+  assert.equal(supermajorityThreshold(Object.keys(kr).length), 2);
+  assert.notEqual(supermajorityThreshold(r.panel.validators.length), 2);
+});
+
+test('standingKeyring throws if a standing validator has no published key (no silent omission)', () => {
+  assert.throws(() => standingKeyring(basePanel(), { A: 'PK_A', B: 'PK_B', C: 'PK_C' }), /no public key|\bD\b/);
+});
 
 test('genesis panel holds the ≥4 distinct-family standing floor (NI-3)', () => {
   const p = basePanel();

@@ -14,9 +14,15 @@
 
 import { createInterface } from 'node:readline';
 import { generateValidatorKey, ballotHash, signVote } from './signed-vote.ts';
+import { loadOrCreateKeyring } from './keystore.ts';
 
-const key = generateValidatorKey(); // the private key lives ONLY in this process
 const validatorId = process.env.QRM_VALIDATOR_ID ?? 'V?';
+// Stable identity: when a keystore dir is given, load this validator's persistent
+// key from disk (created child-side, private half never leaves this process) so the
+// public key is the same across every spawn. Ephemeral only as a last resort.
+const key = process.env.QRM_KEYSTORE_DIR
+  ? loadOrCreateKeyring(process.env.QRM_KEYSTORE_DIR, [validatorId]).keys[validatorId]
+  : generateValidatorKey(); // the private key lives ONLY in this process either way
 const verdict = process.env.QRM_FIXED_VERDICT ?? 'NO_VERDICT';
 const rawOutput = process.env.QRM_FIXED_RAW ?? `deliberation withheld\nVERDICT: ${verdict}`;
 

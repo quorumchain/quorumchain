@@ -4,72 +4,29 @@
 //
 //   node src/run-panel.ts "<question>" "<context>"
 //
-// V2/V3 shell out to the codex/hermes CLIs. V1 is the orchestrating Claude,
-// which cannot subprocess itself, so its verbatim deliberation is supplied
-// out-of-band in data/claude-vote.txt (write it before running). Each validator
-// signs its own vote behind a Signer boundary (CIP-3 — the orchestrator holds no
-// key in code and cannot mint/alter a verdict). Testnet item: locally the keys
-// are still loaded into THIS process via the keystore, so OS-level custody is not
-// yet isolated; the drop-in is a RemoteSigner (separate process/enclave) on the
-// same Signer interface, needing no change to convene.
+// Each validator runs behind a RemoteSigner: a SEPARATE OS process
+// (deliberating-signer-host.ts) that holds the validator's keystore key, runs its
+// real CLI invoker child-side (V1→claude, V2→codex, V3→hermes), parses the verdict,
+// derives the ballot hash, and signs. The orchestrator holds NO private key in this
+// process and supplies NO verdict (CIP-3 — the orchestrator is not the trust root).
+// Round 47 (WIRE_NOW 2/1) closed OS-level custody on this live path; round 48
+// (AUTONOMY_FIRST) made V1 deliberate autonomously via `claude -p` — no human paste —
+// so all three are symmetric and no human is in the loop.
 
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { writeFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { convene, buildPrompt, parseVerdict, type ValidatorInvoker } from './panel.ts';
-import { makeLocalSigner } from './signer.ts';
-import { loadOrCreateKeyring } from './keystore.ts';
+import { convene, startSigners } from './panel.ts';
+import { makeRemoteSigner } from './signer.ts';
+import { loadPinnedKeyring, assertMatchesPin } from './keystore.ts';
 import { verifyLog, readLog } from './vote-log.ts';
 
-const execFileP = promisify(execFile);
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DATA = join(HERE, '..', 'data');
 const KEYSTORE = join(DATA, 'keystore');
 const LOG = join(DATA, 'votes.log');
-const CLAUDE_VOTE = join(DATA, 'claude-vote.txt');
-const EXEC_OPTS = { maxBuffer: 16 * 1024 * 1024, timeout: 180_000 };
-
-// Wrap an invoker so a CLI failure becomes a recorded NO_VERDICT (no fabricated
-// verdict) rather than crashing the whole panel and leaving a partial log.
-function safe(id: string, fn: ValidatorInvoker): ValidatorInvoker {
-  return async (prompt) => {
-    try {
-      return await fn(prompt);
-    } catch (e) {
-      return `INVOCATION_ERROR (${id}): ${(e as Error).message}`;
-    }
-  };
-}
-
-// codex exec blocks on "Reading additional input from stdin..." unless stdin is
-// an explicit /dev/null EOF — async execFile's stdin handling does not satisfy
-// it, so we go through a shell that redirects stdin. The prompt is passed via
-// env (not interpolated) to avoid any quoting/injection issues. The model's
-// answer lands on stdout; the verbose banner goes to stderr (discarded).
-const codexInvoke: ValidatorInvoker = async (prompt) => {
-  const { stdout } = await execFileP(
-    '/bin/sh',
-    ['-c', 'codex exec --skip-git-repo-check "$QRM_PROMPT" </dev/null'],
-    { ...EXEC_OPTS, env: { ...process.env, QRM_PROMPT: prompt } },
-  );
-  return stdout;
-};
-
-const hermesInvoke: ValidatorInvoker = async (prompt) => {
-  // Research-capable ballots need more turns + time than a plain deliberation:
-  // a web-research pass (search → read → answer) easily exceeds the default.
-  const { stdout } = await execFileP('hermes', ['chat', '-q', prompt, '--max-turns', '6', '-Q'], { ...EXEC_OPTS, timeout: 480_000 });
-  return stdout;
-};
-
-const claudeInvoke: ValidatorInvoker = async () => {
-  if (!existsSync(CLAUDE_VOTE)) {
-    throw new Error(`write V1's deliberation to ${CLAUDE_VOTE} before convening`);
-  }
-  return readFileSync(CLAUDE_VOTE, 'utf8');
-};
+const PINNED = join(HERE, '..', 'pinned-keyring.json');
+const DELIB_HOST = join(HERE, 'deliberating-signer-host.ts');
 
 async function main() {
   const [prompt, context = ''] = process.argv.slice(2);
@@ -78,27 +35,32 @@ async function main() {
     process.exit(1);
   }
   mkdirSync(DATA, { recursive: true });
-  const ks = loadOrCreateKeyring(KEYSTORE, ['V1', 'V2', 'V3']);
-  // Wrap a validator's raw invoker into a `deliberate` closure: it builds the
-  // prompt and parses the verdict on the validator side, so the signer derives the
-  // ballot hash from the same content the model judged (round-45 binding fix).
-  const deliberateWith = (invoke: ValidatorInvoker) => async (prompt: string, context: string, verdicts?: string[]) => {
-    const rawOutput = await invoke(buildPrompt(prompt, context, verdicts));
-    return { verdict: parseVerdict(rawOutput), rawOutput };
-  };
-  const signers = [
-    makeLocalSigner({ validatorId: 'V1', key: ks.keys.V1, deliberate: deliberateWith(safe('V1', claudeInvoke)) }),
-    makeLocalSigner({ validatorId: 'V2', key: ks.keys.V2, deliberate: deliberateWith(safe('V2', codexInvoke)) }),
-    makeLocalSigner({ validatorId: 'V3', key: ks.keys.V3, deliberate: deliberateWith(safe('V3', hermesInvoke)) }),
-  ];
 
   // Optional multiple-choice ballot: QRM_VERDICTS="A,B,C" (default YES/NO/ABSTAIN).
   const verdicts = process.env.QRM_VERDICTS
     ? process.env.QRM_VERDICTS.split(',').map((s) => s.trim())
     : undefined;
 
+  // Spawn one deliberating host per validator. Each loads its OWN key from the
+  // keystore child-side (creating it on first run); the private half never enters
+  // this process. The timeout must exceed the slowest invoker (hermes ≈ 480s).
+  // startSigners tolerates a STARTUP failure (round-49 V2 fix): a host that dies at
+  // handshake is a recorded absence, not an abort of the whole convening.
+  const pinned = loadPinnedKeyring(PINNED);
+  const { started, startupFailures } = await startSigners(['V1', 'V2', 'V3'], (id) =>
+    makeRemoteSigner({ validatorId: id, hostPath: DELIB_HOST, timeoutMs: 600_000, env: { QRM_KEYSTORE_DIR: KEYSTORE } }),
+  );
+  if (startupFailures.length) console.error('Startup failures:', JSON.stringify(startupFailures));
+  // Pin check (Phase 0.2): every host that DID come up must present its published key
+  // (no substitution); an absent validator counts against ratify's 2/3 bar, since the
+  // keyring (denominator) is the full registered panel.
+  const presented = Object.fromEntries(started.map((s) => [s.validatorId, s.publicKeyPem]));
+  assertMatchesPin(presented, pinned);
+  const keyring = pinned;
+
   console.error(`Convening panel on: ${prompt}`);
-  const r = await convene({ prompt, context, signers, keyring: ks.keyring, quorum: 2, logPath: LOG, verdicts });
+  const r = await convene({ prompt, context, signers: started, keyring, quorum: 2, logPath: LOG, verdicts });
+  for (const s of started) s.close();
 
   // Persist verbatim reasoning keyed by ballot hash. The log stores only the
   // sha256 of each rawOutput (tamper-evidence); this sidecar keeps the readable
@@ -112,6 +74,7 @@ async function main() {
   for (const v of r.votes) console.log(`  ${v.validatorId}: ${v.verdict}`);
   console.log('Ratified    :', r.ratified, '| verdict:', r.verdict, '| tally:', JSON.stringify(r.tally));
   if (r.rejected.length) console.log('Rejected    :', JSON.stringify(r.rejected));
+  if (r.failures.length) console.log('Failures    :', JSON.stringify(r.failures)); // validators whose host failed (liveness)
   console.log('Log         :', LOG, '|', readLog(LOG).length, 'entries | chain valid:', verifyLog(LOG).valid);
 }
 

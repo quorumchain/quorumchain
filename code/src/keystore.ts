@@ -30,3 +30,29 @@ export function loadOrCreateKeyring(dir: string, validatorIds: string[]): Keyrin
   const keyring = Object.fromEntries(Object.entries(keys).map(([id, k]) => [id, k.publicKeyPem]));
   return { keys, keyring };
 }
+
+// --- Pinned / published keyring (Phase 0.2) ---------------------------------
+// The keyring `ratify()` trusts must be a PUBLISHED artifact, not whatever a host
+// hands back at handshake — otherwise a compromised orchestrator could spawn hosts
+// with keys it generated and "ratify" a fake panel. The pinned keyring is committed
+// (public keys only) and matches the round-6 published identities; anyone holding it
+// + the log can verify a convening, and a silent key swap is visible in its history.
+
+/** Load the published id→publicKeyPem map. Throws if it has not been published yet. */
+export function loadPinnedKeyring(path: string): Record<string, string> {
+  if (!existsSync(path)) throw new Error(`pinned keyring not found at ${path} — publish it first`);
+  return JSON.parse(readFileSync(path, 'utf8')) as Record<string, string>;
+}
+
+/** Reject key SUBSTITUTION, allow ABSENCE. Every key a host actually presents must be
+ *  a pinned validator presenting its published key — a wrong key (substitution) or a
+ *  validator not in the pin (unknown) aborts. A pinned validator that presents NO key
+ *  is an absence, not a breach: that is a liveness event handled by quorum (2/3 is of
+ *  the registered panel), not a reason to abort the convening. This separates the
+ *  pin's security property (no substitution) from liveness (round-49 V2 finding). */
+export function assertMatchesPin(presented: Record<string, string>, pinned: Record<string, string>): void {
+  for (const [id, key] of Object.entries(presented)) {
+    if (!(id in pinned)) throw new Error(`validator ${id} is not in the pinned keyring (unknown validator)`);
+    if (key !== pinned[id]) throw new Error(`validator ${id} key does not match the pinned keyring (substitution?)`);
+  }
+}

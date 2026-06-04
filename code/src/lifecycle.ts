@@ -88,6 +88,22 @@ export function effectiveQuorum(p: Panel): number {
   return standing(p).length;
 }
 
+/** Build the keyring `ratify()` must use from a panel: the STANDING set only. This is
+ *  the structural enforcement of ratify's documented standing-set precondition
+ *  (round-46 V3 TODO): ratify's 2/3 denominator is `|keyring|`, so a probation member
+ *  — zero quorum weight (NI-3) — must never reach it, or it would inflate the bar.
+ *  Probationers are excluded by construction here; a standing slot with no published
+ *  key throws rather than being silently dropped. */
+export function standingKeyring(p: Panel, publicKeyById: Record<string, string>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const v of standing(p)) {
+    const pk = publicKeyById[v.id];
+    if (pk === undefined) throw new Error(`no public key for standing validator ${v.id}`);
+    out[v.id] = pk;
+  }
+  return out;
+}
+
 export function seedPanel(validators: Validator[]): Panel {
   return {
     validators: validators.map((v) => ({ ...v, status: 'STANDING' as Status })),

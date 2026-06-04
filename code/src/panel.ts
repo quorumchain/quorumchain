@@ -12,6 +12,7 @@ export type ValidatorInvoker = (fullPrompt: string) => Promise<string>;
 
 export interface ConveneResult extends RatifyResult {
   votes: SignedVote[];
+  failures: { validatorId: string; error: string }[]; // validators whose signer failed (e.g. dead host)
 }
 
 /** Pull a structured verdict out of free-text model output. Validators are asked
@@ -39,6 +40,27 @@ export function buildPrompt(prompt: string, context: string, verdicts: string[] 
   ].join('\n');
 }
 
+/** Bring up one signer per validator id, tolerating STARTUP failures (round-49 V2
+ *  finding): a host that fails its initial handshake is recorded as a startup absence
+ *  instead of aborting the whole convening. The validators that came up are returned
+ *  for `convene`; the absences count against ratify's 2/3 bar (the denominator is the
+ *  full registered/pinned panel). `make` is the per-id signer factory (e.g. a
+ *  makeRemoteSigner call). This is the live-path complement to convene's per-signing
+ *  failure handling, so a dead host can abort the convening at NO stage. */
+export async function startSigners(
+  ids: string[],
+  make: (id: string) => Promise<Signer>,
+): Promise<{ started: Signer[]; startupFailures: { validatorId: string; error: string }[] }> {
+  const results = await Promise.allSettled(ids.map((id) => make(id)));
+  const started: Signer[] = [];
+  const startupFailures: { validatorId: string; error: string }[] = [];
+  results.forEach((r, i) => {
+    if (r.status === 'fulfilled') started.push(r.value);
+    else startupFailures.push({ validatorId: ids[i], error: r.reason instanceof Error ? r.reason.message : String(r.reason) });
+  });
+  return { started, startupFailures };
+}
+
 export async function convene(params: {
   prompt: string;
   context: string;
@@ -50,17 +72,26 @@ export async function convene(params: {
 }): Promise<ConveneResult> {
   const bh = ballotHash(params.prompt, params.context);
   const votes: SignedVote[] = [];
+  const failures: { validatorId: string; error: string }[] = [];
   // Sequential: appendVote reads-then-writes the file, so concurrent appends
   // would race the hash chain. A 3-validator panel does not need parallelism.
   // The orchestrator holds NO key and supplies NO hash: it passes the ballot
   // CONTENT, and each validator signs its own vote behind the Signer boundary,
   // deriving the hash from that content (CIP-3 — the orchestrator is not the trust
   // root; it can collect and verify, but cannot mint, alter, or rebind a verdict).
+  // Liveness (Phase 0.5): a signer failure (e.g. a dead RemoteSigner host) is
+  // RECORDED as an absence and the convening proceeds — it never hangs or aborts,
+  // and a missing vote is never fabricated. ratify then decides on the votes that
+  // arrived: 2/3 is of the whole registered panel, so absences count against the bar.
   for (const s of params.signers) {
-    const vote = await s.signBallot(params.prompt, params.context, params.verdicts);
-    appendVote(params.logPath, vote);
-    votes.push(vote);
+    try {
+      const vote = await s.signBallot(params.prompt, params.context, params.verdicts);
+      appendVote(params.logPath, vote);
+      votes.push(vote);
+    } catch (e) {
+      failures.push({ validatorId: s.validatorId, error: (e as Error).message });
+    }
   }
   const result = ratify(bh, votes, params.keyring, params.quorum);
-  return { ...result, votes };
+  return { ...result, votes, failures };
 }

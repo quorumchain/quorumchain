@@ -74,10 +74,10 @@ artifacts.
 
 - **`src/run-panel.ts`** — the live wiring. Convenes the real validators
   (V1 Claude, V2 Codex, V3 Hermes) on one ballot:
-  `node src/run-panel.ts "<question>" "<context>"`. V2/V3 shell out to the
-  `codex`/`hermes` CLIs; V1 (the orchestrating Claude, which cannot subprocess
-  itself) supplies its deliberation in `data/claude-vote.txt`. Each validator is
-  wrapped in a `Signer`, so `convene` is handed signing *capabilities*, not keys.
+  `node src/run-panel.ts "<question>" "<context>"`. All three deliberate
+  autonomously by shelling out to their own CLI — V1→`claude -p`, V2→`codex`,
+  V3→`hermes` (round 48; no human paste). Each validator is wrapped in a `Signer`,
+  so `convene` is handed signing *capabilities*, not keys.
   Keystore + log live under `data/` (git-ignored — holds private keys).
 
 ### CIP-8 — the Accountability Ledger (v0.1, built)
@@ -266,7 +266,7 @@ node src/bonds-demo.ts   # CIP-8 v0.2: bond/stake autonomy gate + slash-on-viola
 node src/reputation-demo.ts # CIP-9 v0.2: external-anchor reputation (NI-9b accuracy-not-popularity) + computed standing (NI-9c)
 node src/scenario-demo.ts # END-TO-END: one accountability story threaded through every CIP (bond→notary→resolve→index→reputation→rotate)
 node src/run-panel.ts "<question>" "<context>"   # LIVE convening: Claude + Codex + Hermes
-node --test              # 142 tests
+node --test              # 178 tests
 ```
 
 Zero dependencies — Node 25 runs the TypeScript natively (type-stripping) and
@@ -274,12 +274,23 @@ Zero dependencies — Node 25 runs the TypeScript natively (type-stripping) and
 
 ## Deliberately NOT done yet (open items)
 
-- **Validator key custody** — *closed in code (round-44 #2 → round-46).* `convene`
-  takes `Signer` capabilities, not keys; `makeRemoteSigner` runs the key in a
-  **separate OS process** (`src/remote-signer-host.ts`) so it never enters the
-  orchestrator process. What's left for testnet is the *production host* invoking
-  the real model child-side (locally the deliberation is a fixed stand-in; the
-  custody property itself is fully real) and a hardware/enclave key store.
+- **Validator key custody** — *closed on the live path (round-44 #2 → round-46
+  mechanism → round-47 wiring, panel vote WIRE_NOW 2/1).* `run-panel` now runs every
+  validator behind a `makeRemoteSigner` whose host (`src/deliberating-signer-host.ts`)
+  is a **separate OS process**: it holds the keystore key, runs the validator's real
+  CLI invoker child-side (V1→`claude -p`, V2→`codex`, V3→`hermes`), parses the
+  verdict, derives the ballot hash, and signs — so no private key enters the
+  orchestrator and the spawner supplies no verdict. (`src/remote-signer-host.ts` is
+  retained only as a fixed-verdict TEST fixture for the custody/liveness tests.)
+  A round-47 re-audit corrected the earlier "closed in code / local backlog
+  exhausted" overstatement: the mechanism existed but was unwired, generated an
+  *ephemeral* key per spawn, and had no RPC timeout/error/exit handling — all now
+  fixed under TDD. Round 48 (**AUTONOMY_FIRST**) then made **V1 autonomous** via
+  `claude -p`, removing the last human-pasted-file dependency (verified live). Phase
+  0.2 then pinned the keyring: `ratify` verifies against a committed
+  `pinned-keyring.json` (matching the round-6 identities) and `run-panel` aborts if a
+  host's handshake key ≠ the pin (verified live: a substituted key is rejected).
+  *Testnet still owed:* a hardware/enclave key store.
 - **On-chain hash-pinning** — votes and module state are local + hash-chained
   (`vote-log` / `state-log`), not yet anchored to an L1. CIP-3 §5 calls this the
   interim state; `state-log.ts` is the interim for module state (round-44 #6).
@@ -295,8 +306,11 @@ written to the hash-chained log and ratified — every signature verifies and th
 chain validates independently. The orchestrator can no longer fabricate or
 silently alter the result; anyone with the keyring + log recomputes it.
 
-Remaining gap for a *fully* trustless panel: OS-level key custody (above) — the
-`Signer` boundary now means `convene` never holds a key in code, but locally the
-keystore still loads keys into the orchestrator process, so true isolation waits
-on a `RemoteSigner` (separate process / enclave) at testnet. The signed + chained
-log already makes divergence from a re-run detectable (the testnet-α guarantee).
+OS-level key custody is now part of this live path (round 47): each validator's key
+lives in its own deliberating-host process, so `run-panel` holds no private key and
+cannot mint or alter a verdict. The signed + chained log makes divergence from a
+re-run detectable, and anyone with the keyring + log recomputes the result. V1 now
+deliberates autonomously via `claude -p` (round 48), so no human is in the panel loop.
+The keyring is pinned to a published file (round-6 identities), so a substituted key
+aborts the convening. Remaining gap for a *fully* trustless panel: a hardware/enclave
+key store (testnet).

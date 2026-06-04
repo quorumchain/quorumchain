@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { parseVerdict, buildPrompt, convene } from '../src/panel.ts';
+import { parseVerdict, buildPrompt, convene, startSigners } from '../src/panel.ts';
 import { makeLocalSigner, type Signer } from '../src/signer.ts';
 import { generateValidatorKey, ballotHash, verifyVote } from '../src/signed-vote.ts';
 import { readLog, verifyLog } from '../src/vote-log.ts';
@@ -102,4 +102,46 @@ test('convene records a non-voting validator as NO_VERDICT (counted but unparsea
   const r = await convene({ prompt: 'q', context: 'c', signers, keyring, quorum: 2, logPath: tmpLog() });
   assert.equal(r.tally.NO_VERDICT, 1);
   assert.equal(r.verdict, 'YES'); // 2 YES still carries quorum
+});
+
+// --- liveness (Phase 0.5): a dead validator process must not abort the convening ---
+
+const deadSigner = (id: string): Signer => ({
+  validatorId: id,
+  publicKeyPem: `PLACEHOLDER_${id}`,
+  signBallot: async () => { throw new Error('remote signer host exited before answering'); },
+});
+
+test('convene survives a dead validator: records the failure, ratifies on the standing quorum', async () => {
+  const { signers, keyring } = fakePanel({ V1: 'VERDICT: YES', V2: 'VERDICT: YES' }); // 2 live
+  keyring.V3 = 'PLACEHOLDER_V3'; // V3 is a registered validator whose host is down
+  const logPath = tmpLog();
+  const r = await convene({ prompt: 'q', context: 'c', signers: [...signers, deadSigner('V3')], keyring, quorum: 2, logPath });
+  assert.equal(r.ratified, true); // 2/3 of the registered panel still met — a dead host does not hang or abort
+  assert.equal(r.verdict, 'YES');
+  assert.equal(r.votes.length, 2); // only the live validators produced signed votes
+  assert.deepEqual(r.failures.map((f) => f.validatorId), ['V3']); // the absence is recorded, never fabricated
+  assert.equal(readLog(logPath).length, 2); // the dead validator wrote nothing to the log
+});
+
+test('startSigners tolerates a host that fails its startup handshake: records it, returns the rest', async () => {
+  // round-49 V2 finding: run-panel must not abort the whole convening if ONE host
+  // dies at startup. A failed signer factory is a recorded startup absence, not a throw.
+  const make = async (id: string): Promise<Signer> => {
+    if (id === 'V2') throw new Error('remote signer host exited before answering');
+    return { validatorId: id, publicKeyPem: `PK_${id}`, signBallot: async () => { throw new Error('unused'); } };
+  };
+  const { started, startupFailures } = await startSigners(['V1', 'V2', 'V3'], make);
+  assert.deepEqual(started.map((s) => s.validatorId), ['V1', 'V3']); // the two that came up
+  assert.deepEqual(startupFailures.map((f) => f.validatorId), ['V2']); // the dead one, recorded not thrown
+  assert.match(startupFailures[0].error, /exited/);
+});
+
+test('convene does NOT ratify when failures drop it below the 2/3 bar', async () => {
+  const { signers, keyring } = fakePanel({ V1: 'VERDICT: YES' }); // only 1 live
+  keyring.V2 = 'PLACEHOLDER_V2';
+  keyring.V3 = 'PLACEHOLDER_V3';
+  const r = await convene({ prompt: 'q', context: 'c', signers: [...signers, deadSigner('V2'), deadSigner('V3')], keyring, quorum: 2, logPath: tmpLog() });
+  assert.equal(r.ratified, false); // 1 vote is below 2/3 of the 3 registered
+  assert.equal(r.failures.length, 2);
 });

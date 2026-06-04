@@ -35,3 +35,18 @@ Chain verified valid at 126 entries. Verbatim reasoning: `code/data/raw-0d7d765b
 - **Outstanding — testnet/substrate only:** the RemoteSigner host invoking the real model child-side; auto-wiring module state-emission into the state-log; per-event authorization + on-chain anchoring; slashing execution; and structurally enforcing the `ratify` standing-set precondition at the CIP-7 caller (V3's structural TODO).
 
 The local backlog is now exhausted. Every remaining item genuinely requires the testnet substrate.
+
+> **Correction (round 47).** This claim was wrong, and a round-47 adversarial
+> re-audit of round 46's own additions — read from the SOURCE, not from the
+> builder's summary — found three under-disclosed gaps that prove it: (A) the
+> RemoteSigner host generated an *ephemeral* key per spawn (no stable identity);
+> (C) `makeRemoteSigner` had no timeout/error/exit handling, so a dead host hung
+> the convening forever; and (B) `run-panel` still used the *local* signer —
+> RemoteSigner was never wired into the live path, and "the RemoteSigner host
+> invoking the real model child-side" was **local** work, not testnet. A and C
+> were fixed under TDD; B was put to the panel, which voted **WIRE_NOW (2/1)** to
+> build a deliberating host and wire it. See
+> `2026-06-04-round-47-audit-and-deliberating-host.md`. The round-46 unanimous
+> SOUND was therefore partly a product of the builder's own under-disclosure —
+> the recorded process fix is that a builder's own additions are reviewed from
+> the source/diff, never from a summary the builder authored.
