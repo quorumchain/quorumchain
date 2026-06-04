@@ -76,6 +76,14 @@ test('the index shows a CONTESTED claim AS contested, never as a winner-label (g
   assert.match(md, /Did X occur\?.*RESOLVED/s);
 });
 
+test('index links resolve to claim pages co-located with INDEX.md, not a doubled commons/ path (round-58 review, V1 REVISE)', () => {
+  // publish-commons.ts writes INDEX.md INTO docs/commons/, alongside the per-claim pages.
+  // A `commons/<hash>.md` link from there resolves to docs/commons/commons/<hash>.md — dead.
+  const md = renderIndexMarkdown([resolved]);
+  assert.match(md, /\]\(\.\/abc123def456\.md\)/); // same-directory relative link
+  assert.doesNotMatch(md, /\]\(commons\/abc123def456\.md\)/); // the broken doubled-path
+});
+
 test('the index carries the chain-validity banner', () => {
   assert.match(renderIndexMarkdown([resolved]), /Chain validity/);
   assert.match(renderIndexMarkdown([{ ...resolved, chainValid: false }]), /❌|BROKEN/);

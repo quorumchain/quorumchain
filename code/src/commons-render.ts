@@ -43,7 +43,9 @@ export function renderClaimMarkdown(view: ClaimView): string {
  *  as a winner-label; a RESOLVED claim shows its consensus stance AND flags preserved dissent. */
 function indexRow(view: ClaimView): string {
   const title = view.statement ?? `\`${view.ballotHash.slice(0, 12)}\``;
-  const link = `commons/${view.ballotHash.slice(0, 12)}.md`;
+  // INDEX.md is written into docs/commons/ alongside the claim pages, so links are
+  // same-directory relative — a `commons/`-prefix would resolve to docs/commons/commons/ (round 58, V1).
+  const link = `./${view.ballotHash.slice(0, 12)}.md`;
   if (view.status === 'RESOLVED') {
     const consensus = view.stances.find((s) => s.standing === 'CONSENSUS');
     const dissent = view.stances.filter((s) => s.standing === 'CREDIBLE_MINORITY').length;
