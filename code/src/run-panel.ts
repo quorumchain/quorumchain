@@ -59,7 +59,7 @@ async function main() {
   const keyring = pinned;
 
   console.error(`Convening panel on: ${prompt}`);
-  const r = await convene({ prompt, context, signers: started, keyring, quorum: 2, logPath: LOG, verdicts });
+  const r = await convene({ prompt, context, signers: started, keyring, quorum: 2, logPath: LOG, verdicts, registryPath: join(DATA, 'ballots.jsonl') });
   for (const s of started) s.close();
 
   // Persist verbatim reasoning keyed by ballot hash. The log stores only the

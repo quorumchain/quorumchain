@@ -18,6 +18,7 @@ export const DATA = join(HERE, '..', 'data');
 export const KEYSTORE = join(DATA, 'keystore');
 export const LOG = join(DATA, 'votes.log');
 export const QUEUE = join(DATA, 'queue');
+export const REGISTRY = join(DATA, 'ballots.jsonl'); // ballot statements for the read surface (CIP-9)
 const PINNED = join(HERE, '..', 'pinned-keyring.json');
 const DELIB_HOST = join(HERE, 'deliberating-signer-host.ts');
 
@@ -42,6 +43,7 @@ export async function liveRunBallot(ballot: Ballot): Promise<RunResult> {
       quorum: QUORUM,
       logPath: LOG,
       verdicts: ballot.verdicts,
+      registryPath: REGISTRY, // record the statement so the read surface can show it (round-58)
     });
     const rawDump = r.votes.map((v) => `### ${v.validatorId} — ${v.verdict}\n${v.rawOutput}`).join('\n\n');
     writeFileSync(join(DATA, `raw-${r.ballotHash.slice(0, 12)}.txt`), rawDump);
