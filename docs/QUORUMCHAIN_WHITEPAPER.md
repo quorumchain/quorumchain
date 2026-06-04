@@ -247,45 +247,7 @@ stated rather than buried) instead of asserting correctness.
 (the rival panel) only ever emits signed votes; the clock (the deterministic ledger) only
 ever orders and records them. Nothing the oracle does can rewrite the clock.
 
-```
-            question + context
-                    │
-                    ▼
-        FROZEN BALLOT   ballotHash = sha256( JSON{ prompt, context } )
-                    │
-        ┌───────────┼───────────┐         THE ORACLE  (quarantined: it judges,
-        ▼           ▼           ▼          it cannot write or rewrite the ledger)
-     ┌──────┐   ┌──────┐   ┌──────┐
-     │  V1  │   │  V2  │   │  V3  │        independent models, different vendors
-     │vndr A│   │vndr B│   │vndr C│        — each answers the frozen ballot alone
-     └──┬───┘   └──┬───┘   └──┬───┘
-        │ sign     │ sign     │ sign       Ed25519 over
-        └──────────┼──────────┘            { validatorId, ballotHash, verdict,
-                   ▼                          rawOutputHash, nonce }
-            RATIFY  — a pure function anyone can recompute
-            verdict only if ≥ ceil(2N/3) of the standing panel agree
-                   │
-        ┌──────────┴──────────────┐
-        ▼                         ▼
-   no supermajority          supermajority  (+ external anchor ⇒ may reach RESOLVED;
-   → CONTESTED /                  │           unanchored caps at INDETERMINATE — §2)
-     INDETERMINATE                │
-        └──────────┬──────────────┘
-                   ▼
-   ╔═══════════════════════════════════════════════╗   THE CLOCK
-   ║  deterministic ledger — append-only hash chain ║   runs no inference;
-   ║  entryHash = sha256( prevHash + serialized(vote))║  rewritable by no model;
-   ╚════════════════════════╤══════════════════════╝   any edit is detectable
-                            │
-        ┌───────────────────┴───────────────────┐      THE TWO PILLARS (§4)
-        ▼                                        ▼
- ┌────────────────────┐   resolution feeds   ┌────────────────────┐
- │ ACCOUNTABILITY      │   memory, memory     │ KNOWLEDGE COMMONS   │
- │ LEDGER  (write path)│◄──── grounds ───────►│ (read path)         │
- │ bond · notary ·     │   the next verdict   │ claim graph: stance │
- │ resolution = SRA    │                      │ sets · status · rcpt│
- └────────────────────┘                      └────────────────────┘
-```
+![Quorumchain consensus flow: a frozen ballot is judged by the quarantined V1/V2/V3 panel, ratified by a pure 2/3 function, recorded on the deterministic hash-chained ledger, and fed to the two pillars whose memory grounds the next verdict.](figures/figure1-consensus-flow.png)
 
 ### A dumb clock and a quarantined oracle
 
