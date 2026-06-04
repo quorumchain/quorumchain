@@ -43,9 +43,40 @@ const CORRELATION_THRESHOLD = 0.9;
 
 const standing = (p: Panel) => p.validators.filter((v) => v.status === 'STANDING');
 
-/** Distinct pretraining-corpus families among STANDING validators (NI-1). */
+// NI-1: "distinct lineage" is the full attested provenance vector, not a model
+// card. Two slots share a lineage — a common failure mode — if they overlap on
+// ANY of these dimensions. A null teacher means "not distilled" and is NOT a
+// shared teacher, so two un-distilled slots do not collide on that axis.
+const LINEAGE_DIMENSIONS = ['corpusFamily', 'teacher', 'weightDerivation', 'provider', 'servingStack'] as const;
+
+/** The provenance dimension on which a and b collide (shared lineage), or null. */
+function collidingDimension(a: Provenance, b: Provenance): (typeof LINEAGE_DIMENSIONS)[number] | null {
+  for (const d of LINEAGE_DIMENSIONS) {
+    if (a[d] !== null && a[d] === b[d]) return d;
+  }
+  return null;
+}
+
+const sharesLineage = (a: Provenance, b: Provenance): boolean => collidingDimension(a, b) !== null;
+
+/** Distinct STANDING lineages (NI-1), over the FULL provenance vector. Slots that
+ *  share any provenance dimension are merged into one family (connected components),
+ *  so a hidden correlation — same base weights, same provider — can never inflate
+ *  the independence count. Conservative by construction: it never over-counts
+ *  independence, which is the safe direction for a security floor. */
 export function distinctStandingFamilies(p: Panel): number {
-  return new Set(standing(p).map((v) => v.provenance.corpusFamily)).size;
+  const s = standing(p);
+  const parent = s.map((_, i) => i);
+  const find = (x: number): number => {
+    while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; }
+    return x;
+  };
+  for (let i = 0; i < s.length; i++) {
+    for (let j = i + 1; j < s.length; j++) {
+      if (sharesLineage(s[i].provenance, s[j].provenance)) parent[find(i)] = find(j);
+    }
+  }
+  return new Set(s.map((_, i) => find(i))).size;
 }
 
 export function floorOk(p: Panel): boolean {
@@ -89,10 +120,12 @@ export function proposeUpgrade(p: Panel, slotId: string, cand: UpgradeCandidate)
   if (inProbation(p)) return { ok: false, reason: 'NI-2: a probation is already in progress — second upgrade queued', panel: p };
   if (!cand.fingerprintIndependent) return { ok: false, reason: 'rejected: fails the CIP-1 §6 independence / fingerprint test', panel: p };
 
-  // structural diversity (NI-1): the new lineage must not collide with the OTHER standing slots
+  // structural diversity (NI-1): the new lineage must not collide with the OTHER
+  // standing slots on ANY provenance dimension (not just corpus — provenance, not model card)
   const others = standing(p).filter((v) => v.id !== slotId);
-  if (others.some((v) => v.provenance.corpusFamily === cand.provenance.corpusFamily)) {
-    return { ok: false, reason: `rejected: NI-1 — lineage '${cand.provenance.corpusFamily}' collides with a standing slot (provenance, not model card)`, panel: p };
+  for (const o of others) {
+    const dim = collidingDimension(o.provenance, cand.provenance);
+    if (dim) return { ok: false, reason: `rejected: NI-1 — shares ${dim} '${cand.provenance[dim]}' with a standing slot (provenance, not model card)`, panel: p };
   }
 
   // the old version leaves the slot; the new version holds it provisionally, shadowed (0 weight)
@@ -121,8 +154,9 @@ export function graduate(p: Panel, version: string, opts: { predecessorCalibrati
 export function beginRotation(p: Panel, outgoingId: string, replacement: UpgradeCandidate & { provider?: string }): Result {
   if (inProbation(p)) return { ok: false, reason: 'NI-2: a probation is already in progress', panel: p };
   if (!replacement.fingerprintIndependent) return { ok: false, reason: 'rejected: fails independence test', panel: p };
-  if (standing(p).some((v) => v.provenance.corpusFamily === replacement.provenance.corpusFamily)) {
-    return { ok: false, reason: `rejected: NI-1 — replacement lineage collides with a standing slot`, panel: p };
+  for (const o of standing(p)) {
+    const dim = collidingDimension(o.provenance, replacement.provenance);
+    if (dim) return { ok: false, reason: `rejected: NI-1 — replacement shares ${dim} '${replacement.provenance[dim]}' with a standing slot`, panel: p };
   }
   const id = replacement.provenance.provider;
   const validators = [...p.validators, { id, version: replacement.version, status: 'PROBATION' as Status, calibration: replacement.calibration, provenance: replacement.provenance }];

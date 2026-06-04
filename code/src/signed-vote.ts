@@ -121,8 +121,20 @@ export function findEquivocations(votes: SignedVote[]): { validatorId: string; b
   return out;
 }
 
+/** The 2/3 supermajority of a registered panel of size n: the smallest integer
+ *  count c with c/n ≥ 2/3, i.e. ceil(2n/3). This is the CIP-3 consensus rule
+ *  itself, computed — not a tunable. */
+export function supermajorityThreshold(n: number): number {
+  return Math.ceil((2 * n) / 3);
+}
+
 /** Ratification = a verifiable function of signed votes (CIP-3 §1). The orchestrator
- *  cannot change the outcome; anyone with the keyring can recompute this. */
+ *  cannot change the outcome; anyone with the keyring can recompute this. The 2/3
+ *  supermajority is enforced by the primitive: the effective bar is the GREATER of
+ *  the caller's quorum and the 2/3 supermajority of the registered panel, so a
+ *  caller may demand a stricter threshold but can never weaken below 2/3. Absent
+ *  validators count against the bar — 2/3 is of the whole registered panel, not of
+ *  whoever showed up. */
 export function ratify(
   expectedBallotHash: string,
   votes: SignedVote[],
@@ -167,7 +179,8 @@ export function ratify(
       verdict = val;
     }
   }
-  const ratified = verdict !== null && max >= quorum;
+  const required = Math.max(quorum, supermajorityThreshold(Object.keys(keyring).length));
+  const ratified = verdict !== null && max >= required;
 
   return {
     ballotHash: expectedBallotHash,

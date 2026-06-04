@@ -7,6 +7,7 @@ import {
   verifyVote,
   ratify,
   findEquivocations,
+  supermajorityThreshold,
 } from '../src/signed-vote.ts';
 
 // --- ballot hashing: a vote must bind the FULL prompt + context (CIP-3 §1) ---
@@ -81,6 +82,27 @@ test('ratify reaches quorum when enough validators agree on the same ballot', ()
   const r = ratify(bh, votes, p.keyring, 2);
   assert.equal(r.ratified, true);
   assert.equal(r.verdict, 'YES');
+  assert.equal(r.tally.YES, 2);
+});
+
+test('supermajorityThreshold is the 2/3 ceiling of the registered panel size', () => {
+  assert.equal(supermajorityThreshold(3), 2);
+  assert.equal(supermajorityThreshold(4), 3); // 2.67 -> 3
+  assert.equal(supermajorityThreshold(6), 4);
+  assert.equal(supermajorityThreshold(9), 6);
+});
+
+test('ratify enforces the 2/3 supermajority of the registered panel even if a weaker quorum is passed', () => {
+  const v1 = generateValidatorKey(), v2 = generateValidatorKey(), v3 = generateValidatorKey(), v4 = generateValidatorKey();
+  const keyring = { V1: v1.publicKeyPem, V2: v2.publicKeyPem, V3: v3.publicKeyPem, V4: v4.publicKeyPem }; // N=4 -> needs 3
+  const bh = ballotHash('q', 'c');
+  const votes = [
+    signVote({ validatorId: 'V1', privateKeyPem: v1.privateKeyPem, ballotHash: bh, verdict: 'YES', rawOutput: 'a' }),
+    signVote({ validatorId: 'V2', privateKeyPem: v2.privateKeyPem, ballotHash: bh, verdict: 'YES', rawOutput: 'b' }),
+  ];
+  // a caller supplies a too-weak quorum of 2; the primitive must still require ceil(2*4/3)=3
+  const r = ratify(bh, votes, keyring, 2);
+  assert.equal(r.ratified, false); // 2 of a 4-validator panel is below the 2/3 floor
   assert.equal(r.tally.YES, 2);
 });
 

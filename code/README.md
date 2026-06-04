@@ -28,7 +28,11 @@ artifacts.
   - `ratify(ballotHash, votes, keyring, quorum)` — the verifiable function.
     Rejects wrong-ballot, invalid-signature, unknown-validator, and equivocating
     votes; tallies one verdict per validator; returns `{ratified, verdict, tally,
-    counted, rejected}`. The orchestrator cannot change this outcome.
+    counted, rejected}`. The orchestrator cannot change this outcome. The **2/3
+    supermajority is enforced by the primitive** (round-44 backlog #7): the bar is
+    `max(quorum, supermajorityThreshold(N))` over the registered panel `N`, so a
+    caller may demand stricter but can never weaken below 2/3, and absent
+    validators count against it.
 
 - **`src/vote-log.ts`** — tamper-evident append-only log (CIP-3 §2/§5). Each
   entry is SHA-256 hash-chained to the previous one, so any edit, deletion, or
@@ -202,7 +206,10 @@ permanent panel survives its impermanent members with no human in the loop.
   version-bound and never inherited, shadowed at **zero quorum weight** — NI-3;
   at most one concurrent probation — NI-2; every new version probationed —
   NI-4), `distinctStandingFamilies`/`floorOk` (the ≥4 standing distinct-family
-  floor — NI-3), lineage distinctness by **provenance, not model card** (NI-1),
+  floor — NI-3), lineage distinctness by the **full provenance vector, not a model
+  card** (NI-1: corpus + teacher + weight-derivation + provider + serving — slots
+  sharing *any* dimension merge into one family, so a hidden correlation cannot
+  inflate the independence count),
   `beginRotation`/`completeRotation` (overlap handoff; an undersized pool
   **FREEZEs** rather than breach the floor — NI-5), `correlationEvict` (fires on
   the verifiable class; on the unverifiable class the structural floor is the
@@ -245,7 +252,7 @@ node src/bonds-demo.ts   # CIP-8 v0.2: bond/stake autonomy gate + slash-on-viola
 node src/reputation-demo.ts # CIP-9 v0.2: external-anchor reputation (NI-9b accuracy-not-popularity) + computed standing (NI-9c)
 node src/scenario-demo.ts # END-TO-END: one accountability story threaded through every CIP (bond→notary→resolve→index→reputation→rotate)
 node src/run-panel.ts "<question>" "<context>"   # LIVE convening: Claude + Codex + Hermes
-node --test              # 131 tests
+node --test              # 135 tests
 ```
 
 Zero dependencies — Node 25 runs the TypeScript natively (type-stripping) and

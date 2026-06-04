@@ -90,6 +90,28 @@ test('NI-1: a candidate sharing a corpus lineage is rejected even with a differe
   assert.match(r.reason!, /lineage|provenance|NI-1|distinct/i);
 });
 
+test('NI-1 full vector: two slots sharing ANY provenance dimension are one family (hidden correlation)', () => {
+  // four DIFFERENT corpus names, but B was built on A's base weights — a shared
+  // failure mode the corpus-only check would miss (NI-1 names weight-derivation too)
+  const b = v('B', 'corpus-B');
+  b.provenance.weightDerivation = 'corpus-A-base'; // collides with A's base weights
+  const p = seedPanel([v('A', 'corpus-A'), b, v('C', 'corpus-C'), v('D', 'corpus-D')]);
+  assert.equal(distinctStandingFamilies(p), 3); // A and B collapse into one family
+  assert.equal(floorOk(p), false); // below the ≥4 floor once the hidden correlation counts
+});
+
+test('NI-1 full vector: a candidate sharing provider control (not corpus) is rejected', () => {
+  const p = basePanel(); // standing providers A,B,C,D
+  // a fresh corpus/name, but the SAME provider as standing slot B — provider-control correlation
+  const r = proposeUpgrade(p, 'A', {
+    version: 'A@v2', calibration: 0.9,
+    provenance: { corpusFamily: 'corpus-NEW', teacher: null, weightDerivation: 'corpus-NEW-base', provider: 'B', servingStack: 'A2-stack' },
+    fingerprintIndependent: true,
+  });
+  assert.equal(r.ok, false);
+  assert.match(r.reason!, /provider|lineage|provenance|NI-1/i);
+});
+
 test('NI-1: failing the independence/fingerprint test is rejected', () => {
   const p = basePanel();
   const r = proposeUpgrade(p, 'A', { version: 'A@v2', calibration: 0.9, provenance: { corpusFamily: 'corpus-A', teacher: null, weightDerivation: 'corpus-A-base', provider: 'A', servingStack: 'A-stack' }, fingerprintIndependent: false });
