@@ -24,11 +24,14 @@ const SHORT = 12;
 const VERDICTS = ['SOUND', 'REVISE', 'INADEQUATE'];
 
 /** The review ballot for one commit. Deterministic: same commit -> identical id and
- *  ballot. The id is `review-<epoch>-<short-sha>` — epoch-prefixed so ids sort
- *  oldest-commit-first, sha-suffixed so it is unique and reproducible from public git. */
+ *  ballot. The id is `review-<epoch>-<full-sha>` — epoch-prefixed so ids sort
+ *  oldest-commit-first, FULL-sha-suffixed so the dedup identity is collision-free and
+ *  reproducible from public git (round-52 V2: a 12-char prefix can collide within a
+ *  committer-second, silently suppressing a distinct commit's review). The short sha is
+ *  used only for human-readable display in the prompt. */
 export function reviewBallotFor(commit: Commit): { id: string; ballot: Ballot } {
   const short = commit.sha.slice(0, SHORT);
-  const id = `review-${commit.epoch}-${short}`;
+  const id = `review-${commit.epoch}-${commit.sha}`;
   const prompt =
     `Autonomous self-review of commit ${short} ("${commit.subject}"): is the change SOUND? ` +
     `Review it adversarially from source — find any gap between what it claims and what it does.`;

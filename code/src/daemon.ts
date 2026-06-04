@@ -21,7 +21,7 @@ import { listPending, bumpAttempt, complete, fail, type Ballot, type QueuedBallo
 /** What a single convening returns to the daemon. Only `votes.length` and the
  *  ratification fields are read here; the real runBallot returns a full ConveneResult. */
 export interface RunResult {
-  votes: unknown[];
+  votes: { verdict: string }[];
   ratified: boolean;
   [k: string]: unknown;
 }
@@ -54,15 +54,20 @@ export async function drainQueue(params: {
       ranError = (e as Error).message;
     }
 
-    const reachedQuorumParticipation = !!result && result.votes.length >= params.quorum;
-    if (reachedQuorumParticipation) {
+    // Participation counts REAL verdicts only: a NO_VERDICT (the invoker errored or the
+    // agent timed out) is a non-decision, not a vote. >= quorum REAL verdicts means the
+    // outcome is meaningful (decided, ratified or not); fewer is a liveness failure to
+    // retry — so 2/3 validators failing is never laundered into a finalized decision
+    // (round-52 finding, the daemon-side complement to ratify excluding NO_VERDICT).
+    const realVotes = result ? result.votes.filter((v) => v.verdict !== 'NO_VERDICT').length : 0;
+    if (result && realVotes >= params.quorum) {
       complete(params.queueDir, id, result); // decided (ratified or not) — final, never retried
       summary.done.push(id);
       continue;
     }
 
-    // Liveness failure: too few validators voted, or the convening could not run.
-    const reason = ranError ?? `only ${result?.votes.length ?? 0} of quorum ${params.quorum} validators participated`;
+    // Liveness failure: too few real verdicts, or the convening could not run at all.
+    const reason = ranError ?? `only ${realVotes} of quorum ${params.quorum} validators produced a real verdict`;
     if (attempts + 1 >= params.maxAttempts) {
       fail(params.queueDir, id, reason);
       summary.failed.push(id);

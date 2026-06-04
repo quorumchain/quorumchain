@@ -11,14 +11,24 @@ function tmpQueue(): string {
 }
 
 // A fake convene result: only the fields the daemon's participation policy reads.
-function result(votes: number, ratified: boolean) {
-  return { ballotHash: 'h', ratified, verdict: ratified ? 'YES' : 'NO', tally: {}, votes: new Array(votes).fill({}), failures: [], rejected: [] };
+// `verdicts` are the per-validator verdicts; the daemon counts REAL (non-NO_VERDICT)
+// ones to decide "decided vs liveness-retry".
+function result(verdicts: string[], ratified: boolean) {
+  return {
+    ballotHash: 'h',
+    ratified,
+    verdict: ratified ? verdicts[0] : null,
+    tally: {},
+    votes: verdicts.map((verdict) => ({ verdict })),
+    failures: [],
+    rejected: [],
+  };
 }
 
 test('a ratified convening (>= quorum votes) is moved to done', async () => {
   const q = tmpQueue();
   enqueue(q, 'b01', { prompt: 'ship?' });
-  const summary = await drainQueue({ queueDir: q, quorum: 2, maxAttempts: 3, runBallot: async () => result(3, true) });
+  const summary = await drainQueue({ queueDir: q, quorum: 2, maxAttempts: 3, runBallot: async () => result(['SOUND','SOUND','SOUND'], true) });
   assert.deepEqual(summary.done, ['b01']);
   assert.equal(listPending(q).length, 0);
   assert.ok(existsSync(join(q, 'done', 'b01.json')));
@@ -34,7 +44,7 @@ test('ran with >= quorum votes but NOT ratified is still done, never retried (a 
     maxAttempts: 3,
     runBallot: async () => {
       calls++;
-      return result(3, false); // 3 validators voted, quorum not reached -> legitimate NO
+      return result(['NO','NO','NO'], false); // 3 validators voted, quorum not reached -> legitimate NO
     },
   });
   assert.equal(calls, 1, 'a decided ballot is convened exactly once');
@@ -46,12 +56,30 @@ test('ran with >= quorum votes but NOT ratified is still done, never retried (a 
 test('fewer than quorum votes (liveness, not a decision) is a retry, not done', async () => {
   const q = tmpQueue();
   enqueue(q, 'b01', { prompt: 'ship?' });
-  const summary = await drainQueue({ queueDir: q, quorum: 2, maxAttempts: 3, runBallot: async () => result(1, false) });
+  const summary = await drainQueue({ queueDir: q, quorum: 2, maxAttempts: 3, runBallot: async () => result(['NO'], false) });
   assert.deepEqual(summary.retried, ['b01']);
   assert.equal(summary.done.length, 0);
   const pending = listPending(q);
   assert.equal(pending.length, 1);
   assert.equal(pending[0].attempts, 1);
+});
+
+// Round-52 dogfood scenario: 2 validators returned NO_VERDICT (a CLI error + an agent
+// timeout) and only 1 produced a real verdict. Raw votes.length is 3, but real
+// participation is 1 < quorum, so this is a LIVENESS failure (retry), not a decided
+// outcome. Counting raw votes would launder two failures into a finalized "decision".
+test('a convening with fewer than quorum REAL verdicts (rest NO_VERDICT) is a retry, not done', async () => {
+  const q = tmpQueue();
+  enqueue(q, 'b01', { prompt: 'ship?' });
+  const summary = await drainQueue({
+    queueDir: q,
+    quorum: 2,
+    maxAttempts: 3,
+    runBallot: async () => result(['REVISE', 'NO_VERDICT', 'NO_VERDICT'], false),
+  });
+  assert.deepEqual(summary.retried, ['b01']); // 1 real verdict < quorum -> liveness retry
+  assert.equal(summary.done.length, 0);
+  assert.equal(listPending(q)[0].attempts, 1);
 });
 
 test('a throw from runBallot (could not run) is a retry; after maxAttempts it fails', async () => {
@@ -86,7 +114,7 @@ test('drains pending oldest-first, one convening at a time', async () => {
       assert.equal(inFlight, 1, 'convenings never overlap');
       order.push(ballot.prompt);
       inFlight--;
-      return result(2, true);
+      return result(['SOUND','SOUND'], true);
     },
   });
   assert.deepEqual(order, ['first', 'second']);

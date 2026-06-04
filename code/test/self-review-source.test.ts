@@ -21,6 +21,17 @@ test('reviewBallotFor is deterministic and keyed by the commit sha', () => {
   assert.match(a.ballot.context ?? '', /git show abc123def456789/); // points validators at the diff
 });
 
+// Round-52 V2 finding: a 12-char-sha + epoch-second dedup key collides for two distinct
+// commits sharing a committer-second and 12-char prefix — the later is silently skipped
+// as "already reviewed" (an adversarial commit could craft this to suppress its review).
+// The durable dedup identity must use the FULL sha.
+test('reviewBallotFor does not collide on a shared epoch + 12-char-prefix (full-sha identity)', () => {
+  const epoch = 1780000000;
+  const a = reviewBallotFor({ sha: 'abc123def456' + '0000000000000000000000000000', subject: 'one', epoch });
+  const b = reviewBallotFor({ sha: 'abc123def456' + 'ffffffffffffffffffffffffffff', subject: 'two', epoch });
+  assert.notEqual(a.id, b.id, 'distinct commits must get distinct dedup ids');
+});
+
 test('reviewBallotFor ids sort oldest-commit-first (epoch prefix)', () => {
   const older = reviewBallotFor({ sha: 'zzz', subject: 'older', epoch: 1000 });
   const newer = reviewBallotFor({ sha: 'aaa', subject: 'newer', epoch: 2000 });

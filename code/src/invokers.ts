@@ -18,36 +18,40 @@ import { promisify } from 'node:util';
 import { type ValidatorInvoker } from './panel.ts';
 
 const execFileP = promisify(execFile);
-const EXEC_OPTS = { maxBuffer: 16 * 1024 * 1024, timeout: 180_000 };
+// Code-review ballots are AGENTIC: the validator reads files and runs `git show`, which
+// far exceeds a plain verdict's budget. The old 180s timeout KILLED claude/codex
+// mid-review (round-52: V1 → "Command failed"), and a too-low turn cap cut V3 off before
+// it concluded. Budgets must clear an agentic review, and a failure must surface WHY.
+const EXEC_OPTS = { maxBuffer: 16 * 1024 * 1024, timeout: 480_000 };
+
+// On a non-zero exit, execFile's error message is just "Command failed: ..." — useless
+// for diagnosis. Re-throw with the child's stderr tail appended so the host's
+// INVOCATION_ERROR (and thus the NO_VERDICT rawOutput) records the real cause.
+async function runWithDiag(label: string, file: string, args: string[], opts: object): Promise<string> {
+  try {
+    const { stdout } = await execFileP(file, args, opts);
+    return stdout;
+  } catch (e) {
+    const err = e as Error & { stderr?: string; signal?: string; code?: number };
+    const detail = err.signal === 'SIGTERM' ? `timed out after ${(opts as { timeout?: number }).timeout}ms` : (err.stderr ?? '').trim().slice(-500);
+    throw new Error(`${label} failed (${err.signal ?? err.code ?? '?'})${detail ? `: ${detail}` : ''}`);
+  }
+}
 
 // All three go through `/bin/sh -c` with stdin redirected from /dev/null (codex blocks
 // on "Reading additional input from stdin..." otherwise) and the prompt passed via env
 // (not interpolated) to avoid any quoting/injection. The answer lands on stdout; the
-// verbose banner goes to stderr (discarded).
-export const claudeInvoke: ValidatorInvoker = async (prompt) => {
-  const { stdout } = await execFileP(
-    '/bin/sh',
-    ['-c', 'claude -p "$QRM_PROMPT" </dev/null'],
-    { ...EXEC_OPTS, env: { ...process.env, QRM_PROMPT: prompt } },
-  );
-  return stdout;
-};
+// verbose banner goes to stderr.
+export const claudeInvoke: ValidatorInvoker = (prompt) =>
+  runWithDiag('claude', '/bin/sh', ['-c', 'claude -p "$QRM_PROMPT" </dev/null'], { ...EXEC_OPTS, env: { ...process.env, QRM_PROMPT: prompt } });
 
-export const codexInvoke: ValidatorInvoker = async (prompt) => {
-  const { stdout } = await execFileP(
-    '/bin/sh',
-    ['-c', 'codex exec --skip-git-repo-check "$QRM_PROMPT" </dev/null'],
-    { ...EXEC_OPTS, env: { ...process.env, QRM_PROMPT: prompt } },
-  );
-  return stdout;
-};
+export const codexInvoke: ValidatorInvoker = (prompt) =>
+  runWithDiag('codex', '/bin/sh', ['-c', 'codex exec --skip-git-repo-check "$QRM_PROMPT" </dev/null'], { ...EXEC_OPTS, env: { ...process.env, QRM_PROMPT: prompt } });
 
-export const hermesInvoke: ValidatorInvoker = async (prompt) => {
-  // Research-capable ballots need more turns + time than a plain deliberation:
-  // a web-research pass (search → read → answer) easily exceeds the default.
-  const { stdout } = await execFileP('hermes', ['chat', '-q', prompt, '--max-turns', '6', '-Q'], { ...EXEC_OPTS, timeout: 480_000 });
-  return stdout;
-};
+export const hermesInvoke: ValidatorInvoker = (prompt) =>
+  // An agentic review (read several files → run tests → conclude) needs more turns than
+  // a plain deliberation; 6 cut V3 off mid-investigation (round-52), so allow 12.
+  runWithDiag('hermes', 'hermes', ['chat', '-q', prompt, '--max-turns', '12', '-Q'], EXEC_OPTS);
 
 /** Select a validator's real invoker by id. Throws on any non-validator id — there
  *  is no env-verdict fallback, so the spawner cannot choose a real verdict. */

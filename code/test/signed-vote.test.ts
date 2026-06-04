@@ -106,6 +106,24 @@ test('ratify enforces the 2/3 supermajority of the registered panel even if a we
   assert.equal(r.tally.YES, 2);
 });
 
+// Round-52 dogfood finding: NO_VERDICT is the sentinel for "no parseable verdict /
+// the invoker errored" — it is a non-decision, NOT a consensus. Two validators failing
+// to produce a verdict (a CLI error + an agent timeout) must NEVER ratify as NO_VERDICT.
+test('ratify never ratifies NO_VERDICT, even at 2/3 (a non-decision is not a consensus)', () => {
+  const p = panel();
+  const bh = ballotHash('q', 'c');
+  const votes = [
+    signVote({ validatorId: 'V1', privateKeyPem: p.keys.V1.privateKeyPem, ballotHash: bh, verdict: 'NO_VERDICT', rawOutput: 'INVOCATION_ERROR' }),
+    signVote({ validatorId: 'V2', privateKeyPem: p.keys.V2.privateKeyPem, ballotHash: bh, verdict: 'REVISE', rawOutput: 'b' }),
+    signVote({ validatorId: 'V3', privateKeyPem: p.keys.V3.privateKeyPem, ballotHash: bh, verdict: 'NO_VERDICT', rawOutput: 'max iterations' }),
+  ];
+  const r = ratify(bh, votes, p.keyring, 2);
+  assert.equal(r.ratified, false); // NO_VERDICT reached 2/3 but cannot be the ratified verdict
+  assert.equal(r.verdict, null);
+  assert.equal(r.tally.NO_VERDICT, 2); // still counted in the tally for transparency
+  assert.equal(r.tally.REVISE, 1);
+});
+
 test('ratify does not reach quorum when validators do not agree', () => {
   const p = panel();
   const bh = ballotHash('q', 'c');

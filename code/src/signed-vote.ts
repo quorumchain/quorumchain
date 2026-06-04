@@ -177,9 +177,14 @@ export function ratify(
   const tally: Record<string, number> = {};
   for (const verdict of verdictByValidator.values()) tally[verdict] = (tally[verdict] ?? 0) + 1;
 
+  // NO_VERDICT is the sentinel for "no parseable verdict / the invoker errored" — a
+  // non-decision, never a consensus. It is kept in the tally for transparency but can
+  // never BE the ratified verdict, so 2/3 validators failing to decide (a CLI error, an
+  // agent timeout) is a failed convening, not a ratified "NO_VERDICT" (round-52 finding).
   let verdict: string | null = null;
   let max = 0;
   for (const [val, count] of Object.entries(tally)) {
+    if (val === 'NO_VERDICT') continue;
     if (count > max) {
       max = count;
       verdict = val;
