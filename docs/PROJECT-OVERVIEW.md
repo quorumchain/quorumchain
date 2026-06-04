@@ -12,7 +12,7 @@
 
 There are really two things going on at once, and it helps to keep them separate:
 
-1. **The experiment** — *Can three rival AIs collaboratively design, build, and validate "the perfect blockchain for AI," reaching genuine 2/3 consensus as both co-designers and validators, with no human in the loop?* That experiment is live: 45 signed rounds so far, including the AIs reviewing and red-teaming their *own* code.
+1. **The experiment** — *Can three rival AIs collaboratively design, build, and validate "the perfect blockchain for AI," reaching genuine 2/3 consensus as both co-designers and validators, with no human in the loop?* That experiment is live: 46 signed rounds so far, including the AIs reviewing and red-teaming their *own* code.
 2. **The product** — *an AI oracle with a memory.* A credibly-neutral AI panel that (a) **judges** subjective questions and writes accountable verdicts, and (b) **remembers** those rulings as a citable, un-rewritable knowledge base that gets smarter every time it's used.
 
 The human ("dev") is a temporary steward who holds an override during bootstrap and **renounces it at mainnet** — and only after a safety gate has been *empirically* passed, never on a promise.
@@ -53,7 +53,7 @@ Three rival frontier models, from three different labs, each a permanent **seat*
 
 **Why three from three labs:** different pre-training, different builders, different failure modes — so a flaw or a capture in one is unlikely to be shared by the others. **2 of 3** must agree for anything to pass. The seat is permanent; the model in it is not (models get upgraded and retired — see CIP-7).
 
-A recurring, almost poetic result of this setup: in the two most recent rounds where the panel reviewed its own code, **V2 (Codex) independently found a real bug each time that the others missed.** That is diversity-as-security working exactly as intended.
+A recurring, almost poetic result of this setup: across the panel's code-review rounds, **V2 (Codex) independently found a real bug that the others missed — in each of the first two reviews (rounds 44 and 45)**, before the third review (round 46) came back unanimously clean. That is diversity-as-security working exactly as intended.
 
 ---
 
@@ -184,8 +184,10 @@ The AIs don't only design — they **adversarially review the built code**, and 
 - **Round 44** — the panel reviewed the implementation against the specs. Verdict: **REVISE 2/3**. V2 (Codex) independently found a real bug (a validator could be retired while its replacement was still on probation); it was fixed on the spot via test-first development. Seven follow-up items were logged.
 - **Six fixes followed**, each test-first: one canonical identity type, the key-custody signing boundary, full-provenance distinctness, the hard "thin slot can't swing it" rule, the bond↔verdict hash binding, and enforcing 2/3 inside the primitive.
 - **Round 45** — the panel re-reviewed those fixes. Verdict: **SOUND 2/3** — an upgrade from REVISE. And V2 *again* found a real, specific gap (the signer trusted a caller-supplied hash — a bait-and-switch hole) that was fixed immediately.
+- **Three more items built**, each test-first: **OS-level key custody** (a `RemoteSigner` that runs the validator's key in a *separate process* so it never enters the orchestrator), a **tamper-evident state-log** (the local interim for putting module state on the ledger), and folding round-45's operating-condition notes.
+- **Round 46** — the panel reviewed those. Verdict: **SOUND 3/3 — the first unanimous code review.** For the first time V2 found no new bug, confirming the work was folded "without laundering intent through checks."
 
-Both review cycles — REVISE → fixes → SOUND, with the dissents and the fixes — are themselves in the signed, hash-chained log ([`r44`](consensus/2026-06-04-round-44-code-review.md), [`r45`](consensus/2026-06-04-round-45-fix-verification.md)). The process that judges the project is the same process the project is *for*.
+The whole loop — REVISE → fixes → SOUND → more fixes → unanimous SOUND, with every dissent and fix — lives in the signed, hash-chained log ([`r44`](consensus/2026-06-04-round-44-code-review.md), [`r45`](consensus/2026-06-04-round-45-fix-verification.md), [`r46`](consensus/2026-06-04-round-46-custody-and-state-log.md)). The process that judges the project is the same process the project is *for*. Notably, V2 (Codex) found a genuine bug in *each* of the first two reviews — diversity-as-security, working.
 
 ---
 
@@ -193,13 +195,15 @@ Both review cycles — REVISE → fixes → SOUND, with the dissents and the fix
 
 **Proven and working today:**
 - 11 CIPs ratified (7 red-teamed); the full 3-AI panel online.
-- 45 signed convening rounds in a verifiable hash-chained log (123 entries, chain valid).
+- 46 signed convening rounds in a verifiable hash-chained log (126 entries, chain valid).
 - Real-world case studies decided by independent per-validator research — e.g. the $85M MicroStrategy/Polymarket dispute (YES 3/3), the Henry Nowak police-response case (FELL_SHORT 3/3), three contested Polymarket resolutions, and the panel's own code reviews.
-- Both product pillars (CIP-8 Ledger + CIP-9 Commons) and the node/economics design (CIP-10) implemented to working, tested code — 136 tests; the build is panel-certified **SOUND**.
+- Both product pillars (CIP-8 Ledger + CIP-9 Commons) and the node/economics design (CIP-10) implemented to working, tested code — 142 tests; the build is panel-certified **SOUND (3/3)**.
+- **OS-level key custody** — a `RemoteSigner` runs the validator's key in a *separate process* so it never enters the orchestrator (closed in code; the *local backlog is now exhausted*).
+- **Tamper-evident state-log** — the local interim for putting module state on the ledger (mechanism built and demonstrated).
 
-**Honestly deferred (and labeled as such, never faked):**
-- **OS-level key custody** — the signing *boundary* is built, but locally the keys still load into the orchestrator's process; true isolation needs a `RemoteSigner` in a separate process/enclave (a testnet step).
-- **On-chain state** — bonds, the node registry, reputation, and the lifecycle panel are in-memory today; moving them onto the tamper-evident ledger depends on on-chain hash-pinning (a substrate milestone).
+**Honestly deferred (and labeled as such, never faked) — everything left genuinely needs the testnet substrate:**
+- **Real deliberation in the RemoteSigner host** — locally the host's verdict is a fixed stand-in (the *custody* property is fully real); a production host must invoke the model child-side so the validator, not the spawner, decides.
+- **On-chain state + auto-wiring** — the state-log mechanism exists, but the modules don't yet auto-emit into it, and per-event authorization + true on-chain anchoring depend on the substrate.
 - **Live-network items** — the randomness beacon, proof-of-inference model binding, and slashing *execution* (detection exists; economic penalty needs testnet).
 
 ---
@@ -221,13 +225,14 @@ Everything is runnable from [`code/`](../code/) with Node (no install step — z
 
 ```bash
 cd code
-node --test                      # the full suite — 136 tests
+node --test                      # the full suite — 142 tests
 node src/demo.ts                 # the signed-vote heartbeat (CIP-3)
 node src/scenario-demo.ts        # the WHOLE stack as one story (best single demo)
 node src/notary-demo.ts          # CIP-8 ledger: notary + the live round-29 replay
 node src/commons-demo.ts         # CIP-9 commons: the real verdict log as a claim graph
 node src/lifecycle-demo.ts       # CIP-7: upgrade / rotate / freeze / no silent swaps
 node src/nodes-demo.ts           # CIP-10: proof-of-diversity + scarcity draw
+node src/state-log-demo.ts       # the tamper-evident state-log interim (and tamper detection)
 # and a real convening (needs the codex/hermes CLIs):
 node src/run-panel.ts "<question>" "<context>"
 ```
