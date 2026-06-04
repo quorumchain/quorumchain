@@ -12,11 +12,12 @@ function tmpQueue(): string {
 
 // A fake convene result: only the fields the daemon's participation policy reads.
 // `verdicts` are the per-validator verdicts; the daemon counts REAL (non-NO_VERDICT)
-// ones to decide "decided vs liveness-retry".
-function result(verdicts: string[], ratified: boolean) {
+// ones and compares against the result's own `required` threshold (ratify's actual bar).
+function result(verdicts: string[], ratified: boolean, required = 2) {
   return {
     ballotHash: 'h',
     ratified,
+    required,
     verdict: ratified ? verdicts[0] : null,
     tally: {},
     votes: verdicts.map((verdict) => ({ verdict })),
@@ -80,6 +81,19 @@ test('a convening with fewer than quorum REAL verdicts (rest NO_VERDICT) is a re
   assert.deepEqual(summary.retried, ['b01']); // 1 real verdict < quorum -> liveness retry
   assert.equal(summary.done.length, 0);
   assert.equal(listPending(q)[0].attempts, 1);
+});
+
+// Round-53 V1 deferred finding: the daemon's participation bar must match ratify's ACTUAL
+// threshold (max(quorum, supermajority(n))), not the passed quorum. For an N>4 panel,
+// supermajority can exceed a weak passed quorum; 2 real verdicts that ratify reports as
+// required=3 must be a retry, not a finalized "decided" outcome.
+test("the daemon honours the result's own required threshold, not just the passed quorum", async () => {
+  const q = tmpQueue();
+  enqueue(q, 'b01', { prompt: 'ship?' });
+  // 2 real verdicts, but ratify says required=3 (e.g. a 4-validator panel) -> liveness retry
+  const summary = await drainQueue({ queueDir: q, quorum: 2, maxAttempts: 3, runBallot: async () => result(['NO', 'NO'], false, 3) });
+  assert.deepEqual(summary.retried, ['b01']);
+  assert.equal(summary.done.length, 0);
 });
 
 test('a throw from runBallot (could not run) is a retry; after maxAttempts it fails', async () => {

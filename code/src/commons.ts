@@ -80,13 +80,15 @@ export function buildClaimIndex(votes: SignedVote[], keyring: Record<string, str
     // resolution (RESOLVED): the ratified majority is CONSENSUS, every other held
     // position CREDIBLE_MINORITY. On the unverifiable / no-consensus class
     // (INDETERMINATE, CONTESTED) nothing is ranked — UNRANKED, never FRINGE —
-    // consistent with reputation.ts and NI-9c.
+    // consistent with reputation.ts and NI-9c. NO_VERDICT is a non-position (a validator
+    // whose invoker errored/timed out), never a credible dissent — it stays UNRANKED even
+    // in a RESOLVED claim (round-53 V1 finding).
     const ranked = status === 'RESOLVED';
     const stances: Stance[] = positionOrder.map((position) => ({
       position,
       validators: heldBy.get(position)!,
       panelVotes: heldBy.get(position)!.length,
-      standing: ranked ? (position === r.verdict ? 'CONSENSUS' : 'CREDIBLE_MINORITY') : 'UNRANKED',
+      standing: ranked && position !== 'NO_VERDICT' ? (position === r.verdict ? 'CONSENSUS' : 'CREDIBLE_MINORITY') : 'UNRANKED',
     }));
 
     return {

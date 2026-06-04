@@ -23,6 +23,7 @@ import { listPending, bumpAttempt, complete, fail, type Ballot, type QueuedBallo
 export interface RunResult {
   votes: { verdict: string }[];
   ratified: boolean;
+  required: number; // ratify's actual bar: max(quorum, 2/3-ceiling of the panel)
   [k: string]: unknown;
 }
 
@@ -55,19 +56,21 @@ export async function drainQueue(params: {
     }
 
     // Participation counts REAL verdicts only: a NO_VERDICT (the invoker errored or the
-    // agent timed out) is a non-decision, not a vote. >= quorum REAL verdicts means the
-    // outcome is meaningful (decided, ratified or not); fewer is a liveness failure to
-    // retry — so 2/3 validators failing is never laundered into a finalized decision
-    // (round-52 finding, the daemon-side complement to ratify excluding NO_VERDICT).
+    // agent timed out) is a non-decision, not a vote. The bar is ratify's OWN `required`
+    // (max(quorum, 2/3-ceiling of the panel)), not the passed quorum — so the daemon's
+    // "decided" boundary always matches the actual ratification threshold, even for an
+    // N>3 panel where supermajority exceeds a weak quorum (round-53 V1 finding). >=
+    // required REAL verdicts means the outcome is meaningful (decided, ratified or not);
+    // fewer is a liveness failure to retry, never laundered into a finalized decision.
     const realVotes = result ? result.votes.filter((v) => v.verdict !== 'NO_VERDICT').length : 0;
-    if (result && realVotes >= params.quorum) {
+    if (result && realVotes >= result.required) {
       complete(params.queueDir, id, result); // decided (ratified or not) — final, never retried
       summary.done.push(id);
       continue;
     }
 
     // Liveness failure: too few real verdicts, or the convening could not run at all.
-    const reason = ranError ?? `only ${realVotes} of quorum ${params.quorum} validators produced a real verdict`;
+    const reason = ranError ?? `only ${realVotes} of required ${result?.required ?? params.quorum} validators produced a real verdict`;
     if (attempts + 1 >= params.maxAttempts) {
       fail(params.queueDir, id, reason);
       summary.failed.push(id);

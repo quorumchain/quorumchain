@@ -21,6 +21,7 @@ const BH_UNANIMOUS = ballotHash('Q-unanimous', 'criteria');
 const BH_SPLIT = ballotHash('Q-split', 'criteria'); // 2/1 — dissent must survive
 const BH_INDET = ballotHash('Q-indeterminate', 'criteria');
 const BH_NOQUORUM = ballotHash('Q-noquorum', 'criteria'); // 1/1/1 — no consensus
+const BH_WITHFAIL = ballotHash('Q-withfail', 'criteria'); // 2 YES + 1 NO_VERDICT (a failed invoker)
 
 function fullPanel(): SignedVote[] {
   return [
@@ -28,6 +29,7 @@ function fullPanel(): SignedVote[] {
     vote('V1', BH_SPLIT, 'NO'), vote('V2', BH_SPLIT, 'YES'), vote('V3', BH_SPLIT, 'NO'),
     vote('V1', BH_INDET, 'INDETERMINATE'), vote('V2', BH_INDET, 'INDETERMINATE'), vote('V3', BH_INDET, 'NO'),
     vote('V1', BH_NOQUORUM, 'A'), vote('V2', BH_NOQUORUM, 'B'), vote('V3', BH_NOQUORUM, 'C'),
+    vote('V1', BH_WITHFAIL, 'YES'), vote('V2', BH_WITHFAIL, 'YES'), vote('V3', BH_WITHFAIL, 'NO_VERDICT'),
   ];
 }
 
@@ -53,6 +55,20 @@ test('G1 pluralism: a 2/1 split preserves the dissenting stance as CREDIBLE_MINO
   assert.deepEqual(consensus.validators.sort(), ['V1', 'V3']);
   assert.equal(minority.standing, 'CREDIBLE_MINORITY');
   assert.deepEqual(minority.validators, ['V2']); // the dissent is named, not flattened
+});
+
+// Round-53 V1 finding: in a RESOLVED claim, a NO_VERDICT "position" (a validator whose
+// invoker errored / timed out) must NOT be dignified as a CREDIBLE_MINORITY dissent — it
+// is a non-position, not a credible opposing view. It stays UNRANKED.
+test('a NO_VERDICT stance in a RESOLVED claim is UNRANKED, never CREDIBLE_MINORITY', () => {
+  const idx = buildClaimIndex(fullPanel(), keyring, 2);
+  const c = queryClaim(idx, BH_WITHFAIL)!;
+  assert.equal(c.status, 'RESOLVED');
+  assert.equal(c.verdict, 'YES');
+  const consensus = c.stances.find((s) => s.position === 'YES')!;
+  const failed = c.stances.find((s) => s.position === 'NO_VERDICT')!;
+  assert.equal(consensus.standing, 'CONSENSUS');
+  assert.equal(failed.standing, 'UNRANKED'); // a failed invoker is not a credible minority
 });
 
 test('G5 honest unknown: an INDETERMINATE resolution is UNRANKED, not ranked CONSENSUS (NI-9c)', () => {

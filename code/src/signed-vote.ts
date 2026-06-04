@@ -31,6 +31,7 @@ export interface RatifyResult {
   ballotHash: string;
   ratified: boolean;
   verdict: string | null;
+  required: number; // the actual bar applied: max(quorum, 2/3-ceiling of the panel)
   tally: Record<string, number>;
   counted: string[]; // validatorIds whose vote was counted
   rejected: { validatorId: string; reason: string }[];
@@ -197,6 +198,7 @@ export function ratify(
     ballotHash: expectedBallotHash,
     ratified,
     verdict: ratified ? verdict : null,
+    required,
     tally,
     counted: [...verdictByValidator.keys()],
     rejected,
