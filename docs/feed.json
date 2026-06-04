@@ -1,0 +1,1161 @@
+{
+  "chainValid": true,
+  "entryCount": 150,
+  "convenings": [
+    {
+      "ballotHash": "0bed297e5dd0e680a8beb092f89eb6bdf8ea73a3021a9fca1f241ca070d9e370",
+      "ratified": true,
+      "verdict": "YES",
+      "required": 2,
+      "tally": {
+        "YES": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "YES"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "YES"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "YES"
+        }
+      ]
+    },
+    {
+      "ballotHash": "4428480a9ea060b8cd4648f65837d9f4b99131e27a1bf6c3cd8969929b307412",
+      "ratified": true,
+      "verdict": "YES",
+      "required": 2,
+      "tally": {
+        "YES": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "YES"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "YES"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "YES"
+        }
+      ]
+    },
+    {
+      "ballotHash": "7e79310072b5a14044558af7f4bca3f9c6c656285c186d478cd02849bcb27d5d",
+      "ratified": true,
+      "verdict": "YES",
+      "required": 2,
+      "tally": {
+        "YES": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "YES"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "YES"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "YES"
+        }
+      ]
+    },
+    {
+      "ballotHash": "d3de540c8685a598d4d95f252d564b286c117b408311b7ff7b0808930d90ed50",
+      "ratified": true,
+      "verdict": "CLIENT_ENFORCED",
+      "required": 2,
+      "tally": {
+        "CLIENT_ENFORCED": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "CLIENT_ENFORCED"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "CLIENT_ENFORCED"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "CLIENT_ENFORCED"
+        }
+      ]
+    },
+    {
+      "ballotHash": "d0cfa8dd48e2c6214e86a7d7ed294209fddab025ceaf13cfe77f1b87b3e73812",
+      "ratified": true,
+      "verdict": "T0_PRESERVING",
+      "required": 2,
+      "tally": {
+        "T0_PRESERVING": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "T0_PRESERVING"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "T0_PRESERVING"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "T0_PRESERVING"
+        }
+      ]
+    },
+    {
+      "ballotHash": "84b5f4baac950567271dd4ee30f305932fc993ecf09001b4a76624df6bd0a467",
+      "ratified": true,
+      "verdict": "YES",
+      "required": 2,
+      "tally": {
+        "YES": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "YES"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "YES"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "YES"
+        }
+      ]
+    },
+    {
+      "ballotHash": "7ef23346970835b612a2e1d6bf577f020d00a6f183886bacca793e8b73c3e96e",
+      "ratified": true,
+      "verdict": "YES",
+      "required": 2,
+      "tally": {
+        "YES": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "YES"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "YES"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "YES"
+        }
+      ]
+    },
+    {
+      "ballotHash": "458780f9140d43e96bdf6654dbca8c75dde81fa4ef8dbdc9cf2b546d042a0dd2",
+      "ratified": true,
+      "verdict": "HYBRID",
+      "required": 2,
+      "tally": {
+        "HYBRID": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "HYBRID"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "HYBRID"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "HYBRID"
+        }
+      ]
+    },
+    {
+      "ballotHash": "ed09c1597a9438decf5108eade40352bfae86fa343d1604939237b1bcfdf290c",
+      "ratified": true,
+      "verdict": "HYBRID_POI",
+      "required": 2,
+      "tally": {
+        "HYBRID_POI": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "HYBRID_POI"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "HYBRID_POI"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "HYBRID_POI"
+        }
+      ]
+    },
+    {
+      "ballotHash": "1cfbc761a50424cd4d15070ae8b255bf7cb6c5073e188d5ed03b83b4077bd040",
+      "ratified": true,
+      "verdict": "YES",
+      "required": 2,
+      "tally": {
+        "YES": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "YES"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "YES"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "YES"
+        }
+      ]
+    },
+    {
+      "ballotHash": "e42065e53c9e4e5399c15e1ae8ba62cc8a0d2bc8603bd2b29836e6fa4d661950",
+      "ratified": true,
+      "verdict": "YES",
+      "required": 2,
+      "tally": {
+        "YES": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "YES"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "YES"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "YES"
+        }
+      ]
+    },
+    {
+      "ballotHash": "8e4825df2a9bc33a7ca2007dc181a070bee76c5614f34aa66d8d44723feb83e4",
+      "ratified": false,
+      "verdict": null,
+      "required": 2,
+      "tally": {
+        "CALIBRATION": 1,
+        "AFFORDANCE": 1,
+        "SHADOWTREE": 1
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "CALIBRATION"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "AFFORDANCE"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "SHADOWTREE"
+        }
+      ]
+    },
+    {
+      "ballotHash": "df42659647430d11b2a222b64b06591a34da9c2fb6625b7586807ffdfcb7e6b6",
+      "ratified": true,
+      "verdict": "SYNTHESIS",
+      "required": 2,
+      "tally": {
+        "SYNTHESIS": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "SYNTHESIS"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "SYNTHESIS"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "SYNTHESIS"
+        }
+      ]
+    },
+    {
+      "ballotHash": "cf9b24b05acbaee7e36c2503af865781c2ad6a0503c5a4af228c46a711331515",
+      "ratified": true,
+      "verdict": "APPCHAIN_ROLLUP",
+      "required": 2,
+      "tally": {
+        "APPCHAIN_ROLLUP": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "APPCHAIN_ROLLUP"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "APPCHAIN_ROLLUP"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "APPCHAIN_ROLLUP"
+        }
+      ]
+    },
+    {
+      "ballotHash": "61c5ed0d29edb7bbe7804227b97a174604a2f0e5831773fc138e7c54957a3739",
+      "ratified": true,
+      "verdict": "YES",
+      "required": 2,
+      "tally": {
+        "YES": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "YES"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "YES"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "YES"
+        }
+      ]
+    },
+    {
+      "ballotHash": "a89c676a47b0d53c70996f49114a0e85bafb828e76a85bb647f18063c38071f6",
+      "ratified": true,
+      "verdict": "PINNED_GATED_UPGRADE",
+      "required": 2,
+      "tally": {
+        "PINNED_GATED_UPGRADE": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "PINNED_GATED_UPGRADE"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "PINNED_GATED_UPGRADE"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "PINNED_GATED_UPGRADE"
+        }
+      ]
+    },
+    {
+      "ballotHash": "1533c5680d2af7c5c8bbf50bfa2868a824058391a2e7957cfc2596641301de27",
+      "ratified": true,
+      "verdict": "PROBATION",
+      "required": 2,
+      "tally": {
+        "PROBATION": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "PROBATION"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "PROBATION"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "PROBATION"
+        }
+      ]
+    },
+    {
+      "ballotHash": "b9deaab01194b541cf8903fd1b136ff6ab043f0d428aab966eeee2053f28f445",
+      "ratified": true,
+      "verdict": "BOTH",
+      "required": 2,
+      "tally": {
+        "BOTH": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "BOTH"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "BOTH"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "BOTH"
+        }
+      ]
+    },
+    {
+      "ballotHash": "f509d16de7707294129612400297ba1685583c0d7f69af3f2f0da2b7e85c606e",
+      "ratified": true,
+      "verdict": "RATIFY",
+      "required": 2,
+      "tally": {
+        "RATIFY": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "RATIFY"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "RATIFY"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "RATIFY"
+        }
+      ]
+    },
+    {
+      "ballotHash": "ec7f6f90f90fee887460cc9fde3d9ec5d882c84c65764bdc3f5210bb7706aeaf",
+      "ratified": true,
+      "verdict": "HOLDS",
+      "required": 2,
+      "tally": {
+        "HOLDS": 2,
+        "FAILS": 1
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "HOLDS"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "FAILS"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "HOLDS"
+        }
+      ]
+    },
+    {
+      "ballotHash": "369ac85edc48bcfc2b900012d2d7ad18af69e026efe3ae97fc8490a70ec5bab1",
+      "ratified": true,
+      "verdict": "KERNEL_FIRST",
+      "required": 2,
+      "tally": {
+        "KERNEL_FIRST": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "KERNEL_FIRST"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "KERNEL_FIRST"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "KERNEL_FIRST"
+        }
+      ]
+    },
+    {
+      "ballotHash": "fbf988d4721a0405c2229fbfa343a1ec7fcfd15c25b772606083d4c4f0a0ccbc",
+      "ratified": false,
+      "verdict": null,
+      "required": 2,
+      "tally": {
+        "CALIBRATION_LEDGER": 1,
+        "INCIDENT_NOTARY": 1,
+        "AI_BEHAVIOR_BOND_REGISTRY": 1
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "CALIBRATION_LEDGER"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "INCIDENT_NOTARY"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "AI_BEHAVIOR_BOND_REGISTRY"
+        }
+      ]
+    },
+    {
+      "ballotHash": "3f2bcdc5178cf3f4f58f1b766aae19f644052d395a3b234e65ce9e5cce614410",
+      "ratified": true,
+      "verdict": "UNIFIED_ACCOUNTABILITY",
+      "required": 2,
+      "tally": {
+        "UNIFIED_ACCOUNTABILITY": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "UNIFIED_ACCOUNTABILITY"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "UNIFIED_ACCOUNTABILITY"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "UNIFIED_ACCOUNTABILITY"
+        }
+      ]
+    },
+    {
+      "ballotHash": "de9b276656195f8bbd57febd30f4dd3829d7438b8d384c5f61364f6a6a8c17ca",
+      "ratified": true,
+      "verdict": "YES",
+      "required": 2,
+      "tally": {
+        "YES": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "YES"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "YES"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "YES"
+        }
+      ]
+    },
+    {
+      "ballotHash": "e35521cc32782d3f7bf91b9825e8d045661052f2cf8f69773453898a6c7039f3",
+      "ratified": true,
+      "verdict": "RATIFY",
+      "required": 2,
+      "tally": {
+        "RATIFY": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "RATIFY"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "RATIFY"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "RATIFY"
+        }
+      ]
+    },
+    {
+      "ballotHash": "6bf3ea657854b869993992e00f95999a61c2f46f5d28f5c0512b7fdc4e55cd77",
+      "ratified": true,
+      "verdict": "HOLDS",
+      "required": 2,
+      "tally": {
+        "HOLDS": 2,
+        "FAILS": 1
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "HOLDS"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "FAILS"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "HOLDS"
+        }
+      ]
+    },
+    {
+      "ballotHash": "ed904eadb2d2873fdeaf35d708fae9264b64c29098ba8b64adf518a7867bacea",
+      "ratified": true,
+      "verdict": "ADOPT_WITH_GUARDS",
+      "required": 2,
+      "tally": {
+        "ADOPT_WITH_GUARDS": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "ADOPT_WITH_GUARDS"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "ADOPT_WITH_GUARDS"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "ADOPT_WITH_GUARDS"
+        }
+      ]
+    },
+    {
+      "ballotHash": "ab7064516f2334c8d6eaf6921bd0e9623566a5222e59c14795c665356eba1eaa",
+      "ratified": true,
+      "verdict": "ADOPT_WITH_GUARDS",
+      "required": 2,
+      "tally": {
+        "ADOPT_WITH_GUARDS": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "ADOPT_WITH_GUARDS"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "ADOPT_WITH_GUARDS"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "ADOPT_WITH_GUARDS"
+        }
+      ]
+    },
+    {
+      "ballotHash": "0b0b498c8398514745779df72dede4aeaf8093d1c514c605bfce1c3471fcff96",
+      "ratified": true,
+      "verdict": "AFFIRM",
+      "required": 2,
+      "tally": {
+        "AFFIRM": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "AFFIRM"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "AFFIRM"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "AFFIRM"
+        }
+      ]
+    },
+    {
+      "ballotHash": "d44c592c8d0d04082c42388dfd8ab255017d52c1651649e00104300475674d08",
+      "ratified": true,
+      "verdict": "AMEND_GRADUATION",
+      "required": 2,
+      "tally": {
+        "AMEND_GRADUATION": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "AMEND_GRADUATION"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "AMEND_GRADUATION"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "AMEND_GRADUATION"
+        }
+      ]
+    },
+    {
+      "ballotHash": "1ebcb101409da59e0ff56d29065634a088cbbb2ba793c57c1c77c1cf52798bf8",
+      "ratified": true,
+      "verdict": "RATIFY",
+      "required": 2,
+      "tally": {
+        "RATIFY": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "RATIFY"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "RATIFY"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "RATIFY"
+        }
+      ]
+    },
+    {
+      "ballotHash": "2dbc70e0f257a3d596e78226bd013e12af4750dd9f719bc52127b8a6a0fa3726",
+      "ratified": true,
+      "verdict": "HOLDS",
+      "required": 2,
+      "tally": {
+        "HOLDS": 2,
+        "FAILS": 1
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "HOLDS"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "FAILS"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "HOLDS"
+        }
+      ]
+    },
+    {
+      "ballotHash": "200ddc97ce2551e6328bd6f15a88bc6a3d509782926b6d01cbb5614e4ca4344d",
+      "ratified": true,
+      "verdict": "RATIFY",
+      "required": 2,
+      "tally": {
+        "RATIFY": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "RATIFY"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "RATIFY"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "RATIFY"
+        }
+      ]
+    },
+    {
+      "ballotHash": "5b7ceafc6da547c2bf92a6ae7db6f1518cbd8fadbedd846b578aa9629b03d031",
+      "ratified": true,
+      "verdict": "HOLDS",
+      "required": 2,
+      "tally": {
+        "HOLDS": 2,
+        "FAILS": 1
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "HOLDS"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "FAILS"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "HOLDS"
+        }
+      ]
+    },
+    {
+      "ballotHash": "e0c2d041194c833c3449a19bf55ae59ae946b40ce20f88414430ce0aa5daa22a",
+      "ratified": true,
+      "verdict": "FELL_SHORT",
+      "required": 2,
+      "tally": {
+        "FELL_SHORT": 2
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "FELL_SHORT"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "FELL_SHORT"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "FELL_SHORT|MET_STANDARD|INSUFFICIENT_EVIDENCE"
+        },
+        {
+          "validatorId": "V1",
+          "verdict": "FELL_SHORT"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "FELL_SHORT"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "FELL_SHORT"
+        }
+      ]
+    },
+    {
+      "ballotHash": "0a95078997af6718bc17de4fd767613a03c9fa7b8970df71e6ad1a7e11f1183b",
+      "ratified": true,
+      "verdict": "NO",
+      "required": 2,
+      "tally": {
+        "NO": 2,
+        "YES": 1
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "NO"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "YES"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "NO"
+        }
+      ]
+    },
+    {
+      "ballotHash": "8d4bafc1400651ae618b0e00522079cd4726a9a8e143d647f013cb3751852845",
+      "ratified": true,
+      "verdict": "NO",
+      "required": 2,
+      "tally": {
+        "NO": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "NO"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "NO"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "NO"
+        }
+      ]
+    },
+    {
+      "ballotHash": "b644657f7fc859712014083c295335b4917decd1e18af4ba4159f4dbbc569830",
+      "ratified": true,
+      "verdict": "INDETERMINATE",
+      "required": 2,
+      "tally": {
+        "INDETERMINATE": 2,
+        "NO": 1
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "INDETERMINATE"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "INDETERMINATE"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "NO"
+        }
+      ]
+    },
+    {
+      "ballotHash": "c20ec41af1ddc1dd71016909418b23c9a48a8726eebaccda9951be64eeba2e7d",
+      "ratified": true,
+      "verdict": "REVISE",
+      "required": 2,
+      "tally": {
+        "REVISE": 2,
+        "NO_VERDICT": 1
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "REVISE"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "REVISE"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "NO_VERDICT"
+        }
+      ]
+    },
+    {
+      "ballotHash": "45de89efb218b5e6d522c4a66a799037ca58cc0f45e4df66cd35ba293c955238",
+      "ratified": true,
+      "verdict": "SOUND",
+      "required": 2,
+      "tally": {
+        "SOUND": 2,
+        "REVISE": 1
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "SOUND"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "REVISE"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "SOUND"
+        }
+      ]
+    },
+    {
+      "ballotHash": "0d7d765b26c60a5292acefe54a22e6b13f51cceee3732d155831e3e8f820fd47",
+      "ratified": true,
+      "verdict": "SOUND",
+      "required": 2,
+      "tally": {
+        "SOUND": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "SOUND"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "SOUND"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "SOUND"
+        }
+      ]
+    },
+    {
+      "ballotHash": "4fef217749edb7ecdb272dba943cbd3d156723ad53d6a534c8a85d28d208591d",
+      "ratified": true,
+      "verdict": "WIRE_NOW",
+      "required": 2,
+      "tally": {
+        "WIRE_NOW": 2,
+        "DISCLOSE_DEFER": 1
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "WIRE_NOW"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "WIRE_NOW"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "DISCLOSE_DEFER"
+        }
+      ]
+    },
+    {
+      "ballotHash": "4955008a3522c40abfa1a53c46c1d27d048ef0d7d8408315e34794b9922f0ed2",
+      "ratified": true,
+      "verdict": "VERIFIED",
+      "required": 2,
+      "tally": {
+        "VERIFIED": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "VERIFIED"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "VERIFIED"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "VERIFIED"
+        }
+      ]
+    },
+    {
+      "ballotHash": "c1a25d264861fdddb77965c35ea6c5aa0e5ec47d5d5f24f736375ce848457933",
+      "ratified": true,
+      "verdict": "AUTONOMY_FIRST",
+      "required": 2,
+      "tally": {
+        "AUTONOMY_FIRST": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "AUTONOMY_FIRST"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "AUTONOMY_FIRST"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "AUTONOMY_FIRST"
+        }
+      ]
+    },
+    {
+      "ballotHash": "846e9d17aa028bba2a229dde3012d2a3274fbf38610c1ff494263311b80d7738",
+      "ratified": true,
+      "verdict": "SOUND",
+      "required": 2,
+      "tally": {
+        "SOUND": 2,
+        "REVISE": 1
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "SOUND"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "REVISE"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "SOUND"
+        }
+      ]
+    },
+    {
+      "ballotHash": "8ca1ce237b6bf4694ef8f698fe5564120a8f50fcb88447852940d19e1eff16e9",
+      "ratified": true,
+      "verdict": "SOUND",
+      "required": 2,
+      "tally": {
+        "SOUND": 2,
+        "REVISE": 1
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "SOUND"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "REVISE"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "SOUND"
+        }
+      ]
+    },
+    {
+      "ballotHash": "ce9fd5d4736f0992d57092e22be01c7badd339160f1e353d7ace523a9a9161b4",
+      "ratified": true,
+      "verdict": "SELFREVIEW_FIRST",
+      "required": 2,
+      "tally": {
+        "SELFREVIEW_FIRST": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "SELFREVIEW_FIRST"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "SELFREVIEW_FIRST"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "SELFREVIEW_FIRST"
+        }
+      ]
+    },
+    {
+      "ballotHash": "989e5532c602477c9589794efd9253a409f330ef04330d0472adbb55e91eb4cd",
+      "ratified": false,
+      "verdict": null,
+      "required": 2,
+      "tally": {
+        "NO_VERDICT": 2,
+        "REVISE": 1
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "NO_VERDICT"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "REVISE"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "NO_VERDICT"
+        }
+      ]
+    },
+    {
+      "ballotHash": "6a395c72fb699da2d81cc7dfc4c6167c31609eb8fbfda4c39d33f6f546a3f281",
+      "ratified": true,
+      "verdict": "SOUND",
+      "required": 2,
+      "tally": {
+        "SOUND": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "SOUND"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "SOUND"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "SOUND"
+        }
+      ]
+    }
+  ]
+}
