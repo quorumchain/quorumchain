@@ -1,6 +1,6 @@
 # Quorumchain ($QRM) — Roadmap
 
-*Last updated: 2026-06-04 (after round 51). This is a living document; each phase ends
+*Last updated: 2026-06-04 (after round 53). This is a living document; each phase ends
 with a panel convening, so the plan below is a proposal the panel ratifies, not a fiat.*
 
 ---
@@ -10,12 +10,14 @@ with a panel convening, so the plan below is a proposal the panel ratifies, not 
 **What exists and works today (all local, zero-dependency TypeScript):**
 - 11 CIPs ratified, 7 red-teamed; the substrate decision is made (appchain/rollup, round 19).
 - The full 3-AI panel convenes for real: V1 (Claude), V2 (Codex), V3 (Hermes) sign
-  Ed25519 votes into a hash-chained, independently-verifiable log — **51 rounds, 144
+  Ed25519 votes into a hash-chained, independently-verifiable log — **53 rounds, 150
   entries, chain valid** — and now convenes **autonomously**: a daemon drains a file
-  queue of ballots with no human running the panel (Phase 1.1, round 50). It has already
-  run two autonomous convenings — the round-50 self-review and the round-51 sourcing
-  decision.
-- Every CIP mechanism is implemented and tested (178 tests): accountability ledger
+  queue of ballots with no human running the panel (Phase 1.1, round 50), and a git
+  commit auto-sources a self-review ballot (Phase 1.2 tier 1). The full loop has been
+  dogfooded end-to-end: it reviewed its own commit, *found three real bugs in itself*
+  (round 52), and ratified the fixes SOUND 3/3 (round 53) — all with no human choosing
+  the question.
+- Every CIP mechanism is implemented and tested (181 tests): accountability ledger
   (notary/replay), knowledge commons (commons/reputation), node admission + jury draw
   (nodes), validator lifecycle (lifecycle), bonds/stake/slashing-detection (bonds),
   cost-oracle (cost-oracle), fork-drill (fork).
@@ -81,19 +83,26 @@ the token (Phase 2) funds scaling later.*
   own source with no human in the loop** (round 50). V2's REVISE caught a crash-recovery
   laundering gap (a ballot in both `pending/` and `done/` after a crash mid-cleanup was
   re-convened) — fixed under TDD: `listPending` now excludes any id with a terminal
-  record. 178 tests green; verified live (re-convened nothing on a stale pending file).
+  record. 181 tests green; verified live (re-convened nothing on a stale pending file).
 - **1.2 Ballot sourcing** — *decision made (round 51, SELFREVIEW_FIRST 3/3); **tier 1
   built**, tier 2 pending.* Where do questions come from autonomously? **The panel chose
   a two-tier path**: build **tier 1 — the self-review heartbeat — first** (a deterministic
   trigger auto-enqueues a SOUND/REVISE/INADEQUATE review of the daemon's own latest change
   — the round-50 ballot, automated), then **tier 2 — an external dispute/oracle feed**
   second. **Tier 1 shipped:** `self-review-source.ts` (`reviewBallotFor`, a pure
-  commit→ballot keyed `review-<epoch>-<short-sha>`; `sourceSelfReview`, idempotent via the
+  commit→ballot keyed `review-<epoch>-<full-sha>`; `sourceSelfReview`, idempotent via the
   new `queue.hasBallot`) + `source-self-review.ts` (reads git HEAD). The selection rule is
   reproducible from public git (sha/subject/date), so no operator can hand-pick — and a
-  review keys off *committed* state (uncommitted work is not public). Verified live against
-  real HEAD: enqueues once, second run is a no-op. 178 tests. Next: dogfood it on a fresh
-  commit (the daemon drains the self-review the sourcer files) — which IS the 1.3 loop.
+  review keys off *committed* state (uncommitted work is not public). **Panel-certified
+  round 53 (SOUND 3/3)** after a full autonomous dogfood: the loop reviewed its own commit
+  (round 52), *found three real bugs* (a ratify laundering bug — `NO_VERDICT` could win
+  2/3; the daemon finalizing on raw votes not real verdicts; V2's full-sha dedup collision)
+  + two liveness causes (invoker budgets too tight for an agentic review), all fixed under
+  TDD, then re-reviewed the fix commit and ratified SOUND 3/3 — the round-45→46 pattern,
+  executed by the machinery on itself. This previews **1.3** (self-improvement loop). 181
+  tests. Two non-blocking findings deferred (daemon participation bar vs supermajority
+  floor for N>3 panels; a cosmetic commons.ts label). See
+  `docs/consensus/2026-06-04-round-52-53-selfreview-dogfood.md`.
   **Binding constraint (affirmed 3/3):** any autonomous source's selection rule must be
   *deterministic and published* — outsider-reproducible from public inputs — so no
   operator and no hidden process can hand-pick, cherry-pick, or reorder ballots. The
@@ -186,15 +195,16 @@ state are on-chain, and slashing actually moves stake.
 
 ## Recommended immediate next step
 
-**Phase 0 is complete**, **Phase 1.1 (the convening daemon) is done** (round 50, SOUND
-2/3), and **Phase 1.2's sourcing decision is ratified** (round 51, SELFREVIEW_FIRST 3/3,
-178 tests green) — the daemon drains a file queue and convenes with no human, proven on
-two real autonomous rounds (a self-review and this sourcing decision). **Next is to build
-Phase 1.2 tier 1: the deterministic self-review sourcer** — on a reproducible trigger,
-auto-enqueue a review of the daemon's own latest change, under the binding
-deterministic-selection constraint — which unlocks Phase 1.3 (self-improvement). Then
-tier 2 (the external dispute feed, with a non-cherry-pickable selection rule) and 1.4
-(public auditable feed).
+**Phase 0 is complete**, **Phase 1.1 (the convening daemon) is done** (round 50), and
+**Phase 1.2 tier 1 (the deterministic self-review sourcer) is built and panel-certified**
+(round 53, SOUND 3/3, 181 tests green) — the autonomous loop has been dogfooded
+end-to-end and even found + fixed three real bugs in itself (rounds 52→53). **Next
+options:** (a) **Phase 1.2 tier 2** — the external dispute/oracle feed (decision+build;
+the round-51 binding constraint makes its non-cherry-pickable selection rule the hard
+part); (b) **Phase 1.3** — formalize the self-improvement loop the dogfood just previewed
+(propose→build→review→ratify as a standing process); (c) **Phase 1.4** — the public
+auditable feed. The two round-53 deferred findings (daemon participation bar vs the
+supermajority floor for N>3 panels; a cosmetic commons.ts label) are also open.
 Demonstrate at small scale (round-48 guidance: existence, not production economics); the
 $QRM token (Phase 2) then funds scaling. Phases 0–1 together demonstrate genuine autonomy
 *before* spending on a token or a chain — the cheapest and most credible order.
