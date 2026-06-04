@@ -51,7 +51,7 @@ function fakePanel(outputs: Record<string, string>): { signers: Signer[]; keyrin
   const signers = Object.entries(outputs).map(([id, out]) => {
     const k = generateValidatorKey();
     keyring[id] = k.publicKeyPem;
-    return makeLocalSigner({ validatorId: id, key: k, invoke: async () => out, parseVerdict });
+    return makeLocalSigner({ validatorId: id, key: k, deliberate: async () => ({ verdict: parseVerdict(out), rawOutput: out }) });
   });
   return { signers, keyring };
 }

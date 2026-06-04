@@ -49,15 +49,15 @@ export async function convene(params: {
   verdicts?: string[];
 }): Promise<ConveneResult> {
   const bh = ballotHash(params.prompt, params.context);
-  const fullPrompt = buildPrompt(params.prompt, params.context, params.verdicts);
   const votes: SignedVote[] = [];
   // Sequential: appendVote reads-then-writes the file, so concurrent appends
   // would race the hash chain. A 3-validator panel does not need parallelism.
-  // The orchestrator holds NO key: each validator signs its own vote behind the
-  // Signer boundary (CIP-3 — the orchestrator is not the trust root). It can
-  // collect and verify, but cannot mint or alter a verdict.
+  // The orchestrator holds NO key and supplies NO hash: it passes the ballot
+  // CONTENT, and each validator signs its own vote behind the Signer boundary,
+  // deriving the hash from that content (CIP-3 — the orchestrator is not the trust
+  // root; it can collect and verify, but cannot mint, alter, or rebind a verdict).
   for (const s of params.signers) {
-    const vote = await s.signBallot(bh, fullPrompt);
+    const vote = await s.signBallot(params.prompt, params.context, params.verdicts);
     appendVote(params.logPath, vote);
     votes.push(vote);
   }

@@ -18,7 +18,7 @@ import { promisify } from 'node:util';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { convene, parseVerdict, type ValidatorInvoker } from './panel.ts';
+import { convene, buildPrompt, parseVerdict, type ValidatorInvoker } from './panel.ts';
 import { makeLocalSigner } from './signer.ts';
 import { loadOrCreateKeyring } from './keystore.ts';
 import { verifyLog, readLog } from './vote-log.ts';
@@ -79,10 +79,17 @@ async function main() {
   }
   mkdirSync(DATA, { recursive: true });
   const ks = loadOrCreateKeyring(KEYSTORE, ['V1', 'V2', 'V3']);
+  // Wrap a validator's raw invoker into a `deliberate` closure: it builds the
+  // prompt and parses the verdict on the validator side, so the signer derives the
+  // ballot hash from the same content the model judged (round-45 binding fix).
+  const deliberateWith = (invoke: ValidatorInvoker) => async (prompt: string, context: string, verdicts?: string[]) => {
+    const rawOutput = await invoke(buildPrompt(prompt, context, verdicts));
+    return { verdict: parseVerdict(rawOutput), rawOutput };
+  };
   const signers = [
-    makeLocalSigner({ validatorId: 'V1', key: ks.keys.V1, invoke: safe('V1', claudeInvoke), parseVerdict }),
-    makeLocalSigner({ validatorId: 'V2', key: ks.keys.V2, invoke: safe('V2', codexInvoke), parseVerdict }),
-    makeLocalSigner({ validatorId: 'V3', key: ks.keys.V3, invoke: safe('V3', hermesInvoke), parseVerdict }),
+    makeLocalSigner({ validatorId: 'V1', key: ks.keys.V1, deliberate: deliberateWith(safe('V1', claudeInvoke)) }),
+    makeLocalSigner({ validatorId: 'V2', key: ks.keys.V2, deliberate: deliberateWith(safe('V2', codexInvoke)) }),
+    makeLocalSigner({ validatorId: 'V3', key: ks.keys.V3, deliberate: deliberateWith(safe('V3', hermesInvoke)) }),
   ];
 
   // Optional multiple-choice ballot: QRM_VERDICTS="A,B,C" (default YES/NO/ABSTAIN).
