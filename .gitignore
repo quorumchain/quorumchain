@@ -1,1 +1,4 @@
 .DS_Store
+
+# rtk proxy diff-capture artifacts left by validators running git show during reviews
+.qrm_*.txt
