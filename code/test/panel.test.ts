@@ -7,6 +7,7 @@ import { parseVerdict, buildPrompt, convene, startSigners } from '../src/panel.t
 import { makeLocalSigner, type Signer } from '../src/signer.ts';
 import { generateValidatorKey, ballotHash, verifyVote, signVote } from '../src/signed-vote.ts';
 import { readLog, verifyLog } from '../src/vote-log.ts';
+import { loadRegistry, statementFor } from '../src/ballot-registry.ts';
 
 function tmpLog(): string {
   return join(mkdtempSync(join(tmpdir(), 'qrm-panel-')), 'votes.log');
@@ -144,6 +145,22 @@ test('convene does NOT ratify when failures drop it below the 2/3 bar', async ()
   const r = await convene({ prompt: 'q', context: 'c', signers: [...signers, deadSigner('V2'), deadSigner('V3')], keyring, quorum: 2, logPath: tmpLog() });
   assert.equal(r.ratified, false); // 1 vote is below 2/3 of the 3 registered
   assert.equal(r.failures.length, 2);
+});
+
+// --- read surface (round-58): convene records the ballot statement to the registry ---
+
+test('convene records the ballot to the registry when registryPath is set (verifiable statement)', async () => {
+  const { signers, keyring } = fakePanel({ V1: 'VERDICT: YES', V2: 'VERDICT: YES', V3: 'VERDICT: NO' });
+  const registryPath = join(mkdtempSync(join(tmpdir(), 'qrm-cv-')), 'ballots.jsonl');
+  await convene({ prompt: 'Did X occur?', context: 'evidence', signers, keyring, quorum: 2, logPath: tmpLog(), registryPath });
+  const reg = loadRegistry(registryPath);
+  assert.equal(statementFor(reg, ballotHash('Did X occur?', 'evidence')), 'Did X occur?'); // recoverable AND hash-verified
+});
+
+test('convene without registryPath writes no registry (back-compatible)', async () => {
+  const { signers, keyring } = fakePanel({ V1: 'VERDICT: YES', V2: 'VERDICT: YES' });
+  const r = await convene({ prompt: 'q', context: 'c', signers, keyring, quorum: 2, logPath: tmpLog() });
+  assert.equal(r.votes.length, 2); // no throw, no registry required
 });
 
 // --- replay nonce (round-57): convene issues a per-convening nonce and rejects a
