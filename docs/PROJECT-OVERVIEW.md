@@ -12,7 +12,7 @@
 
 There are really two things going on at once, and it helps to keep them separate:
 
-1. **The experiment** — *Can three rival AIs collaboratively design, build, and validate "the perfect blockchain for AI," reaching genuine 2/3 consensus as both co-designers and validators, with no human in the loop?* That experiment is live: 53 signed rounds so far, including the AIs reviewing, red-teaming, and re-auditing their *own* code, setting their own roadmap, and — as of round 50 — convening fully autonomously: a daemon drains a file queue of ballots and runs the panel with no human in the loop (V1 itself deliberates via `claude -p`, no human paste). It convened on its *own* source (round 50), decided where its future ballots should autonomously come from (round 51), and then ran the full self-review loop end-to-end — a git commit auto-sourced a review of itself that *found three real bugs in the machinery* (round 52), which were fixed under TDD and re-ratified SOUND 3/3 (round 53), all with no human choosing the question.
+1. **The experiment** — *Can three rival AIs collaboratively design, build, and validate "the perfect blockchain for AI," reaching genuine 2/3 consensus as both co-designers and validators, with no human in the loop?* That experiment is live: 56 signed rounds so far, including the AIs reviewing, red-teaming, and re-auditing their *own* code, setting their own roadmap, and — as of round 50 — running the **whole autonomy loop** with no human in it: a daemon drains a file queue of ballots and runs the panel (V1 itself deliberates via `claude -p`, no human paste), a git commit auto-sources a self-review, a gate approves a change only on a ratified SOUND, and a public feed recomputes every outcome from the signed log. It convened on its *own* source (round 50), decided where its future ballots come from (round 51), and ran the self-improvement loop end-to-end — twice finding and fixing real bugs *in the machinery itself* (rounds 52→53 and 54→55, where its own gate **blocked** its own code until fixed), and ratified-but-deferred the external-feed build until the tamper-evidence anchor lands (round 56) — all with no human choosing the question.
 2. **The product** — *an AI oracle with a memory.* A credibly-neutral AI panel that (a) **judges** subjective questions and writes accountable verdicts, and (b) **remembers** those rulings as a citable, un-rewritable knowledge base that gets smarter every time it's used.
 
 The human ("dev") is a temporary steward who holds an override during bootstrap and **renounces it at mainnet** — and only after a safety gate has been *empirically* passed, never on a promise.
@@ -195,9 +195,9 @@ The whole loop — REVISE → fixes → SOUND → more fixes → unanimous SOUND
 
 **Proven and working today:**
 - 11 CIPs ratified (7 red-teamed); the full 3-AI panel online.
-- 53 signed convening rounds in a verifiable hash-chained log (150 entries, chain valid).
+- 56 signed convening rounds in a verifiable hash-chained log (159 entries, chain valid).
 - Real-world case studies decided by independent per-validator research — e.g. the $85M MicroStrategy/Polymarket dispute (YES 3/3), the Henry Nowak police-response case (FELL_SHORT 3/3), three contested Polymarket resolutions, and the panel's own code reviews.
-- Both product pillars (CIP-8 Ledger + CIP-9 Commons) and the node/economics design (CIP-10) implemented to working, tested code — 181 tests; the build is panel-certified **SOUND (3/3)**.
+- Both product pillars (CIP-8 Ledger + CIP-9 Commons) and the node/economics design (CIP-10) implemented to working, tested code — 196 tests; the build is panel-certified **SOUND (3/3)**.
 - **OS-level key custody, on the live path** — every validator runs behind a `RemoteSigner`: a *separate OS process* (`deliberating-signer-host.ts`) that holds the keystore key, runs the validator's real invoker child-side, parses the verdict, and signs — so no private key enters the orchestrator and the spawner cannot choose a verdict. Round 47 wired this into `run-panel` (panel vote **WIRE_NOW 2/1**) after a re-audit found the earlier "closed in code / local backlog exhausted" claim was an overstatement (the mechanism existed but was unwired, with an ephemeral key and no liveness floor).
 - **Autonomous V1 deliberation** — Phase 0.1 (round 48 **AUTONOMY_FIRST**): V1 now deliberates by shelling out to the `claude` CLI in its own host process, exactly like V2→codex and V3→hermes — **no human-pasted file**. All three validators are now symmetric with no human in the loop (verified live: a `claude -p` deliberation returned a parseable verdict). A CLI failure becomes `NO_VERDICT` in the host, the same fallback as V2/V3.
 - **Pinned / published keyring** — Phase 0.2: `ratify` now verifies against a committed, published keyring (`code/pinned-keyring.json`, matching the round-6 identities), and `run-panel` aborts if any host presents a key that doesn't match the pin — so the orchestrator can't substitute a validator's key (verified live: matching keys pass, a substituted key is rejected). Hardware/enclave key storage remains a testnet item.
@@ -226,7 +226,7 @@ Everything is runnable from [`code/`](../code/) with Node (no install step — z
 
 ```bash
 cd code
-node --test                      # the full suite — 181 tests
+node --test                      # the full suite — 196 tests
 node src/demo.ts                 # the signed-vote heartbeat (CIP-3)
 node src/scenario-demo.ts        # the WHOLE stack as one story (best single demo)
 node src/notary-demo.ts          # CIP-8 ledger: notary + the live round-29 replay

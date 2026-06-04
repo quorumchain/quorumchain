@@ -1,6 +1,6 @@
 # Quorumchain — public convening feed
 
-**Chain validity:** ✅ valid · 150 signed votes · 49 convenings
+**Chain validity:** ✅ valid · 159 signed votes · 52 convenings
 
 | # | ballot | outcome | tally | votes |
 |---|--------|---------|-------|-------|
@@ -53,3 +53,6 @@
 | 47 | `ce9fd5d4736f` | ✅ SELFREVIEW_FIRST | SELFREVIEW_FIRST:3 | V1=SELFREVIEW_FIRST V2=SELFREVIEW_FIRST V3=SELFREVIEW_FIRST |
 | 48 | `989e5532c602` | — not ratified | NO_VERDICT:2 REVISE:1 | V1=NO_VERDICT V2=REVISE V3=NO_VERDICT |
 | 49 | `6a395c72fb69` | ✅ SOUND | SOUND:3 | V1=SOUND V2=SOUND V3=SOUND |
+| 50 | `e5779b38525b` | ✅ REVISE | REVISE:2 SOUND:1 | V1=REVISE V2=REVISE V3=SOUND |
+| 51 | `cea2d144bf4b` | ✅ SOUND | SOUND:3 | V1=SOUND V2=SOUND V3=SOUND |
+| 52 | `e85a24ec9864` | ✅ SPECIFY_DEFER | SPECIFY_DEFER:3 | V1=SPECIFY_DEFER V2=SPECIFY_DEFER V3=SPECIFY_DEFER |

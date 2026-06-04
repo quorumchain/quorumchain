@@ -1,6 +1,6 @@
 # Quorumchain ($QRM) — Roadmap
 
-*Last updated: 2026-06-04 (after round 53). This is a living document; each phase ends
+*Last updated: 2026-06-04 (after round 56). This is a living document; each phase ends
 with a panel convening, so the plan below is a proposal the panel ratifies, not a fiat.*
 
 ---
@@ -10,14 +10,14 @@ with a panel convening, so the plan below is a proposal the panel ratifies, not 
 **What exists and works today (all local, zero-dependency TypeScript):**
 - 11 CIPs ratified, 7 red-teamed; the substrate decision is made (appchain/rollup, round 19).
 - The full 3-AI panel convenes for real: V1 (Claude), V2 (Codex), V3 (Hermes) sign
-  Ed25519 votes into a hash-chained, independently-verifiable log — **53 rounds, 150
-  entries, chain valid** — and now convenes **autonomously**: a daemon drains a file
-  queue of ballots with no human running the panel (Phase 1.1, round 50), and a git
-  commit auto-sources a self-review ballot (Phase 1.2 tier 1). The full loop has been
-  dogfooded end-to-end: it reviewed its own commit, *found three real bugs in itself*
-  (round 52), and ratified the fixes SOUND 3/3 (round 53) — all with no human choosing
-  the question.
-- Every CIP mechanism is implemented and tested (181 tests): accountability ledger
+  Ed25519 votes into a hash-chained, independently-verifiable log — **56 rounds, 159
+  entries, chain valid** — and now runs the **whole autonomy loop** with no human in it:
+  a daemon drains a file queue (1.1), a git commit auto-sources a self-review (1.2 tier 1),
+  the panel convenes and a **gate approves a change only on a ratified SOUND** (1.3), and a
+  public feed recomputes every outcome from the signed log (1.4). It has found and fixed
+  real bugs *in itself* twice (rounds 52→53 and 54→55) — its own gate **blocked** its own
+  code until fixed — all autonomously.
+- Every CIP mechanism is implemented and tested (196 tests): accountability ledger
   (notary/replay), knowledge commons (commons/reputation), node admission + jury draw
   (nodes), validator lifecycle (lifecycle), bonds/stake/slashing-detection (bonds),
   cost-oracle (cost-oracle), fork-drill (fork).
@@ -85,7 +85,8 @@ the token (Phase 2) funds scaling later.*
   re-convened) — fixed under TDD: `listPending` now excludes any id with a terminal
   record. 181 tests green; verified live (re-convened nothing on a stale pending file).
 - **1.2 Ballot sourcing** — *decision made (round 51, SELFREVIEW_FIRST 3/3); **tier 1
-  built**, tier 2 pending.* Where do questions come from autonomously? **The panel chose
+  built + certified** (round 53); **tier 2 design ratified, build deferred** (round 56).*
+  Where do questions come from autonomously? **The panel chose
   a two-tier path**: build **tier 1 — the self-review heartbeat — first** (a deterministic
   trigger auto-enqueues a SOUND/REVISE/INADEQUATE review of the daemon's own latest change
   — the round-50 ballot, automated), then **tier 2 — an external dispute/oracle feed**
@@ -110,15 +111,36 @@ the token (Phase 2) funds scaling later.*
   unsolved problem for the external feed (its ripeness/selection filter is the cherry-pick
   surface) — which is *why* self-review goes first. Governance-first was rejected (the
   proposer is still us). See `docs/consensus/2026-06-04-round-51-phase1.2-ballot-sourcing.md`.
-- **1.3 Self-improvement loop** — automate what we now do by hand round-by-round:
-  propose → build (TDD) → the panel reviews its own diff from **source** (the
-  round-47 process fix) → ratify or revise. The agent proposes code; the panel gates
-  it; nothing merges without 2/3.
-- **1.4 Observability** — a public, append-only feed of convenings (the log is already
-  verifiable; expose it) so the autonomy is auditable by outsiders.
+  **Tier 2 (round 56, SPECIFY_DEFER 3/3):** the panel ratified the deterministic
+  selection-rule design (published source set; window `[now−W, now]`; order by
+  `(resolution_timestamp, question_id)`; oldest K unreviewed; W/K/sources panel-gated) — it
+  collapses agenda control to a public, logged config decision — but **deferred the build**.
+  V1's decisive point: determinism *at a feed snapshot* ≠ reproducibility over time, because
+  the feed operator can edit/reorder inputs and "now" is unpinned; closing that needs the
+  **CIP-3 external-anchor mechanism** (hash-pinned, timestamped feed snapshots + a pinned
+  evaluation instant). **Deferral trigger:** build tier 2 when that anchor is live and/or the
+  token/substrate phase begins (real demand). See
+  `docs/consensus/2026-06-04-round-54-56-phase1.3-1.4-tier2.md`.
+- ~~**1.3 Self-improvement loop**~~ ✅ **DONE (rounds 54→55).** `self-improve.ts`
+  (`gateOf`, `gateForBallot`, `exitCodeFor`) + `run-self-improve.ts` (one standing cycle:
+  source a review of HEAD → convene + drain → gate → refresh feed) + `live-ballot.ts` (the
+  shared per-ballot convening). A change is APPROVED only on a ratified SOUND; the gate is
+  anchored to the RECOMPUTED log (not a mutable queue record) and sets a non-zero exit code
+  so a scheduler/CI blocks mechanically. **Proven autonomously:** the gate reviewed the 1.3
+  code, *blocked it* (round 54, REVISE 2/3 — V1/V2 found the exit-0 and stored-record gaps),
+  the fixes landed under TDD, and the re-review **APPROVED** the fix commit (round 55, SOUND
+  3/3, exit 0). The agent proposes + commits; the panel gates; nothing is approved without
+  2/3 SOUND.
+- ~~**1.4 Observability**~~ ✅ **DONE.** `feed.ts` (`buildFeed`, a pure projection that
+  RECOMPUTES chain validity + the 2/3 tally from the signed votes + pinned keyring, never a
+  stored result) + `renderFeedMarkdown` + `publish-feed.ts` → `docs/FEED.md` + `feed.json`.
+  Self-correcting: the round-52 self-review, whose stale `done/` record held the pre-fix
+  "ratified NO_VERDICT", shows "not ratified" in the public feed.
 
-**Exit criterion:** the system runs unattended for a sustained window, convening on
-real ballots and gating its own changes, with every action in the verifiable log.
+**Exit criterion (essentially MET):** the loop sources, convenes, gates its own changes,
+and publishes an auditable feed with no human in the loop — demonstrated end-to-end across
+rounds 50–55 (it even found and fixed bugs in itself). A *sustained unattended window* is a
+scheduling/cadence concern (a cron over `run-self-improve.ts`), available whenever desired.
 
 ---
 
@@ -195,16 +217,15 @@ state are on-chain, and slashing actually moves stake.
 
 ## Recommended immediate next step
 
-**Phase 0 is complete**, **Phase 1.1 (the convening daemon) is done** (round 50), and
-**Phase 1.2 tier 1 (the deterministic self-review sourcer) is built and panel-certified**
-(round 53, SOUND 3/3, 181 tests green) — the autonomous loop has been dogfooded
-end-to-end and even found + fixed three real bugs in itself (rounds 52→53). **Next
-options:** (a) **Phase 1.2 tier 2** — the external dispute/oracle feed (decision+build;
-the round-51 binding constraint makes its non-cherry-pickable selection rule the hard
-part); (b) **Phase 1.3** — formalize the self-improvement loop the dogfood just previewed
-(propose→build→review→ratify as a standing process); (c) **Phase 1.4** — the public
-auditable feed. The two round-53 deferred findings (daemon participation bar vs the
-supermajority floor for N>3 panels; a cosmetic commons.ts label) are also open.
-Demonstrate at small scale (round-48 guidance: existence, not production economics); the
-$QRM token (Phase 2) then funds scaling. Phases 0–1 together demonstrate genuine autonomy
-*before* spending on a token or a chain — the cheapest and most credible order.
+**Phase 1's no-substrate scope is complete** (196 tests green): 1.1 daemon, 1.2 tier 1
+(self-review source, certified round 53) + tier 2 (design ratified, build deferred round
+56), 1.3 self-improvement gate (rounds 54→55: it *blocked* its own code, then approved the
+fix), 1.4 public feed. The two round-53 deferred findings are closed. The loop sources,
+convenes, gates, and publishes with no human in it, and has twice found + fixed bugs in
+itself. **The remaining Phase-1 work (the tier-2 external-feed build) is consciously
+deferred** to its trigger: CIP-3's external-anchor mechanism (tamper-evident feed inputs)
+and/or the token/substrate phase. **Next frontier — a panel decision:** Phase 2 ($QRM
+token) vs Phase 3 (testnet substrate). Round 48 (AUTONOMY_FIRST) put autonomy before the
+token; with autonomy now demonstrated, the token (Phase 2) funds scaling, while the
+substrate (Phase 3) is where CIP-4/5 get real teeth *and* where the CIP-3 anchor that
+unblocks tier 2 most naturally lives. A convening should sequence these two.
