@@ -194,3 +194,32 @@ test('findEquivocations is empty when each validator votes once', () => {
   const b = signVote({ validatorId: 'V2', privateKeyPem: p.keys.V2.privateKeyPem, ballotHash: bh, verdict: 'YES', rawOutput: 'b' });
   assert.equal(findEquivocations([a, b]).length, 0);
 });
+
+// --- replay nonce (round-57): a vote is bound to ONE convening (V1/V2/V3 required) ---
+
+test('a per-convening nonce is signed into the vote and binds it to that convening', () => {
+  const k = generateValidatorKey();
+  const nbh = ballotHash('q', 'c');
+  const vote = signVote({ validatorId: 'V1', privateKeyPem: k.privateKeyPem, ballotHash: nbh, verdict: 'YES', rawOutput: 'r', nonce: 'convening-A' });
+  assert.equal(vote.nonce, 'convening-A');
+  assert.equal(verifyVote(vote, k.publicKeyPem), true);
+});
+
+test('replaying a vote into another convening fails: swapping the nonce breaks the signature', () => {
+  const k = generateValidatorKey();
+  const nbh = ballotHash('q', 'c');
+  const vote = signVote({ validatorId: 'V1', privateKeyPem: k.privateKeyPem, ballotHash: nbh, verdict: 'YES', rawOutput: 'r', nonce: 'convening-A' });
+  const replayed = { ...vote, nonce: 'convening-B' };
+  assert.equal(verifyVote(replayed, k.publicKeyPem), false);
+  const stripped: typeof vote = { ...vote };
+  delete (stripped as { nonce?: string }).nonce; // dropping the nonce a vote was signed with also fails
+  assert.equal(verifyVote(stripped, k.publicKeyPem), false);
+});
+
+test('backward compatible: a vote signed without a nonce still verifies (legacy log entries)', () => {
+  const k = generateValidatorKey();
+  const nbh = ballotHash('q', 'c');
+  const vote = signVote({ validatorId: 'V1', privateKeyPem: k.privateKeyPem, ballotHash: nbh, verdict: 'YES', rawOutput: 'r' });
+  assert.equal(vote.nonce, undefined);
+  assert.equal(verifyVote(vote, k.publicKeyPem), true);
+});

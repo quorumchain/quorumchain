@@ -14,6 +14,8 @@ import {
   drawJury,
   verifyDraw,
   tallyJury,
+  diversityAttestation,
+  meetsOperatorDiversity,
   type NodeRegistry,
   type NodeOperator,
 } from '../src/nodes.ts';
@@ -167,4 +169,54 @@ test('NI-10b: a LOW_ASSURANCE operator is carried with its flag', () => {
   const j = drawJury(r, 'seed-la');
   const seatC = j.seats.find((s) => s.slot === 'model-C')!;
   assert.equal(seatC.assurance, 'LOW_ASSURANCE');
+});
+
+// --- operator diversity vs host diversity (round-57 REVISE, load-bearing) ---
+// The red-team gap: "3 independent VMs" mechanically passes a slot/host check while a
+// single operator holds all the keys. The attestation must keep operator-count
+// DISTINCT from host-count so downstream admission can never read one as the other.
+
+test('diversityAttestation separates operator-count from host-count — three VMs, one operator', () => {
+  const reg: NodeRegistry = {
+    taxonomy: TAXONOMY,
+    operators: [
+      { id: 'vm1', model: 'model-A', assurance: 'STANDARD', operator: 'bootstrap' },
+      { id: 'vm2', model: 'model-B', assurance: 'STANDARD', operator: 'bootstrap' },
+      { id: 'vm3', model: 'model-C', assurance: 'STANDARD', operator: 'bootstrap' },
+    ],
+  };
+  const att = diversityAttestation(reg);
+  assert.equal(att.hostCount, 3);
+  assert.equal(att.slotCount, 3);
+  assert.equal(att.operatorCount, 1); // the un-launderable fact: one operator controls all three
+  assert.equal(att.fullyAttested, true);
+  // three VMs under one operator do NOT satisfy operator diversity
+  assert.equal(meetsOperatorDiversity(reg, 2), false);
+});
+
+test('operator diversity is met only when distinct operators control the hosts', () => {
+  const reg: NodeRegistry = {
+    taxonomy: TAXONOMY,
+    operators: [
+      { id: 'vm1', model: 'model-A', assurance: 'STANDARD', operator: 'alice' },
+      { id: 'vm2', model: 'model-B', assurance: 'STANDARD', operator: 'bob' },
+      { id: 'vm3', model: 'model-C', assurance: 'STANDARD', operator: 'carol' },
+    ],
+  };
+  assert.equal(diversityAttestation(reg).operatorCount, 3);
+  assert.equal(meetsOperatorDiversity(reg, 2), true);
+});
+
+test('an unattested node cannot be counted as operator diversity (no silent host=operator)', () => {
+  const reg: NodeRegistry = {
+    taxonomy: ['model-A', 'model-B'],
+    operators: [
+      { id: 'vm1', model: 'model-A', assurance: 'STANDARD', operator: 'alice' },
+      op('vm2', 'model-B'), // no operator declared
+    ],
+  };
+  const att = diversityAttestation(reg);
+  assert.equal(att.fullyAttested, false);
+  // without full attestation, diversity cannot be certified at all
+  assert.equal(meetsOperatorDiversity(reg, 2), false);
 });

@@ -21,9 +21,17 @@ import { createHash } from 'node:crypto';
 export type Assurance = 'STANDARD' | 'LOW_ASSURANCE';
 
 export interface NodeOperator {
-  id: string;
+  id: string; // the HOST/node instance (one machine)
   model: string; // must be one of the taxonomy's slots
   assurance: Assurance;
+  /** The controlling entity — distinct from `id` (round-57). The red-team gap is that
+   *  "three independent VMs" mechanically passes a host/slot check while a single
+   *  operator holds all the keys, and downstream admission would read host-count as
+   *  operator diversity. Tracking the operator separately keeps that un-launderable:
+   *  diversity is certified on operator-count, never host-count. Optional only for
+   *  backward compatibility — a node with no declared operator cannot be counted
+   *  toward operator diversity at all (see meetsOperatorDiversity). */
+  operator?: string;
 }
 
 export interface NodeRegistry {
@@ -63,6 +71,38 @@ export function admitNode(registry: NodeRegistry, node: NodeOperator): Admission
     };
   }
   return { admitted: true, registry: { ...registry, operators: [...registry.operators, node] } };
+}
+
+export interface DiversityAttestation {
+  hostCount: number; // distinct node instances (machines)
+  slotCount: number; // distinct model slots covered
+  operatorCount: number; // distinct CONTROLLING entities — the diversity that matters
+  fullyAttested: boolean; // every operator declared its controlling entity
+}
+
+/** The attestation surface the round-57 ruling made load-bearing: operator-count is
+ *  reported SEPARATELY from host-count and slot-count, so no downstream consumer can
+ *  read "three VMs" as "three operators". During the bootstrap phase (all hosts under
+ *  one operator) this honestly reports operatorCount = 1. */
+export function diversityAttestation(registry: NodeRegistry): DiversityAttestation {
+  const ops = registry.operators;
+  const declared = ops.filter((o) => o.operator !== undefined);
+  return {
+    hostCount: new Set(ops.map((o) => o.id)).size,
+    slotCount: new Set(ops.map((o) => o.model)).size,
+    operatorCount: new Set(declared.map((o) => o.operator)).size,
+    fullyAttested: ops.length > 0 && declared.length === ops.length,
+  };
+}
+
+/** Does the node set meet operator diversity of at least `minOperators` DISTINCT
+ *  controlling entities? Certification requires FULL attestation: an undeclared node
+ *  cannot be silently treated as its own operator (that is exactly the laundering the
+ *  ruling forbids), so any missing `operator` makes the answer false. This is the gate
+ *  a graduation/admission check must call instead of counting hosts or slots. */
+export function meetsOperatorDiversity(registry: NodeRegistry, minOperators: number): boolean {
+  const att = diversityAttestation(registry);
+  return att.fullyAttested && att.operatorCount >= minOperators;
 }
 
 export interface JurySeat {

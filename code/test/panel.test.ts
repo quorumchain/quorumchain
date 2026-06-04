@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { parseVerdict, buildPrompt, convene, startSigners } from '../src/panel.ts';
 import { makeLocalSigner, type Signer } from '../src/signer.ts';
-import { generateValidatorKey, ballotHash, verifyVote } from '../src/signed-vote.ts';
+import { generateValidatorKey, ballotHash, verifyVote, signVote } from '../src/signed-vote.ts';
 import { readLog, verifyLog } from '../src/vote-log.ts';
 
 function tmpLog(): string {
@@ -144,4 +144,25 @@ test('convene does NOT ratify when failures drop it below the 2/3 bar', async ()
   const r = await convene({ prompt: 'q', context: 'c', signers: [...signers, deadSigner('V2'), deadSigner('V3')], keyring, quorum: 2, logPath: tmpLog() });
   assert.equal(r.ratified, false); // 1 vote is below 2/3 of the 3 registered
   assert.equal(r.failures.length, 2);
+});
+
+// --- replay nonce (round-57): convene issues a per-convening nonce and rejects a
+// vote that does not carry it, so a vote from one convening cannot be replayed into another ---
+
+test('convene rejects a vote that does not carry the convening nonce (anti-replay)', async () => {
+  // A signer that ignores the issued nonce and stamps a STALE one — i.e. a replayed
+  // vote from a different convening. convene must not count it.
+  const k = generateValidatorKey();
+  const stale: Signer = {
+    validatorId: 'V1',
+    publicKeyPem: k.publicKeyPem,
+    signBallot: async (p, c) =>
+      signVote({ validatorId: 'V1', privateKeyPem: k.privateKeyPem, ballotHash: ballotHash(p, c), verdict: 'YES', rawOutput: 'VERDICT: YES', nonce: 'STALE' }),
+  };
+  const { signers, keyring } = fakePanel({ V2: 'VERDICT: YES', V3: 'VERDICT: YES' });
+  keyring.V1 = k.publicKeyPem;
+  const r = await convene({ prompt: 'q', context: 'c', signers: [stale, ...signers], keyring, quorum: 2, logPath: tmpLog() });
+  assert.ok(r.failures.some((f) => f.validatorId === 'V1')); // the stale-nonce vote is rejected
+  assert.equal(r.votes.length, 2); // only the two correctly-bound votes are counted
+  assert.equal(r.verdict, 'YES'); // and they still carry the convening
 });

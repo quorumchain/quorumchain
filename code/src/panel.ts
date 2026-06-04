@@ -3,6 +3,7 @@
 // it invokes each validator, signs their VERBATIM output, appends it to the
 // tamper-evident log, and ratifies — all recomputable from the log afterward.
 
+import { randomBytes } from 'node:crypto';
 import { ballotHash, ratify, type SignedVote, type RatifyResult } from './signed-vote.ts';
 import { appendVote } from './vote-log.ts';
 import { type Signer } from './signer.ts';
@@ -71,6 +72,11 @@ export async function convene(params: {
   verdicts?: string[];
 }): Promise<ConveneResult> {
   const bh = ballotHash(params.prompt, params.context);
+  // Per-convening nonce (round-57): issued here, the signers bind it into their signed
+  // payload, and a returned vote that does not carry THIS nonce is rejected — so a vote
+  // captured from one convening cannot be replayed into another. Verdict integrity still
+  // rests on the signature + keyring; the nonce adds convening-binding on top.
+  const nonce = randomBytes(16).toString('hex');
   const votes: SignedVote[] = [];
   const failures: { validatorId: string; error: string }[] = [];
   // Sequential: appendVote reads-then-writes the file, so concurrent appends
@@ -85,7 +91,13 @@ export async function convene(params: {
   // arrived: 2/3 is of the whole registered panel, so absences count against the bar.
   for (const s of params.signers) {
     try {
-      const vote = await s.signBallot(params.prompt, params.context, params.verdicts);
+      const vote = await s.signBallot(params.prompt, params.context, params.verdicts, nonce);
+      if (vote.nonce !== nonce) {
+        // a vote not bound to THIS convening (stale/replayed) is recorded as a failure,
+        // never logged or counted — the orchestrator only accepts the nonce it issued
+        failures.push({ validatorId: s.validatorId, error: 'nonce-mismatch (vote not bound to this convening)' });
+        continue;
+      }
       appendVote(params.logPath, vote);
       votes.push(vote);
     } catch (e) {

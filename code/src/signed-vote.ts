@@ -25,6 +25,11 @@ export interface SignedVote {
   rawOutput: string;
   rawOutputHash: string;
   signature: string; // hex
+  /** Per-convening nonce (round-57): binds a vote to ONE convening so a captured vote
+   *  cannot be replayed into another. Optional for backward compatibility — votes
+   *  signed before this field still verify (the nonce simply does not enter the
+   *  signed payload when absent). The orchestrator issues it and verifies the echo. */
+  nonce?: string;
 }
 
 export interface RatifyResult {
@@ -56,14 +61,18 @@ export function generateValidatorKey(): ValidatorKey {
 }
 
 // The exact bytes a signature commits to. Includes the rawOutput hash so the
-// verbatim reasoning cannot be altered after signing.
-function votePayload(v: { validatorId: string; ballotHash: string; verdict: string; rawOutputHash: string }): string {
-  return JSON.stringify({
+// verbatim reasoning cannot be altered after signing. The nonce is appended ONLY
+// when present, so a vote signed without one produces byte-identical payload to the
+// pre-round-57 format (legacy log entries still verify) while a nonced vote binds it.
+function votePayload(v: { validatorId: string; ballotHash: string; verdict: string; rawOutputHash: string; nonce?: string }): string {
+  const base: Record<string, unknown> = {
     validatorId: v.validatorId,
     ballotHash: v.ballotHash,
     verdict: v.verdict,
     rawOutputHash: v.rawOutputHash,
-  });
+  };
+  if (v.nonce !== undefined) base.nonce = v.nonce;
+  return JSON.stringify(base);
 }
 
 export function signVote(params: {
@@ -72,6 +81,7 @@ export function signVote(params: {
   ballotHash: string;
   verdict: string;
   rawOutput: string;
+  nonce?: string;
 }): SignedVote {
   const rawOutputHash = sha256hex(params.rawOutput);
   const payload = votePayload({
@@ -79,9 +89,10 @@ export function signVote(params: {
     ballotHash: params.ballotHash,
     verdict: params.verdict,
     rawOutputHash,
+    nonce: params.nonce,
   });
   const signature = cryptoSign(null, Buffer.from(payload, 'utf8'), createPrivateKey(params.privateKeyPem)).toString('hex');
-  return {
+  const vote: SignedVote = {
     validatorId: params.validatorId,
     ballotHash: params.ballotHash,
     verdict: params.verdict,
@@ -89,6 +100,8 @@ export function signVote(params: {
     rawOutputHash,
     signature,
   };
+  if (params.nonce !== undefined) vote.nonce = params.nonce;
+  return vote;
 }
 
 export function verifyVote(vote: SignedVote, publicKeyPem: string): boolean {
