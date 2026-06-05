@@ -355,3 +355,14 @@ Two distinct pinned issuers ⇒ two independent families, so `requiredFamilies �
   the "content/relevance/reputation NOT verified" statement; no path emits a Tier-1 anchor unlabeled.
 - **GP1e** — two distinct pinned issuers yield two families (`requiredFamilies ≥ 2` reachable);
   two artifacts from the **same** pinned issuer collapse to one (NI-15g, origin-not-issuer-key).
+
+**Implementation status.** Slice 1 — the hermetic Tier-1 verifier — is **BUILT** (`code/src/anchor.ts`,
+`code/test/cip15-anchor.test.ts`; GP1a–e green, suite 286→291). It is standalone (no lineage
+change yet, zero regression): the typed `Anchor`/`AnchorPolicy`, content-hash recompute, Ed25519
+issuer-signature verification with P1a domain separation + validator-keyring rejection, the
+ED25519_TSA timestamp scheme grounding `surfacedAt` (OTS_BITCOIN / RFC3161_CMS recognized but
+deferred), `structurallyAdmissible` with the NI-15g origin-family count, the P1b
+`tier1_structural_anchor_only` label, and `anchorGatePasses`. **Slice 2 (next):** wire
+`anchorGatePasses` into the commons.ts lineage as the `reviewAdmissible()`/`promotable()` split
+(NI-15b), add `BallotMeta.anchors[]` + the NI-15e `anchorCommitment` ballot-binding, and the
+content-pending render label.
