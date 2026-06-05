@@ -6,7 +6,7 @@
 import { createServer, type IncomingMessage, type ServerResponse, type Server } from 'node:http';
 import { timingSafeEqual } from 'node:crypto';
 import { join } from 'node:path';
-import { readLog } from './vote-log.ts';
+import { readLog, verifyEntries } from './vote-log.ts';
 import { writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import type { NodeConfig } from './node-config.ts';
@@ -144,7 +144,17 @@ export function createNode(cfg: NodeConfig, getMode: () => 'live' | 'degraded' =
         const r = verifyPublish({ staged, current: cur, checkpoint: readCheckpoint(data), keyring: cfg.pinnedKeyring, chainId: cfg.chainId, quorum: cfg.quorum });
         audit(auditPath, 'PUBLISH', { ok: r.ok, reason: r.reason ?? null, headHash: r.headHash, length: r.length });
         if (!r.ok) return send(res, 409, { error: r.reason });
-        stageRelease(data, r.headHash, snap);
+        try { stageRelease(data, r.headHash, snap); } catch (e) { audit(auditPath, 'PUBLISH', { ok: false, reason: (e as Error).message, headHash: r.headHash, length: r.length }); return send(res, 409, { error: (e as Error).message }); }
+        // Re-verify the staged votes.log ON DISK (defends NI-D3/NI-D6 against a commons write that
+        // overwrote the just-verified log): it must be intact AND its head must still equal r.headHash.
+        const stagedRef = { headHash: r.headHash, dir: join(data, 'releases', r.headHash) };
+        const slp = materialize(readReleaseFile(data, stagedRef, 'votes.log'), 'votes.log');
+        const sEntries = slp ? readLog(slp) : [];
+        const sHead = sEntries.length ? sEntries[sEntries.length - 1].entryHash : '0'.repeat(64);
+        if (!verifyEntries(sEntries).valid || sHead !== r.headHash) {
+          audit(auditPath, 'PUBLISH', { ok: false, reason: 'staged votes.log re-verification failed', headHash: r.headHash, length: r.length });
+          return send(res, 409, { error: 'staged votes.log re-verification failed' });
+        }
         commitRelease(data, r.headHash, { chainId: cfg.chainId, valid: true, length: r.length, headHash: r.headHash, verifiedAt: new Date().toISOString() });
         writeCheckpoint(data, { chainId: cfg.chainId, length: r.length, headHash: r.headHash, publishedAt: new Date().toISOString() });
         return send(res, 200, { headHash: r.headHash, length: r.length });

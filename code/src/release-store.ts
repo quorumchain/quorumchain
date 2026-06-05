@@ -5,7 +5,7 @@
 // serving and readers never observe a half-written chain. Zero dependencies.
 
 import { mkdirSync, writeFileSync, readFileSync, existsSync, renameSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { join } from 'node:path';
 
 export interface Snapshot { votesLog: string; ballots: string; commons?: Record<string, string> }
 export interface VerifyResult { chainId: string; valid: boolean; length: number; headHash: string; verifiedAt: string }
@@ -15,15 +15,21 @@ export interface ReleaseRef { headHash: string; dir: string }
 const RELEASES = (data: string) => join(data, 'releases');
 const POINTER = (data: string) => join(data, 'current');
 
+// A safe commons filename is a single path segment: no separators, no traversal,
+// conservative allowlist. Matches the only names the read path ever serves.
+export function isSafeCommonsName(name: string): boolean {
+  return /^[A-Za-z0-9._-]+$/.test(name) && name !== '.' && name !== '..';
+}
+
 export function stageRelease(data: string, headHash: string, snap: Snapshot): string {
   const dir = join(RELEASES(data), headHash);
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'votes.log'), snap.votesLog);
   writeFileSync(join(dir, 'ballots.jsonl'), snap.ballots);
+  mkdirSync(join(dir, 'commons'), { recursive: true });
   for (const [name, content] of Object.entries(snap.commons ?? {})) {
-    const p = join(dir, 'commons', name);
-    mkdirSync(dirname(p), { recursive: true });
-    writeFileSync(p, content);
+    if (!isSafeCommonsName(name)) throw new Error(`unsafe commons filename: ${name}`);
+    writeFileSync(join(dir, 'commons', name), content);
   }
   return dir;
 }

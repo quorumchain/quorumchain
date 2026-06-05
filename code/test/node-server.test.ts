@@ -1,11 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { generateValidatorKey, signVote, ballotHash } from '../src/signed-vote.ts';
 import { appendVote } from '../src/vote-log.ts';
-import { stageRelease, commitRelease, writeCheckpoint } from '../src/release-store.ts';
+import { stageRelease, commitRelease, writeCheckpoint, isSafeCommonsName } from '../src/release-store.ts';
+import { readLog } from '../src/vote-log.ts';
 import { createNode } from '../src/node-server.ts';
 
 const keys = { V1: generateValidatorKey(), V2: generateValidatorKey(), V3: generateValidatorKey() };
@@ -19,6 +20,34 @@ function bootData() {
   commitRelease(data, 'h0', { chainId: 'c', valid: true, length: 1, headHash: 'h0', verifiedAt: 't' });
   writeCheckpoint(data, { chainId: 'c', length: 1, headHash: 'h0', publishedAt: 't' });
   return data;
+}
+
+// Like bootData, but the staged pointer headHash EQUALS the real entryHash of the seeded
+// vote, so a forward-extension snapshot (original entry + new pinned votes) is deterministic.
+function bootDataReal() {
+  const data = mkdtempSync(join(tmpdir(), 'qrm-srv-'));
+  const tmpLog = join(mkdtempSync(join(tmpdir(), 'qrm-sl-')), 'votes.log');
+  appendVote(tmpLog, signVote({ validatorId: 'V1', privateKeyPem: keys.V1.privateKeyPem, ballotHash: ballotHash('Q', 'C'), verdict: 'YES', rawOutput: 'V1:YES' }));
+  const entries = readLog(tmpLog);
+  const head = entries[0].entryHash;
+  const votesLog = readFileSync(tmpLog, 'utf8');
+  stageRelease(data, head, { votesLog, ballots: '', commons: { 'INDEX.md': '# c' } });
+  commitRelease(data, head, { chainId: 'c', valid: true, length: 1, headHash: head, verifiedAt: 't' });
+  writeCheckpoint(data, { chainId: 'c', length: 1, headHash: head, publishedAt: 't' });
+  return { data, tmpLog };
+}
+
+// A forward-extension snapshot of bootDataReal's chain: original entry + N more pinned votes.
+function extendSnapshot(seedLog: string, count: number): { votesLog: string; ballots: string; commons: Record<string, string>; head: string; length: number } {
+  const ext = join(mkdtempSync(join(tmpdir(), 'qrm-ext-')), 'votes.log');
+  writeFileSync(ext, readFileSync(seedLog, 'utf8'));
+  const ids = ['V2', 'V3', 'V1'];
+  for (let i = 0; i < count; i++) {
+    const id = ids[i % ids.length] as 'V1' | 'V2' | 'V3';
+    appendVote(ext, signVote({ validatorId: id, privateKeyPem: keys[id].privateKeyPem, ballotHash: ballotHash(`Q${i}`, `C${i}`), verdict: 'YES', rawOutput: `${id}:YES:${i}` }));
+  }
+  const entries = readLog(ext);
+  return { votesLog: readFileSync(ext, 'utf8'), ballots: '', commons: { 'INDEX.md': '# c2' }, head: entries[entries.length - 1].entryHash, length: entries.length };
 }
 
 async function startNode() {
@@ -79,6 +108,57 @@ test('admin publish with malformed JSON returns 400, not 500', async () => {
     const res = await fetch(`${base}/admin/publish`, { method: 'POST', headers: { authorization: 'Bearer A', 'content-type': 'application/json' }, body: '{not json' });
     assert.equal(res.status, 400);
   } finally { node.close(); }
+});
+
+async function startNodeReal() {
+  const { data, tmpLog } = bootDataReal();
+  const cfg = { dataDir: data, port: 0, submitToken: 'S', adminToken: 'A', pinnedKeyring: keyring, chainId: 'c', quorum: 2,
+    limits: { maxBodyBytes: 1 << 20, maxQuestionLen: 200, maxContextLen: 800, rateWindowMs: 60000, rateMaxPerWindow: 100, inboxMaxBytes: 1e9, nearDupThreshold: 0.8 } };
+  const node = createNode(cfg);
+  await node.listen();
+  return { node, base: `http://127.0.0.1:${node.port()}`, data, tmpLog };
+}
+
+test('admin publish accepts a valid forward-extension and advances the served chain (200)', async () => {
+  const { node, base, tmpLog } = await startNodeReal();
+  try {
+    const before = await (await fetch(`${base}/chain/verify`)).json();
+    assert.equal(before.length, 1);
+    const snap = extendSnapshot(tmpLog, 3);
+    const res = await fetch(`${base}/admin/publish`, { method: 'POST', headers: { authorization: 'Bearer A', 'content-type': 'application/json' }, body: JSON.stringify({ votesLog: snap.votesLog, ballots: snap.ballots, commons: snap.commons }) });
+    assert.equal(res.status, 200);
+    const after = await (await fetch(`${base}/chain/verify`)).json();
+    assert.equal(after.length, snap.length);
+    assert.equal(after.headHash, snap.head);
+    assert.equal(after.valid, true);
+  } finally { node.close(); }
+});
+
+test('admin publish rejects commons path traversal (409) and does not overwrite the verified votes.log', async () => {
+  const { node, base, tmpLog } = await startNodeReal();
+  try {
+    const before = await (await fetch(`${base}/chain/verify`)).json();
+    const snap = extendSnapshot(tmpLog, 2); // a VALID forward-extension that would pass the gate
+    // ...but smuggle a different, internally self-consistent log via a traversing commons name
+    const evil = join(mkdtempSync(join(tmpdir(), 'qrm-evil-')), 'votes.log');
+    appendVote(evil, signVote({ validatorId: 'V1', privateKeyPem: keys.V1.privateKeyPem, ballotHash: ballotHash('OTHER', 'CHAIN'), verdict: 'NO', rawOutput: 'V1:NO' }));
+    const body = { votesLog: snap.votesLog, ballots: snap.ballots, commons: { 'INDEX.md': '# c2', '../votes.log': readFileSync(evil, 'utf8') } };
+    const res = await fetch(`${base}/admin/publish`, { method: 'POST', headers: { authorization: 'Bearer A', 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    assert.equal(res.status, 409);
+    const after = await (await fetch(`${base}/chain/verify`)).json();
+    assert.deepEqual(after, before); // served chain byte-identical: votes.log not overwritten
+  } finally { node.close(); }
+});
+
+test('isSafeCommonsName allowlist + stageRelease throws on unsafe commons name', () => {
+  assert.equal(isSafeCommonsName('../votes.log'), false);
+  assert.equal(isSafeCommonsName('a/b'), false);
+  assert.equal(isSafeCommonsName('..'), false);
+  assert.equal(isSafeCommonsName('.'), false);
+  assert.equal(isSafeCommonsName('INDEX.md'), true);
+  assert.equal(isSafeCommonsName('a'.repeat(64) + '.md'), true);
+  const data = mkdtempSync(join(tmpdir(), 'qrm-stage-'));
+  assert.throws(() => stageRelease(data, 'h', { votesLog: '', ballots: '', commons: { '../votes.log': 'x' } }), /unsafe commons filename/);
 });
 
 test('degraded mode blocks writes but still serves /healthz', async () => {
