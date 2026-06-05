@@ -39,3 +39,26 @@ test('bootVerify is live with no chain yet (nothing published) but not chainVali
   assert.equal(b.mode, 'live');
   assert.equal(b.chainValid, false);
 });
+
+test('bootVerify is degraded when a checkpoint exists but no release is current (rollback below checkpoint)', () => {
+  const { data } = bootedData();
+  writeCheckpoint(data, { chainId: 'c', length: 1, headHash: 'h', publishedAt: 't' }); // checkpoint but never committed a release
+  const b = bootVerify(data, 'c');
+  assert.equal(b.mode, 'degraded');
+});
+
+test('bootVerify is degraded when the active release chain is broken', () => {
+  const { data } = bootedData();
+  stageRelease(data, 'h', { votesLog: '{"vote":{"validatorId":"V1","ballotHash":"x","verdict":"YES","rawOutput":"y","rawOutputHash":"z","signature":"00"},"prevHash":"0000000000000000000000000000000000000000000000000000000000000000","entryHash":"deadbeef"}\n', ballots: '' });
+  commitRelease(data, 'h', { chainId: 'c', valid: true, length: 1, headHash: 'h', verifiedAt: 't' });
+  // no checkpoint mismatch; the chain itself is broken (entryHash won't recompute)
+  assert.equal(bootVerify(data, 'c').mode, 'degraded');
+});
+
+test('bootVerify is degraded when current head != checkpoint head', () => {
+  const { data, log } = bootedData();
+  stageRelease(data, 'h', { votesLog: log, ballots: '' });
+  commitRelease(data, 'h', { chainId: 'c', valid: true, length: 1, headHash: 'h', verifiedAt: 't' });
+  writeCheckpoint(data, { chainId: 'c', length: 1, headHash: 'DIFFERENT', publishedAt: 't' });
+  assert.equal(bootVerify(data, 'c').mode, 'degraded');
+});

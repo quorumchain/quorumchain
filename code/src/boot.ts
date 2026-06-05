@@ -14,7 +14,10 @@ export function bootVerify(data: string, expectedChainId: string): BootState {
   const cp = readCheckpoint(data);
   if (cp && cp.chainId !== expectedChainId) return { mode: 'degraded', chainValid: false, reason: 'checkpoint chainId mismatch' };
   const ref = currentRelease(data);
-  if (!ref) return { mode: 'live', chainValid: false };
+  if (!ref) {
+    if (cp) return { mode: 'degraded', chainValid: false, reason: 'checkpoint present but no current release (rollback)' };
+    return { mode: 'live', chainValid: false };
+  }
   const content = readReleaseFile(data, ref, 'votes.log');
   const p = join(mkdtempSync(join(tmpdir(), 'qrm-bv-')), 'votes.log');
   writeFileSync(p, content ?? '');
