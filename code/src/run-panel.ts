@@ -24,7 +24,14 @@ import { verifyLog, readLog } from './vote-log.ts';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DATA = join(HERE, '..', 'data');
 const KEYSTORE = join(DATA, 'keystore');
-const LOG = join(DATA, 'votes.log');
+// Two chains. Core developmental decisions (CIPs) and AI verdicts destined for the
+// Knowledge Commons land on the canonical, published chain (votes.log + ballots.jsonl,
+// the only data/ files force-added to git). Editorial / scratch / test ballots route
+// to a gitignored DEV chain via QRM=dev, so the published chain stays core-only.
+// Default is core; each chain is an independent, self-verifying hash chain.
+const CHAIN = process.env.QRM === 'dev' ? 'dev' : 'core';
+const LOG = join(DATA, CHAIN === 'dev' ? 'votes-dev.log' : 'votes.log');
+const REGISTRY = join(DATA, CHAIN === 'dev' ? 'ballots-dev.jsonl' : 'ballots.jsonl');
 const PINNED = join(HERE, '..', 'pinned-keyring.json');
 const DELIB_HOST = join(HERE, 'deliberating-signer-host.ts');
 
@@ -58,8 +65,8 @@ async function main() {
   assertMatchesPin(presented, pinned);
   const keyring = pinned;
 
-  console.error(`Convening panel on: ${prompt}`);
-  const r = await convene({ prompt, context, signers: started, keyring, quorum: 2, logPath: LOG, verdicts, registryPath: join(DATA, 'ballots.jsonl') });
+  console.error(`Convening panel [${CHAIN} chain] on: ${prompt}`);
+  const r = await convene({ prompt, context, signers: started, keyring, quorum: 2, logPath: LOG, verdicts, registryPath: REGISTRY });
   for (const s of started) s.close();
 
   // Persist verbatim reasoning keyed by ballot hash. The log stores only the
@@ -68,7 +75,7 @@ async function main() {
   const rawDump = r.votes
     .map((v) => `### ${v.validatorId} — ${v.verdict}\n${v.rawOutput}`)
     .join('\n\n');
-  writeFileSync(join(DATA, `raw-${r.ballotHash.slice(0, 12)}.txt`), rawDump);
+  writeFileSync(join(DATA, `raw-${CHAIN === 'dev' ? 'dev-' : ''}${r.ballotHash.slice(0, 12)}.txt`), rawDump);
 
   console.log('\nBallot hash :', r.ballotHash);
   for (const v of r.votes) console.log(`  ${v.validatorId}: ${v.verdict}`);
