@@ -9,6 +9,7 @@ import { existsSync, readFileSync, appendFileSync } from 'node:fs';
 import { ballotHash } from './signed-vote.ts';
 import { anchorCommitment } from './anchor.ts';
 import type { BallotMeta, ContraryDossier } from './commons.ts';
+import { verifyDossier } from './dossier.ts';
 
 export interface BallotRegistryEntry {
   ballotHash: string;
@@ -67,6 +68,24 @@ export function deriveCip13Inputs(registry: BallotRegistryEntry[]): {
     if (e.dossier) dossiers[e.ballotHash] = e.dossier;
   }
   return { ballotMeta, dossiers };
+}
+
+/** Like deriveCip13Inputs, but VERIFIES each dossier's signature against the pinned keyring
+ *  (signed by auditorId's key). Unverifiable dossiers are dropped (returned in `dropped`) and
+ *  never projected — recompute, trust nothing. ballotMeta is unaffected. */
+export function deriveCip13InputsVerified(
+  registry: BallotRegistryEntry[],
+  keyring: Record<string, string>,
+): { ballotMeta: Record<string, BallotMeta>; dossiers: Record<string, ContraryDossier>; dropped: string[] } {
+  const base = deriveCip13Inputs(registry);
+  const dossiers: Record<string, ContraryDossier> = {};
+  const dropped: string[] = [];
+  for (const [ballotHash, d] of Object.entries(base.dossiers)) {
+    const pk = keyring[d.auditorId];
+    if (pk && verifyDossier(d, pk)) dossiers[ballotHash] = d;
+    else dropped.push(ballotHash);
+  }
+  return { ballotMeta: base.ballotMeta, dossiers, dropped };
 }
 
 /** Read the JSONL registry; a missing file is an empty registry. Malformed lines are skipped. */
