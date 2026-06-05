@@ -25,6 +25,14 @@ const DELIB_HOST = join(HERE, 'deliberating-signer-host.ts');
 export const QUORUM = 2;
 export const MAX_ATTEMPTS = 3;
 
+/** Map a queue Ballot to the CIP-13/CIP-10 inputs convene() consumes. Pure: forwards the
+ *  declared verdicts/type/dossier verbatim and invents nothing absent — so an autonomously
+ *  convened ballot records its declared type exactly as a manual run-panel convene does,
+ *  while a bare ballot stays a plain YES/NO claim with no fabricated CIP-13 inputs. */
+export function liveConveneArgs(ballot: Ballot): { verdicts?: string[]; meta?: Ballot['meta']; dossier?: Ballot['dossier'] } {
+  return { verdicts: ballot.verdicts, meta: ballot.meta, dossier: ballot.dossier };
+}
+
 export async function liveRunBallot(ballot: Ballot): Promise<RunResult> {
   mkdirSync(DATA, { recursive: true });
   const pinned = loadPinnedKeyring(PINNED);
@@ -42,8 +50,8 @@ export async function liveRunBallot(ballot: Ballot): Promise<RunResult> {
       keyring: pinned,
       quorum: QUORUM,
       logPath: LOG,
-      verdicts: ballot.verdicts,
       registryPath: REGISTRY, // record the statement so the read surface can show it (round-58)
+      ...liveConveneArgs(ballot), // CIP-13/CIP-10: forward declared verdicts/type/dossier
     });
     const rawDump = r.votes.map((v) => `### ${v.validatorId} — ${v.verdict}\n${v.rawOutput}`).join('\n\n');
     writeFileSync(join(DATA, `raw-${r.ballotHash.slice(0, 12)}.txt`), rawDump);

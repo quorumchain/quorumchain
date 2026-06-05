@@ -46,9 +46,24 @@ function sha256hex(data: string): string {
   return createHash('sha256').update(data, 'utf8').digest('hex');
 }
 
+// CIP-14 (core ballot e0d17747): the epistemic-type tokens that may be hash-bound.
+// Mirrors commons.ts EpistemicType — duplicated (not imported) to keep this crypto core
+// dependency-free. The §2.3 serialization contract (NI-14f) is enforced HERE, at the
+// chokepoint, so it cannot be bypassed: only a recognized token enters the v2 preimage.
+const BOUND_TYPES = new Set(['SETTLED', 'EMPIRICAL_LIVE', 'NORMATIVE']);
+
 /** Hash binding the FULL prompt + context. A vote signs over this, so a validator
- *  can prove exactly what it was asked (defends CIP-1 1c bait-and-switch). */
-export function ballotHash(prompt: string, context: string): string {
+ *  can prove exactly what it was asked (defends CIP-1 1c bait-and-switch).
+ *
+ *  CIP-14: when `boundType` is a recognized EpistemicType token, it is appended to the
+ *  hashed object — exactly like the round-57 nonce's optional-append — so the type enters
+ *  the hash and thus every signature (the NI-13a ideal: the type is SIGNED, not declared).
+ *  Any other value (absent / undefined / null / '' / unrecognized) produces the v1 hash
+ *  byte-identically: the `epistemicType` key is NEVER emitted as null/empty (NI-14a/f). */
+export function ballotHash(prompt: string, context: string, boundType?: string): string {
+  if (typeof boundType === 'string' && BOUND_TYPES.has(boundType)) {
+    return sha256hex(JSON.stringify({ prompt, context, epistemicType: boundType }));
+  }
   return sha256hex(JSON.stringify({ prompt, context }));
 }
 

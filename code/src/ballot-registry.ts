@@ -22,10 +22,20 @@ export interface BallotRegistryEntry {
   dossier?: ContraryDossier; // the CIP-10 adversarial-auditor contrary-evidence dossier
 }
 
-/** True iff the entry's prompt+context actually hash to its ballotHash. (Only prompt+context
- *  are hash-bound; the optional CIP-13 meta/dossier are declared, not hashed — see the type.) */
+/** CIP-14: the type a ballot binds INTO its hash, or undefined for a v1 ballot. The
+ *  discriminator is `meta.typeBinding==='hashed'` (NI-14f / §2.3): a present flag means the
+ *  type was hashed, so verifiers recompute the v2 preimage; absent means advisory/v1 and the
+ *  type stays out of the hash. ballotHash itself re-validates the token, so a malformed type
+ *  with the flag set simply falls through to v1 there. */
+export function boundTypeOf(meta?: BallotMeta): string | undefined {
+  return meta?.typeBinding === 'hashed' ? meta.epistemicType : undefined;
+}
+
+/** True iff the entry's prompt+context (+ bound type, CIP-14) actually hash to its ballotHash.
+ *  A v1 entry's advisory type is NOT in the hash; a v2 entry's bound type IS, so flipping a
+ *  bound type fails this check (NI-14b) while relabeling an advisory type does not. */
 export function verifyEntry(entry: BallotRegistryEntry): boolean {
-  return ballotHash(entry.prompt, entry.context) === entry.ballotHash;
+  return ballotHash(entry.prompt, entry.context, boundTypeOf(entry.meta)) === entry.ballotHash;
 }
 
 /** CIP-13 production read path: project the registry's declared meta/dossier into the
@@ -67,7 +77,7 @@ export function appendBallot(
   context: string,
   extra: { meta?: BallotMeta; dossier?: ContraryDossier } = {},
 ): void {
-  const bh = ballotHash(prompt, context);
+  const bh = ballotHash(prompt, context, boundTypeOf(extra.meta)); // CIP-14: bind the type iff flagged
   if (loadRegistry(path).some((e) => e.ballotHash === bh)) return;
   const entry: BallotRegistryEntry = { ballotHash: bh, prompt, context };
   if (extra.meta) entry.meta = extra.meta;

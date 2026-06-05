@@ -19,6 +19,7 @@ export interface HostRequest {
   context?: string;
   verdicts?: string[];
   nonce?: string;
+  boundType?: string; // CIP-14: a hash-bound epistemic type, derived into the hash child-side
 }
 
 /** Build the handler. `key`'s private half is captured in the closure; only the
@@ -42,7 +43,7 @@ export function makeHostHandler(params: { validatorId: string; key: ValidatorKey
         rawOutput = `INVOCATION_ERROR (${validatorId}): ${(e as Error).message}`;
       }
       const verdict = parseVerdict(rawOutput); // decided here, not by the orchestrator
-      const bh = ballotHash(prompt, context); // derived here, not caller-supplied
+      const bh = ballotHash(prompt, context, req.boundType); // derived here, not caller-supplied (CIP-14: type-bound when present)
       return { vote: signVote({ validatorId, privateKeyPem, ballotHash: bh, verdict, rawOutput, nonce: req.nonce }) };
     }
     return { error: 'unknown request type' }; // no request returns the private key or sets a verdict

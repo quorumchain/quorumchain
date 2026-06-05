@@ -93,6 +93,11 @@ export interface BallotMeta {
   // a supersede ride-along, NI-13h).
   typesClaimFor?: string; // target ballotHash whose type this sub-claim adjudicates
   proposedType?: EpistemicType; // the type proposed for the target
+  // CIP-14 (core ballot e0d17747): when 'hashed', `epistemicType` is bound INTO the
+  // ballotHash (and thus every validator signature) — the proposer's type declaration is
+  // signed, not merely advisory. Set iff the type was actually hashed (NI-14f). Absent =
+  // a v1 ballot whose type, if any, is advisory. Orthogonal to panel ratification (NI-14d).
+  typeBinding?: 'hashed';
 }
 
 // CIP-13 v0.2 — the contrary-evidence weight scale (CIP-10 amendment, ballot 88d756d6).

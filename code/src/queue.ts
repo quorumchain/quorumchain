@@ -11,11 +11,19 @@
 
 import { writeFileSync, readFileSync, readdirSync, unlinkSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import type { BallotMeta, ContraryDossier } from './commons.ts';
 
 export interface Ballot {
   prompt: string;
   context?: string;
   verdicts?: string[];
+  // CIP-13 / CIP-10: optional DECLARED metadata an autonomously-queued ballot may carry,
+  // so a daemon convening lands its epistemic type / supersede / contrary-evidence dossier
+  // in the registry (and thus the read surface + reviewQueue), exactly as a manual
+  // run-panel convene does. Advisory at declaration — trust still rests on the signed
+  // verdicts and (for types) panel ratification, never on a queue field.
+  meta?: BallotMeta;
+  dossier?: ContraryDossier;
 }
 
 export interface QueuedBallot {

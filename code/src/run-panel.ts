@@ -61,6 +61,9 @@ async function main() {
   if (E.QRM_NEW_ANCHOR) meta.newAnchor = E.QRM_NEW_ANCHOR === '1' || E.QRM_NEW_ANCHOR === 'true';
   if (E.QRM_TYPES_FOR) meta.typesClaimFor = E.QRM_TYPES_FOR;
   if (E.QRM_PROPOSED_TYPE) meta.proposedType = E.QRM_PROPOSED_TYPE as BallotMeta['proposedType'];
+  // CIP-14: QRM_BIND_TYPE binds QRM_TYPE INTO the ballot hash (and every signature) — the
+  // type becomes signed, not advisory. Opt-in, so QRM_TYPE alone stays v1/advisory.
+  if ((E.QRM_BIND_TYPE === '1' || E.QRM_BIND_TYPE === 'true') && meta.epistemicType) meta.typeBinding = 'hashed';
   const ballotMeta = Object.keys(meta).length ? meta : undefined;
 
   // Spawn one deliberating host per validator. Each loads its OWN key from the
