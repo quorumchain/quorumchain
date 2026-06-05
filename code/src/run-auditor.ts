@@ -8,7 +8,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { SignedVote } from './signed-vote.ts';
 import { readLog } from './vote-log.ts';
-import { loadRegistry, attachDossier, type BallotRegistryEntry } from './ballot-registry.ts';
+import { loadRegistry, attachDossier, deriveCip13Inputs, type BallotRegistryEntry } from './ballot-registry.ts';
 import { computeAuditScope, type ScopeClaim } from './audit-scope.ts';
 import { selectAuditor } from './auditor-select.ts';
 import { buildAuditPrompt, parseAuditorOutput } from './auditor.ts';
@@ -75,6 +75,12 @@ export function planAudit(votes: SignedVote[], registry: BallotRegistryEntry[]):
   return plan;
 }
 
+/** PURE: drop ballots that already have a dossier (resumability), then apply an optional limit. */
+export function selectPending(plan: AuditPlanItem[], alreadyAudited: Set<string>, limit?: number): AuditPlanItem[] {
+  const pending = plan.filter((p) => !alreadyAudited.has(p.ballotHash));
+  return (limit && limit > 0) ? pending.slice(0, limit) : pending;
+}
+
 // ----- CLI shell (not unit-tested; live hosts) -----
 async function main() {
   const HERE = dirname(fileURLToPath(import.meta.url));
@@ -88,9 +94,12 @@ async function main() {
   const votes = readLog(LOG).map((e) => e.vote);
   const registry = loadRegistry(REG);
   const plan = planAudit(votes, registry);
-  console.error(`[run-auditor] ${plan.length} in-scope claim(s)`);
+  const alreadyAudited = new Set(Object.keys(deriveCip13Inputs(registry).dossiers));
+  const limit = process.env.QRM_AUDIT_LIMIT ? parseInt(process.env.QRM_AUDIT_LIMIT, 10) : undefined;
+  const pending = selectPending(plan, alreadyAudited, limit);
+  console.error(`[run-auditor] ${plan.length} in-scope, ${alreadyAudited.size} already audited, ${pending.length} to process this run (limit=${limit ?? 'none'})`);
 
-  for (const item of plan) {
+  for (const item of pending) {
     const signer = await makeRemoteSigner({
       validatorId: item.auditorId,
       hostPath: DELIB_HOST,

@@ -33,3 +33,20 @@ test('auditor assignment is replay-stable (same votes+registry → same auditor)
   const b = planAudit(votesFor(bh), registry)[0].auditorId;
   assert.equal(a, b);
 });
+
+import { selectPending } from '../src/run-auditor.ts';
+
+test('selectPending skips ballots that already have a dossier, and applies the limit', () => {
+  const plan = [
+    { ballotHash: 'a', auditorId: 'V1', rule: 1 as const, prompt: '', context: '', ratifiedVerdict: 'YES', epistemicType: null },
+    { ballotHash: 'b', auditorId: 'V2', rule: 1 as const, prompt: '', context: '', ratifiedVerdict: 'YES', epistemicType: null },
+    { ballotHash: 'c', auditorId: 'V3', rule: 1 as const, prompt: '', context: '', ratifiedVerdict: 'YES', epistemicType: null },
+  ];
+  const alreadyDone = new Set(['b']); // b already has a dossier
+  // skip b → [a, c]; limit 1 → [a]
+  assert.deepEqual(selectPending(plan, alreadyDone, 1).map(p => p.ballotHash), ['a']);
+  // no limit → [a, c]
+  assert.deepEqual(selectPending(plan, alreadyDone, undefined).map(p => p.ballotHash), ['a', 'c']);
+  // limit larger than remaining → [a, c]
+  assert.deepEqual(selectPending(plan, alreadyDone, 99).map(p => p.ballotHash), ['a', 'c']);
+});
