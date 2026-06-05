@@ -26,3 +26,50 @@ export function emptyDossier(ballotHash: string, auditorId: string): ContraryDos
     signature: '',
   };
 }
+
+import { createHash, sign as edSign, verify as edVerify, createPrivateKey, createPublicKey } from 'node:crypto';
+
+const DOMAIN = 'QRM-CONTRARY-DOSSIER-v1';
+
+// Canonical, order-independent projection of the SIGNED content (excludes `signature`).
+// Arrays are sorted on a stable key and strings NFC-normalized, mirroring anchorCommitment.
+export function dossierPayload(d: ContraryDossier): string {
+  const anchors = d.contraryAnchors
+    .map((a) => ({ source: a.source.normalize('NFC'), anchorType: a.anchorType.normalize('NFC'), claimItContradicts: a.claimItContradicts.normalize('NFC') }))
+    .sort((x, y) => (x.source + x.claimItContradicts < y.source + y.claimItContradicts ? -1 : 1));
+  const rejected = d.searchedRejectedAnchors
+    .map((r) => ({ source: r.source.normalize('NFC'), whyRejected: r.whyRejected.normalize('NFC') }))
+    .sort((x, y) => (x.source + x.whyRejected < y.source + y.whyRejected ? -1 : 1));
+  const conditions = d.falsificationConditions
+    .map((f) => ({ towardVerdict: f.towardVerdict.normalize('NFC'), requiredAnchoredEvidence: f.requiredAnchoredEvidence.normalize('NFC') }))
+    .sort((x, y) => (x.towardVerdict + x.requiredAnchoredEvidence < y.towardVerdict + y.requiredAnchoredEvidence ? -1 : 1));
+  const coSigners = [...d.negligibleCoSigners].sort();
+  return JSON.stringify({
+    domain: DOMAIN,
+    ballotHash: d.ballotHash,
+    auditorId: d.auditorId,
+    contraryAnchors: anchors,
+    searchedRejectedAnchors: rejected,
+    assessedWeight: d.assessedWeight,
+    falsificationConditions: conditions,
+    negligibleCoSigners: coSigners,
+  });
+}
+
+export function dossierHash(d: ContraryDossier): string {
+  return createHash('sha256').update(dossierPayload(d), 'utf8').digest('hex');
+}
+
+export function signDossier(d: ContraryDossier, privateKeyPem: string): ContraryDossier {
+  const sig = edSign(null, Buffer.from(dossierPayload(d), 'utf8'), createPrivateKey(privateKeyPem));
+  return { ...d, signature: sig.toString('hex') };
+}
+
+export function verifyDossier(d: ContraryDossier, publicKeyPem: string): boolean {
+  if (!d.signature) return false;
+  try {
+    return edVerify(null, Buffer.from(dossierPayload(d), 'utf8'), createPublicKey(publicKeyPem), Buffer.from(d.signature, 'hex'));
+  } catch {
+    return false;
+  }
+}
