@@ -9,9 +9,10 @@ import { renderSubmission, packageSnapshot, inert } from '../src/node-client.ts'
 
 const k = generateValidatorKey();
 
-test('inert neutralizes angle brackets and control chars', () => {
-  assert.doesNotMatch(inert('<b>x</b>'), /<b>/);
-  assert.equal(inert('a b').includes(' '), false);
+test('inert neutralizes markup and control chars but preserves readable spacing', () => {
+  assert.doesNotMatch(inert('<b>x</b>'), /<b>/); // angle brackets neutralized
+  assert.doesNotMatch(inert('a\nb\tc'), /[\n\t]/); // control chars removed
+  assert.match(inert('did the agent breach its bond'), /did the agent breach its bond/); // readable text + spaces preserved
 });
 
 test('renderSubmission escapes submission text as inert (no raw markup)', () => {

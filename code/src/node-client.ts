@@ -8,8 +8,8 @@ import type { Snapshot } from './release-store.ts';
 
 export function inert(s: string): string {
   return s
-    .replace(/[\x00-\x20]/g, '') // strip control chars and spaces
-    .replace(/[<>`]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '`': "'" }[c]!)) // neutralize markup
+    .replace(/[\x00-\x1f]/g, ' ') // control chars (newlines/tabs/escapes) → space; no terminal injection
+    .replace(/[<>`]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '`': "'" }[c]!)) // neutralize markup/backticks
     .slice(0, 4000);
 }
 
