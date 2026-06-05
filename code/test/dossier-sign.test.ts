@@ -9,13 +9,14 @@ function material(): ContraryDossier {
   return {
     ballotHash: 'bh', auditorId: 'V2',
     contraryAnchors: [
-      { source: 'b.example/2', anchorType: 'court', claimItContradicts: 'X' },
-      { source: 'a.example/1', anchorType: 'court', claimItContradicts: 'Y' },
+      { source: 'b.example/2', anchorType: 'court', claimItContradicts: 'X', provenanceClass: 'court-record' },
+      { source: 'a.example/1', anchorType: 'court', claimItContradicts: 'Y', provenanceClass: 'court-record' },
     ],
     searchedRejectedAnchors: [{ source: 'blog', whyRejected: 'unanchored' }],
     assessedWeight: 'MATERIAL',
     falsificationConditions: [{ towardVerdict: 'NO', requiredAnchoredEvidence: 'a higher-court reversal' }],
     negligibleCoSigners: [],
+    dossierConstruction: 'A',
     signature: '',
   };
 }
@@ -51,10 +52,10 @@ test('canonical sort is unambiguous for prefix-colliding anchor fields (NI-AA2 d
   const mk = (anchors: any[]): any => ({
     ballotHash: 'bh', auditorId: 'V2', contraryAnchors: anchors,
     searchedRejectedAnchors: [], assessedWeight: 'MATERIAL',
-    falsificationConditions: [], negligibleCoSigners: [], signature: '',
+    falsificationConditions: [], negligibleCoSigners: [], dossierConstruction: 'A', signature: '',
   });
-  const a1 = { source: 'ab', anchorType: 'court', claimItContradicts: 'c' };
-  const a2 = { source: 'a', anchorType: 'court', claimItContradicts: 'bc' };
+  const a1 = { source: 'ab', anchorType: 'court', claimItContradicts: 'c', provenanceClass: 'primary-document' };
+  const a2 = { source: 'a', anchorType: 'court', claimItContradicts: 'bc', provenanceClass: 'primary-document' };
   // same two anchors, opposite input order → payload must be identical
   assert.equal(dossierPayload(mk([a1, a2])), dossierPayload(mk([a2, a1])));
 });

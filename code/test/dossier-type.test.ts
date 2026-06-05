@@ -16,7 +16,7 @@ test('emptyDossier builds a NEGLIGIBLE dossier skeleton with all arrays present'
 });
 
 test('the sub-types carry the spec §4 fields', () => {
-  const a: ContraryAnchor = { source: 's', anchorType: 't', claimItContradicts: 'c' };
+  const a: ContraryAnchor = { source: 's', anchorType: 't', claimItContradicts: 'c', provenanceClass: 'primary-document' };
   const r: SearchedRejectedAnchor = { source: 's', whyRejected: 'unanchored' };
   assert.equal(a.claimItContradicts, 'c');
   assert.equal(r.whyRejected, 'unanchored');

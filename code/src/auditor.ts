@@ -23,7 +23,7 @@ export function buildAuditPrompt(prompt: string, context: string, ratifiedVerdic
     '```json',
     '{',
     '  "assessedWeight": "NEGLIGIBLE|WEAK|MATERIAL|DECISIVE",',
-    '  "contraryAnchors": [{"source":"","anchorType":"","claimItContradicts":""}],',
+    '  "contraryAnchors": [{"source":"","anchorType":"","claimItContradicts":"","provenanceClass":""}],',
     '  "searchedRejectedAnchors": [{"source":"","whyRejected":""}],',
     '  "falsificationConditions": [{"towardVerdict":"","requiredAnchoredEvidence":""}],',
     '  "negligibleCoSigners": []',
@@ -31,6 +31,8 @@ export function buildAuditPrompt(prompt: string, context: string, ratifiedVerdic
     '```',
     'If your weight is NEGLIGIBLE, you MUST populate searchedRejectedAnchors with the contrary sources you',
     'checked and the anchored reason each was rejected (this is your accountability trail).',
+    'For each contrary anchor, set provenanceClass to the KIND of source it represents',
+    '(e.g. court-record, regulator-filing, peer-reviewed, news, primary-document).',
   ].join('\n');
 }
 
@@ -43,19 +45,19 @@ export function parseAuditorOutput(raw: string, ballotHash: string, auditorId: s
   const base = emptyDossier(ballotHash, auditorId);
   const m = raw.match(/```json\s*([\s\S]*?)```/);
   if (!m) {
-    return { ...base, searchedRejectedAnchors: [{ source: '(none)', whyRejected: 'auditor produced no parseable dossier; recorded as a searched-empty result' }] };
+    return { ...base, dossierConstruction: 'A', searchedRejectedAnchors: [{ source: '(none)', whyRejected: 'auditor produced no parseable dossier; recorded as a searched-empty result' }] };
   }
   let obj: any;
   try { obj = JSON.parse(m[1].trim()); } catch {
-    return { ...base, searchedRejectedAnchors: [{ source: '(none)', whyRejected: 'auditor json did not parse; recorded as a searched-empty result' }] };
+    return { ...base, dossierConstruction: 'A', searchedRejectedAnchors: [{ source: '(none)', whyRejected: 'auditor json did not parse; recorded as a searched-empty result' }] };
   }
   const weight: AssessedWeight = WEIGHTS.includes(obj.assessedWeight) ? obj.assessedWeight : 'NEGLIGIBLE';
   const contraryAnchors = asArray<ContraryAnchor>(obj.contraryAnchors, (a) =>
-    a && typeof a.source === 'string' ? { source: a.source, anchorType: String(a.anchorType ?? ''), claimItContradicts: String(a.claimItContradicts ?? '') } : null);
+    a && typeof a.source === 'string' ? { source: a.source, anchorType: String(a.anchorType ?? ''), claimItContradicts: String(a.claimItContradicts ?? ''), provenanceClass: String(a.provenanceClass ?? '') } : null);
   const searchedRejectedAnchors = asArray<SearchedRejectedAnchor>(obj.searchedRejectedAnchors, (r) =>
     r && typeof r.source === 'string' ? { source: r.source, whyRejected: String(r.whyRejected ?? '') } : null);
   const falsificationConditions = asArray<FalsificationCondition>(obj.falsificationConditions, (f) =>
     f && typeof f.towardVerdict === 'string' ? { towardVerdict: f.towardVerdict, requiredAnchoredEvidence: String(f.requiredAnchoredEvidence ?? '') } : null);
   const negligibleCoSigners = asArray<string>(obj.negligibleCoSigners, (s) => (typeof s === 'string' ? s : null));
-  return { ...base, assessedWeight: weight, contraryAnchors, searchedRejectedAnchors, falsificationConditions, negligibleCoSigners };
+  return { ...base, dossierConstruction: 'A', assessedWeight: weight, contraryAnchors, searchedRejectedAnchors, falsificationConditions, negligibleCoSigners };
 }

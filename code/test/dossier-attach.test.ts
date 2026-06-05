@@ -11,7 +11,7 @@ test('attachDossier appends a verifiable entry whose dossier folds to latest', (
   appendBallot(reg, 'Q', 'C', {}); // ballot first, no dossier
   const bh = loadRegistry(reg)[0].ballotHash;
   const d = { ...emptyDossier(bh, 'V2'), assessedWeight: 'MATERIAL' as const,
-    contraryAnchors: [{ source: 's', anchorType: 'court', claimItContradicts: 'X' }], signature: 'deadbeef' };
+    contraryAnchors: [{ source: 's', anchorType: 'court', claimItContradicts: 'X', provenanceClass: 'primary-document' }], signature: 'deadbeef' };
   attachDossier(reg, bh, d);
 
   const entries = loadRegistry(reg);

@@ -23,7 +23,7 @@ test('NEGLIGIBLE accountable via searchedRejectedAnchors is VALID', () => {
 
 test('a contrary anchor missing a field is INVALID (NI-AA4 symmetric bar)', () => {
   const d: ContraryDossier = { ...emptyDossier('bh', 'V1'), assessedWeight: 'MATERIAL',
-    contraryAnchors: [{ source: '', anchorType: 'court', claimItContradicts: 'X' }] };
+    contraryAnchors: [{ source: '', anchorType: 'court', claimItContradicts: 'X', provenanceClass: 'primary-document' }] };
   const r = validateDossier(d, { eligible: true });
   assert.equal(r.valid, false);
   assert.match(r.reason!, /anchor/i);
@@ -31,7 +31,7 @@ test('a contrary anchor missing a field is INVALID (NI-AA4 symmetric bar)', () =
 
 test('MATERIAL with a well-formed anchor is VALID', () => {
   const d: ContraryDossier = { ...emptyDossier('bh', 'V1'), assessedWeight: 'MATERIAL',
-    contraryAnchors: [{ source: 's', anchorType: 'court', claimItContradicts: 'X' }] };
+    contraryAnchors: [{ source: 's', anchorType: 'court', claimItContradicts: 'X', provenanceClass: 'primary-document' }] };
   assert.equal(validateDossier(d, { eligible: true }).valid, true);
 });
 

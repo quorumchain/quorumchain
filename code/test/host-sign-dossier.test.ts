@@ -11,7 +11,7 @@ test('the host signs a dossier with its child-side key and never returns the pri
   const unsigned = {
     ...emptyDossier('bh', 'V2'),
     assessedWeight: 'MATERIAL' as const,
-    contraryAnchors: [{ source: 's', anchorType: 'court', claimItContradicts: 'X' }],
+    contraryAnchors: [{ source: 's', anchorType: 'court', claimItContradicts: 'X', provenanceClass: 'primary-document' }],
   };
   const res: any = await handler({ id: 1, type: 'signDossier', dossier: unsigned });
   assert.ok(res.dossier);

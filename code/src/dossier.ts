@@ -4,7 +4,7 @@
 
 import type { AssessedWeight, FalsificationCondition } from './commons.ts';
 
-export interface ContraryAnchor { source: string; anchorType: string; claimItContradicts: string }
+export interface ContraryAnchor { source: string; anchorType: string; claimItContradicts: string; provenanceClass: string }
 export interface SearchedRejectedAnchor { source: string; whyRejected: string }
 
 export interface ContraryDossier {
@@ -15,6 +15,7 @@ export interface ContraryDossier {
   assessedWeight: AssessedWeight;              // NEGLIGIBLE is first-class (NI-AA5)
   falsificationConditions: FalsificationCondition[]; // structured CIP-13 bridge
   negligibleCoSigners: string[];              // required iff NEGLIGIBLE on an eligible class (NI-AA8)
+  dossierConstruction: 'A' | 'B';            // auditor attests which selection construction produced this (T4, ballot 8415ba86)
   signature: string;                          // hex Ed25519 over dossierPayload (NI-AA2 — artifact, not vote)
 }
 
@@ -23,6 +24,7 @@ export function emptyDossier(ballotHash: string, auditorId: string): ContraryDos
     ballotHash, auditorId,
     contraryAnchors: [], searchedRejectedAnchors: [],
     assessedWeight: 'NEGLIGIBLE', falsificationConditions: [], negligibleCoSigners: [],
+    dossierConstruction: 'A',
     signature: '',
   };
 }
@@ -35,8 +37,8 @@ const DOMAIN = 'QRM-CONTRARY-DOSSIER-v1';
 // Arrays are sorted on a stable key and strings NFC-normalized, mirroring anchorCommitment.
 export function dossierPayload(d: ContraryDossier): string {
   const anchors = d.contraryAnchors
-    .map((a) => ({ source: a.source.normalize('NFC'), anchorType: a.anchorType.normalize('NFC'), claimItContradicts: a.claimItContradicts.normalize('NFC') }))
-    .sort((x, y) => (x.source + '\x00' + x.claimItContradicts < y.source + '\x00' + y.claimItContradicts ? -1 : 1));
+    .map((a) => ({ source: a.source.normalize('NFC'), anchorType: a.anchorType.normalize('NFC'), claimItContradicts: a.claimItContradicts.normalize('NFC'), provenanceClass: (a.provenanceClass ?? '').normalize('NFC') }))
+    .sort((x, y) => (x.source + '\x00' + x.claimItContradicts + '\x00' + x.provenanceClass < y.source + '\x00' + y.claimItContradicts + '\x00' + y.provenanceClass ? -1 : 1));
   const rejected = d.searchedRejectedAnchors
     .map((r) => ({ source: r.source.normalize('NFC'), whyRejected: r.whyRejected.normalize('NFC') }))
     .sort((x, y) => (x.source + '\x00' + x.whyRejected < y.source + '\x00' + y.whyRejected ? -1 : 1));
@@ -53,6 +55,7 @@ export function dossierPayload(d: ContraryDossier): string {
     assessedWeight: d.assessedWeight,
     falsificationConditions: conditions,
     negligibleCoSigners: coSigners,
+    dossierConstruction: d.dossierConstruction,
   });
 }
 

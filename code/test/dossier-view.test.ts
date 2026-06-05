@@ -20,7 +20,7 @@ test('a verified dossier surfaces all auditor fields in the ClaimView', () => {
   const bh = ballotHash('Q', 'C');
   for (const id of ['V1', 'V2', 'V3']) appendVote(log, signVote({ validatorId: id, privateKeyPem: (keys as any)[id].privateKeyPem, ballotHash: bh, verdict: 'YES', rawOutput: `${id}:YES` }));
   const dossier = signDossier({ ...emptyDossier(bh, 'V2'), assessedWeight: 'MATERIAL',
-    contraryAnchors: [{ source: 'court.example', anchorType: 'court', claimItContradicts: 'the YES finding' }],
+    contraryAnchors: [{ source: 'court.example', anchorType: 'court', claimItContradicts: 'the YES finding', provenanceClass: 'court-record' }],
     falsificationConditions: [{ towardVerdict: 'NO', requiredAnchoredEvidence: 'an appellate reversal' }] }, keys.V2.privateKeyPem);
   appendBallot(reg, 'Q', 'C', { dossier });
 

@@ -25,7 +25,7 @@ test('no dossier → explicit "no adversarial review on record yet" section', ()
 test('a MATERIAL dossier renders auditor, weight, anchors, falsification', () => {
   const v = base();
   v.auditorId = 'V2'; v.contraryWeight = 'MATERIAL';
-  v.contraryAnchors = [{ source: 'court.example', anchorType: 'court', claimItContradicts: 'the YES finding' }];
+  v.contraryAnchors = [{ source: 'court.example', anchorType: 'court', claimItContradicts: 'the YES finding', provenanceClass: 'court-record' }];
   v.falsificationConditions = [{ towardVerdict: 'NO', requiredAnchoredEvidence: 'an appellate reversal' }];
   const md = renderClaimMarkdown(v);
   assert.match(md, /## Adversarial review \(CIP-10 auditor\)/);
