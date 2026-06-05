@@ -14,7 +14,6 @@ import { selectAuditor } from './auditor-select.ts';
 import { buildAuditPrompt, parseAuditorOutput } from './auditor.ts';
 import { validateDossier } from './dossier-validate.ts';
 import { makeRemoteSigner } from './signer.ts';
-import { loadPinnedKeyring } from './keystore.ts';
 
 export interface AuditPlanItem {
   ballotHash: string;
@@ -81,10 +80,7 @@ async function main() {
   const LOG = join(DATA, dev ? 'votes-dev.log' : 'votes.log');
   const REG = join(DATA, dev ? 'ballots-dev.jsonl' : 'ballots.jsonl');
   const KEYSTORE = join(DATA, 'keystore');
-  const PINNED = join(HERE, '..', 'pinned-keyring.json');
   const DELIB_HOST = join(HERE, 'deliberating-signer-host.ts');
-
-  loadPinnedKeyring(PINNED); // verify it exists; result used only for key-pin checks in run-panel
 
   const votes = readLog(LOG).map((e) => e.vote);
   const registry = loadRegistry(REG);
