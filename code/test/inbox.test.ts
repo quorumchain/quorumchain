@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { submit, listInbox, getSubmission, decide, markConvened, newId, type Signals } from '../src/inbox.ts';
@@ -43,4 +43,28 @@ test('submit throws when the inbox exceeds the byte budget (NI-D9 cap)', () => {
   // first submit succeeds and writes a record; a second submit with a tiny budget must throw
   submit(path, { question: 'Q', context: 'C', ballotHash: 'bh', screening: SIG });
   assert.throws(() => submit(path, { question: 'Q', context: 'C', ballotHash: 'bh2', screening: SIG }, 1), /budget/);
+});
+
+test('illegal lifecycle transitions throw', () => {
+  const path = inbox();
+  const s = submit(path, { question: 'Q', context: 'C', ballotHash: 'bh', screening: SIG });
+  // cannot convene before accepting
+  assert.throws(() => markConvened(path, s.id, 'x'), /cannot convene/);
+  decide(path, s.id, 'ACCEPT');
+  // cannot decide again once decided
+  assert.throws(() => decide(path, s.id, 'REJECT', 'too late'), /cannot decide/);
+  // acting on a missing id throws
+  assert.throws(() => decide(path, 'nope', 'ACCEPT'), /no submission/);
+  assert.throws(() => markConvened(path, 'nope', 'x'), /no submission/);
+});
+
+test('append-only: each transition adds a line, never rewrites', () => {
+  const path = inbox();
+  const s = submit(path, { question: 'Q', context: 'C', ballotHash: 'bh', screening: SIG });
+  const lines = () => readFileSync(path, 'utf8').trim().split('\n').length;
+  assert.equal(lines(), 1);
+  decide(path, s.id, 'ACCEPT');
+  assert.equal(lines(), 2);
+  markConvened(path, s.id, 'h');
+  assert.equal(lines(), 3); // history retained, not rewritten
 });
