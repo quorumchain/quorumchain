@@ -50,3 +50,16 @@ test('selectPending skips ballots that already have a dossier, and applies the l
   // limit larger than remaining → [a, c]
   assert.deepEqual(selectPending(plan, alreadyDone, 99).map(p => p.ballotHash), ['a', 'c']);
 });
+
+test('planAudit excludes in-scope claims that have no registry entry (cannot be audited/attached)', () => {
+  const bh = ballotHash('Q', 'C');
+  // votes exist for bh, but the registry is EMPTY (no entry for bh)
+  const plan = planAudit(votesFor(bh), []);
+  assert.equal(plan.length, 0);
+});
+
+test('planAudit includes a voted claim that DOES have a registry entry', () => {
+  const bh = ballotHash('Q', 'C');
+  const plan = planAudit(votesFor(bh), [{ ballotHash: bh, prompt: 'Q', context: 'C', meta: { epistemicType: 'NORMATIVE' as const } }]);
+  assert.equal(plan.length, 1);
+});

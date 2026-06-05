@@ -46,6 +46,7 @@ export function planAudit(votes: SignedVote[], registry: BallotRegistryEntry[]):
   const metaByBallot = new Map(registry.map((e) => [e.ballotHash, e]));
   const scopeClaims: ScopeClaim[] = [];
   for (const [bh, vs] of byBallot) {
+    if (!metaByBallot.has(bh)) continue; // only registered ballots can be audited (need prompt/context) and attached
     const verdicts = new Set(vs.map((v) => v.verdict));
     const only = [...verdicts][0];
     const unanimousSubstantive = verdicts.size === 1 && !/^(ABSTAIN|NO_VERDICT)$/i.test(only);
