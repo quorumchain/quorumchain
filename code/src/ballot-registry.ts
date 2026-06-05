@@ -120,6 +120,18 @@ export function appendBallot(
   appendFileSync(path, JSON.stringify(entry) + '\n');
 }
 
+/** Attach a (signed) dossier to an ALREADY-registered ballot. Append-only: re-states the ballot's
+ *  prompt/context/meta (so verifyEntry still passes) plus the dossier. deriveCip13Inputs folds the
+ *  latest dossier per ballotHash. Throws if the ballot isn't registered. */
+export function attachDossier(path: string, ballotHash: string, dossier: ContraryDossier): void {
+  const existing = loadRegistry(path).find((e) => e.ballotHash === ballotHash);
+  if (!existing) throw new Error(`attachDossier: ballot ${ballotHash} not registered`);
+  const entry: BallotRegistryEntry = { ballotHash, prompt: existing.prompt, context: existing.context };
+  if (existing.meta) entry.meta = existing.meta;
+  entry.dossier = dossier;
+  appendFileSync(path, JSON.stringify(entry) + '\n');
+}
+
 /** The human-readable statement for a ballotHash — the registered prompt, but ONLY if the entry
  *  hash-verifies. A missing or tampered entry yields null (never a fabricated title). */
 export function statementFor(registry: BallotRegistryEntry[], ballotHashHex: string): string | null {
