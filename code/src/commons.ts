@@ -168,6 +168,11 @@ export interface Claim {
   // NI-12b: never recomputes status/verdict/standing). Empty / null when no dossier.
   contraryWeight: AssessedWeight | null; // the strongest anchored contrary-evidence weight of record
   falsificationConditions: FalsificationCondition[]; // what anchored evidence would warrant re-adjudication (§5)
+  // CIP-10 amendment (§4): the full auditor view, projected from the VERIFIED dossier (null/empty when none).
+  auditorId: string | null;
+  contraryAnchors: import('./dossier.ts').ContraryAnchor[];
+  searchedRejectedAnchors: import('./dossier.ts').SearchedRejectedAnchor[];
+  negligibleCoSigners: string[];
 }
 
 /** Project the signed verdict log into a claim index. Consensus/standing rest on
@@ -270,6 +275,10 @@ export function buildClaimIndex(
       // CIP-13 v0.2: descriptive consumption of the CIP-10 auditor dossier (NI-12b).
       contraryWeight: dossiers[bh]?.assessedWeight ?? null,
       falsificationConditions: dossiers[bh]?.falsificationConditions ?? [],
+      auditorId: dossiers[bh]?.auditorId ?? null,
+      contraryAnchors: dossiers[bh]?.contraryAnchors ?? [],
+      searchedRejectedAnchors: dossiers[bh]?.searchedRejectedAnchors ?? [],
+      negligibleCoSigners: dossiers[bh]?.negligibleCoSigners ?? [],
     };
   });
 

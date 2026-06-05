@@ -7,7 +7,8 @@
 
 import type { Claim, ClaimStatus, Standing, PanelStateReceipt, EpistemicType, Lineage, BallotMeta, AssessedWeight, FalsificationCondition, ContraryDossier } from './commons.ts';
 import { buildClaimIndex } from './commons.ts';
-import { statementFor, deriveCip13Inputs, type BallotRegistryEntry } from './ballot-registry.ts';
+import { statementFor, deriveCip13InputsVerified, type BallotRegistryEntry } from './ballot-registry.ts';
+import type { ContraryAnchor, SearchedRejectedAnchor } from './dossier.ts';
 import type { SignedVote } from './signed-vote.ts';
 
 export interface StanceView {
@@ -34,6 +35,11 @@ export interface ClaimView {
   // CIP-13 v0.2: the CIP-10 auditor dossier surface (descriptive, NI-12b).
   contraryWeight: AssessedWeight | null;
   falsificationConditions: FalsificationCondition[];
+  // CIP-10 amendment (§4): the full auditor view, projected from the VERIFIED dossier (null/empty when none).
+  auditorId: string | null;
+  contraryAnchors: ContraryAnchor[];
+  searchedRejectedAnchors: SearchedRejectedAnchor[];
+  negligibleCoSigners: string[];
 }
 
 /** Project one commons.ts Claim into a ClaimView. Pure: statement comes from the verified registry,
@@ -58,6 +64,10 @@ export function viewClaim(claim: Claim, registry: BallotRegistryEntry[], chainVa
     lineage: claim.lineage,
     contraryWeight: claim.contraryWeight,
     falsificationConditions: claim.falsificationConditions,
+    auditorId: claim.auditorId,
+    contraryAnchors: claim.contraryAnchors,
+    searchedRejectedAnchors: claim.searchedRejectedAnchors,
+    negligibleCoSigners: claim.negligibleCoSigners,
   };
 }
 
@@ -73,7 +83,8 @@ export function buildViews(
   dossiers: Record<string, ContraryDossier> = {}, // CIP-13 v0.2: explicit overrides; merged OVER registry-derived
 ): ClaimView[] {
   // Production source of CIP-13 inputs is the registry itself; explicit args override per key.
-  const derived = deriveCip13Inputs(registry);
+  // deriveCip13InputsVerified drops unverifiable dossiers — only signed dossiers project (Task 6/7).
+  const derived = deriveCip13InputsVerified(registry, keyring);
   const meta = { ...derived.ballotMeta, ...ballotMeta };
   const doss = { ...derived.dossiers, ...dossiers };
   return buildClaimIndex(votes, keyring, quorum, {}, meta, doss).map((c) => viewClaim(c, registry, chainValid));

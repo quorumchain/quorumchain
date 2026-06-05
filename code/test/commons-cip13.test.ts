@@ -426,6 +426,7 @@ test('v0.3: a multiple-choice type sub-claim with no quorum leaves the declared 
 // ballot, not via a side-channel.
 // ============================================================================
 import { appendBallot, loadRegistry, deriveCip13Inputs } from '../src/ballot-registry.ts';
+import { emptyDossier, signDossier } from '../src/dossier.ts';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -434,10 +435,11 @@ test('production: registry round-trips CIP-13 meta + dossier; buildViews derives
   const reg = join(mkdtempSync(join(tmpdir(), 'qrm-reg-')), 'ballots.jsonl');
   const prompt = 'Is X still true', context = 'as of 2021';
   const bh = ballotHash(prompt, context);
-  appendBallot(reg, prompt, context, {
-    meta: { epistemicType: 'EMPIRICAL_LIVE' },
-    dossier: { ballotHash: bh, auditorId: 'V2', assessedWeight: 'MATERIAL', falsificationConditions: [{ towardVerdict: 'NO', requiredAnchoredEvidence: 'a Big-Four audit' }] },
-  });
+  // dossier must be signed (buildViews uses deriveCip13InputsVerified — unsigned dossiers are dropped)
+  const dossier = signDossier({ ...emptyDossier(bh, 'V2'), assessedWeight: 'MATERIAL',
+    falsificationConditions: [{ towardVerdict: 'NO', requiredAnchoredEvidence: 'a Big-Four audit' }] },
+    keys.V2.privateKeyPem);
+  appendBallot(reg, prompt, context, { meta: { epistemicType: 'EMPIRICAL_LIVE' }, dossier });
   const registry = loadRegistry(reg);
   const { ballotMeta, dossiers } = deriveCip13Inputs(registry);
   assert.equal(ballotMeta[bh]!.epistemicType, 'EMPIRICAL_LIVE');
