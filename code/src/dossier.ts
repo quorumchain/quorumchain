@@ -27,7 +27,7 @@ export function emptyDossier(ballotHash: string, auditorId: string): ContraryDos
   };
 }
 
-import { createHash, sign as edSign, verify as edVerify, createPrivateKey, createPublicKey } from 'node:crypto';
+import { sign as edSign, verify as edVerify, createPrivateKey, createPublicKey } from 'node:crypto';
 
 const DOMAIN = 'QRM-CONTRARY-DOSSIER-v1';
 
@@ -54,10 +54,6 @@ export function dossierPayload(d: ContraryDossier): string {
     falsificationConditions: conditions,
     negligibleCoSigners: coSigners,
   });
-}
-
-export function dossierHash(d: ContraryDossier): string {
-  return createHash('sha256').update(dossierPayload(d), 'utf8').digest('hex');
 }
 
 export function signDossier(d: ContraryDossier, privateKeyPem: string): ContraryDossier {
