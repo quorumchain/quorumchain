@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { appendVote, readLog, verifyLog } from '../src/vote-log.ts';
+import { appendVote, readLog, verifyLog, verifyEntries } from '../src/vote-log.ts';
 import { generateValidatorKey, ballotHash, signVote, type SignedVote } from '../src/signed-vote.ts';
 
 function tmpLog(): string {
@@ -58,6 +58,16 @@ test('removing an entry breaks the chain', () => {
   const lines = readFileSync(p, 'utf8').trimEnd().split('\n');
   writeFileSync(p, lines[1] + '\n'); // keep only the 2nd entry; its prevHash now dangles
   assert.equal(verifyLog(p).valid, false);
+});
+
+test('verifyEntries: a clean chain verifies; a tampered entry is caught at its index', () => {
+  const p = tmpLog();
+  appendVote(p, aVote('V1', 'YES'));
+  appendVote(p, aVote('V2', 'YES'));
+  const entries = readLog(p);
+  assert.deepEqual(verifyEntries(entries), { valid: true });
+  const tampered = entries.map((e, i) => (i === 1 ? { ...e, vote: { ...e.vote, verdict: 'NO' } } : e));
+  assert.deepEqual(verifyEntries(tampered), { valid: false, brokenAt: 1 });
 });
 
 test('an empty/absent log verifies as valid with no entries', () => {

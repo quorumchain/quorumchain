@@ -7,7 +7,7 @@ import { appendFileSync, readFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import type { SignedVote } from './signed-vote.ts';
 
-const GENESIS = '0'.repeat(64);
+export const GENESIS = '0'.repeat(64);
 
 export interface LogEntry {
   vote: SignedVote;
@@ -38,8 +38,7 @@ export function appendVote(path: string, vote: SignedVote): LogEntry {
   return entry;
 }
 
-export function verifyLog(path: string): { valid: boolean; brokenAt?: number } {
-  const entries = readLog(path);
+export function verifyEntries(entries: LogEntry[]): { valid: boolean; brokenAt?: number } {
   let prev = GENESIS;
   for (let i = 0; i < entries.length; i++) {
     const e = entries[i];
@@ -48,4 +47,8 @@ export function verifyLog(path: string): { valid: boolean; brokenAt?: number } {
     prev = e.entryHash;
   }
   return { valid: true };
+}
+
+export function verifyLog(path: string): { valid: boolean; brokenAt?: number } {
+  return verifyEntries(readLog(path));
 }

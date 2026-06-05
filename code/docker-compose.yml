@@ -1,0 +1,27 @@
+services:
+  node:
+    build: .
+    environment:
+      QRM_NODE_DATA: /data
+      QRM_SUBMIT_TOKEN: ${QRM_SUBMIT_TOKEN}
+      QRM_ADMIN_TOKEN: ${QRM_ADMIN_TOKEN}
+    volumes:
+      - qrm-data:/data
+    expose:
+      - "8787"
+    restart: unless-stopped
+  proxy:
+    image: caddy:2
+    depends_on: [node]
+    ports:
+      - "443:443"
+      - "80:80"
+    environment:
+      QRM_NODE_DOMAIN: ${QRM_NODE_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy-data:/data
+    restart: unless-stopped
+volumes:
+  qrm-data:
+  caddy-data:

@@ -1,0 +1,10 @@
+# Keep the Docker build context free of secrets and state. The Dockerfile COPYs only
+# package.json, src/, and the PUBLIC pinned-keyring.json — everything below must never
+# enter the build context (private keys, local chain/keystore, tokens, tests, node_modules).
+data/
+**/*.key.pem
+.env
+.env.*
+test/
+node_modules/
+*.log
