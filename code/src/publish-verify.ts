@@ -47,6 +47,15 @@ export function verifyPublish(input: PublishInput): PublishResult {
     }
   }
 
-  void input.quorum; // reserved: a stricter "all ballots ratified" gate could use ratify() here
+  // chainId/quorum are accepted for caller ergonomics but NOT re-checked here, by design:
+  //  - chainId: a snapshot carries no validator keys to recompute it from; chain IDENTITY is
+  //    enforced at BOOT (boot.ts compares the persisted checkpoint.chainId to the pinned chainId),
+  //    and NI-D1 (pinned-key signatures) already makes validator-set substitution impossible.
+  //  - quorum: this gate verifies signatures + chain links + extension, NOT per-ballot 2/3. The
+  //    real log legitimately contains failed convenings (sub-quorum ballots), so an all-ratified
+  //    gate would reject the genuine chain; ratification stays recomputable by any consumer from
+  //    the served votes (ratify() in signed-vote.ts), per "recompute, trust nothing".
+  void input.chainId;
+  void input.quorum;
   return result(true);
 }
