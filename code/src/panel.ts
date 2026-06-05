@@ -8,6 +8,7 @@ import { ballotHash, ratify, type SignedVote, type RatifyResult } from './signed
 import { appendVote } from './vote-log.ts';
 import { appendBallot } from './ballot-registry.ts';
 import { type Signer } from './signer.ts';
+import type { BallotMeta, ContraryDossier } from './commons.ts';
 
 /** Runs a validator on the full ballot prompt and returns its VERBATIM output. */
 export type ValidatorInvoker = (fullPrompt: string) => Promise<string>;
@@ -72,11 +73,14 @@ export async function convene(params: {
   logPath: string;
   verdicts?: string[];
   registryPath?: string;
+  meta?: BallotMeta; // CIP-13: declared epistemic type / supersedes / typesClaimFor recorded with the ballot
+  dossier?: ContraryDossier; // CIP-10: contrary-evidence dossier recorded with the ballot
 }): Promise<ConveneResult> {
   const bh = ballotHash(params.prompt, params.context);
   // Record the human-readable statement for the read surface (round-58). The registry is
   // self-verifying (the statement must re-hash to bh), so this persists provenance, not trust.
-  if (params.registryPath) appendBallot(params.registryPath, params.prompt, params.context);
+  // CIP-13/CIP-10 declared meta/dossier travel with the ballot when supplied.
+  if (params.registryPath) appendBallot(params.registryPath, params.prompt, params.context, { meta: params.meta, dossier: params.dossier });
   // Per-convening nonce (round-57): issued here, the signers bind it into their signed
   // payload, and a returned vote that does not carry THIS nonce is rejected — so a vote
   // captured from one convening cannot be replayed into another. Verdict integrity still

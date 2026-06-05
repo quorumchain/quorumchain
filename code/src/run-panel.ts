@@ -20,6 +20,7 @@ import { convene, startSigners } from './panel.ts';
 import { makeRemoteSigner } from './signer.ts';
 import { loadPinnedKeyring, assertMatchesPin } from './keystore.ts';
 import { verifyLog, readLog } from './vote-log.ts';
+import type { BallotMeta } from './commons.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DATA = join(HERE, '..', 'data');
@@ -48,6 +49,20 @@ async function main() {
     ? process.env.QRM_VERDICTS.split(',').map((s) => s.trim())
     : undefined;
 
+  // CIP-13/CIP-10 declared meta (optional), recorded with the ballot in the registry so
+  // the read path projects it natively. A type sub-claim sets QRM_TYPES_FOR (+ the ballot's
+  // verdict, multiple-choice, IS the type); a supersede sets QRM_SUPERSEDES (+ QRM_NEW_ANCHOR).
+  const E = process.env;
+  const meta: BallotMeta = {};
+  if (E.QRM_TYPE) meta.epistemicType = E.QRM_TYPE as BallotMeta['epistemicType'];
+  if (E.QRM_EVIDENCE_TIME) meta.evidenceTime = E.QRM_EVIDENCE_TIME;
+  if (E.QRM_SUPERSEDES) meta.supersedes = E.QRM_SUPERSEDES;
+  if (E.QRM_SUPERSEDE_REASON) meta.supersedeReason = E.QRM_SUPERSEDE_REASON;
+  if (E.QRM_NEW_ANCHOR) meta.newAnchor = E.QRM_NEW_ANCHOR === '1' || E.QRM_NEW_ANCHOR === 'true';
+  if (E.QRM_TYPES_FOR) meta.typesClaimFor = E.QRM_TYPES_FOR;
+  if (E.QRM_PROPOSED_TYPE) meta.proposedType = E.QRM_PROPOSED_TYPE as BallotMeta['proposedType'];
+  const ballotMeta = Object.keys(meta).length ? meta : undefined;
+
   // Spawn one deliberating host per validator. Each loads its OWN key from the
   // keystore child-side (creating it on first run); the private half never enters
   // this process. The timeout must exceed the slowest invoker (hermes ≈ 480s).
@@ -66,7 +81,7 @@ async function main() {
   const keyring = pinned;
 
   console.error(`Convening panel [${CHAIN} chain] on: ${prompt}`);
-  const r = await convene({ prompt, context, signers: started, keyring, quorum: 2, logPath: LOG, verdicts, registryPath: REGISTRY });
+  const r = await convene({ prompt, context, signers: started, keyring, quorum: 2, logPath: LOG, verdicts, registryPath: REGISTRY, meta: ballotMeta });
   for (const s of started) s.close();
 
   // Persist verbatim reasoning keyed by ballot hash. The log stores only the

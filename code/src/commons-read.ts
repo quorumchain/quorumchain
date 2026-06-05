@@ -5,9 +5,9 @@
 // support is null in v0.1 (NI-9b: no external anchors in the convening log — never 0). No edit key:
 // every field is derived, nothing assigned. Zero dependencies.
 
-import type { Claim, ClaimStatus, Standing, PanelStateReceipt } from './commons.ts';
+import type { Claim, ClaimStatus, Standing, PanelStateReceipt, EpistemicType, Lineage, BallotMeta, AssessedWeight, FalsificationCondition, ContraryDossier } from './commons.ts';
 import { buildClaimIndex } from './commons.ts';
-import { statementFor, type BallotRegistryEntry } from './ballot-registry.ts';
+import { statementFor, deriveCip13Inputs, type BallotRegistryEntry } from './ballot-registry.ts';
 import type { SignedVote } from './signed-vote.ts';
 
 export interface StanceView {
@@ -25,6 +25,15 @@ export interface ClaimView {
   stances: StanceView[];
   panelState: PanelStateReceipt; // NI-9a receipt
   chainValid: boolean;
+  // CIP-13 (ballot 3729cc2e): the time-aware read. Descriptive — carried through
+  // from the projection, never recomputing status/verdict/standing (NI-13b).
+  epistemicType: EpistemicType | null;
+  typeRatified: boolean; // CIP-13 v0.3: panel-ratified type vs proposer-declared
+  evidenceTime: number | string;
+  lineage: Lineage;
+  // CIP-13 v0.2: the CIP-10 auditor dossier surface (descriptive, NI-12b).
+  contraryWeight: AssessedWeight | null;
+  falsificationConditions: FalsificationCondition[];
 }
 
 /** Project one commons.ts Claim into a ClaimView. Pure: statement comes from the verified registry,
@@ -43,6 +52,12 @@ export function viewClaim(claim: Claim, registry: BallotRegistryEntry[], chainVa
     })),
     panelState: claim.panelStateReceipt,
     chainValid,
+    epistemicType: claim.epistemicType,
+    typeRatified: claim.typeRatified,
+    evidenceTime: claim.evidenceTime,
+    lineage: claim.lineage,
+    contraryWeight: claim.contraryWeight,
+    falsificationConditions: claim.falsificationConditions,
   };
 }
 
@@ -54,6 +69,12 @@ export function buildViews(
   quorum: number,
   registry: BallotRegistryEntry[],
   chainValid: boolean,
+  ballotMeta: Record<string, BallotMeta> = {}, // CIP-13: explicit overrides; merged OVER registry-derived
+  dossiers: Record<string, ContraryDossier> = {}, // CIP-13 v0.2: explicit overrides; merged OVER registry-derived
 ): ClaimView[] {
-  return buildClaimIndex(votes, keyring, quorum).map((c) => viewClaim(c, registry, chainValid));
+  // Production source of CIP-13 inputs is the registry itself; explicit args override per key.
+  const derived = deriveCip13Inputs(registry);
+  const meta = { ...derived.ballotMeta, ...ballotMeta };
+  const doss = { ...derived.dossiers, ...dossiers };
+  return buildClaimIndex(votes, keyring, quorum, {}, meta, doss).map((c) => viewClaim(c, registry, chainValid));
 }

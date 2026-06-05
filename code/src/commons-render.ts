@@ -15,6 +15,57 @@ function renderStance(s: StanceView): string {
   return `- **${s.position}** — ${s.standing} · held by ${who} · panel votes: ${s.panelVotes} · support: ${support}`;
 }
 
+// CIP-13 (ballot 3729cc2e): how a verdict is presented along the TIME axis, by its
+// frozen epistemic type. SETTLED is durable; EMPIRICAL_LIVE is provisional / as-of /
+// open to anchored re-adjudication (NI-13c — the COVID/myocarditis fix); NORMATIVE is
+// the panel's majority position as of D, conventional not true (NI-13f). Untyped
+// (legacy) renders nothing — the type is never inferred (NI-13a).
+function renderEpistemic(view: ClaimView): string[] {
+  if (!view.epistemicType) return []; // null (untyped) or absent — never infer a type (NI-13a)
+  const prov = view.typeRatified ? ' _(panel-ratified)_' : ''; // CIP-13 v0.3 provenance
+  const asOf = `as of ${view.evidenceTime}`;
+  const line =
+    view.epistemicType === 'SETTLED'
+      ? `**Epistemic type:** SETTLED${prov} — durable (${asOf}).`
+      : view.epistemicType === 'EMPIRICAL_LIVE'
+        ? `**Epistemic type:** EMPIRICAL_LIVE${prov} — provisional, ${asOf}; open to anchored re-adjudication, never settled-for-all-time.`
+        : `**Epistemic type:** NORMATIVE${prov} — the panel's majority position ${asOf} (conventional, not truth — CIP-7 NI-6); dissent stays first-class.`;
+  return [line, ''];
+}
+
+// CIP-13 v0.2 (§5): surface the CIP-10 auditor's contrary-evidence weight and the
+// falsification conditions — WHAT anchored evidence would warrant re-adjudication.
+// MATERIAL/DECISIVE on an EMPIRICAL_LIVE claim flags it as a re-adjudication candidate.
+// Descriptive only (NI-12b): this records what the auditor found; it decrees nothing.
+function renderFalsification(view: ClaimView): string[] {
+  if (!view.contraryWeight && (!view.falsificationConditions || view.falsificationConditions.length === 0)) return [];
+  const out: string[] = [];
+  if (view.contraryWeight) {
+    const candidate = view.epistemicType === 'EMPIRICAL_LIVE' && (view.contraryWeight === 'MATERIAL' || view.contraryWeight === 'DECISIVE');
+    out.push(`**Contrary-evidence weight (CIP-10 auditor):** ${view.contraryWeight}${candidate ? ' — flagged as a re-adjudication candidate' : ''}.`, '');
+  }
+  if (view.falsificationConditions && view.falsificationConditions.length > 0) {
+    out.push('### Falsification conditions (what anchored evidence would warrant re-adjudication)', '');
+    for (const f of view.falsificationConditions) out.push(`- toward **${f.towardVerdict}**: ${f.requiredAnchoredEvidence}`);
+    out.push('');
+  }
+  return out;
+}
+
+// CIP-13 NI-13d: a re-adjudicated claim shows its supersession history — what was
+// held before and why it changed — never deleted. Rendered only when a lineage exists.
+function renderLineage(view: ClaimView): string[] {
+  if (!view.lineage || view.lineage.priorVersions.length === 0) return [];
+  const isCurrent = view.lineage.current === view.ballotHash;
+  const head = isCurrent
+    ? '**Re-adjudication:** this is the *current* verdict in its lineage; prior versions are retained below (never deleted).'
+    : `**Re-adjudication:** superseded — the current verdict in this lineage is \`${view.lineage.current.slice(0, 12)}\`. This version is retained for the record.`;
+  const rows = view.lineage.priorVersions.map(
+    (p) => `- \`${p.ballotHash.slice(0, 12)}\` — verdict ${p.verdict ?? '—'} · as of ${p.evidenceTime}${p.supersededReason ? ` · reason: ${p.supersededReason}` : ''}`,
+  );
+  return [head, '', '### Prior versions (retained, never deleted)', '', ...rows, ''];
+}
+
 export function renderClaimMarkdown(view: ClaimView): string {
   const title = view.statement ?? `\`${view.ballotHash}\` — _statement not recorded (pre-registry)_`;
   const banner = view.chainValid
@@ -28,10 +79,13 @@ export function renderClaimMarkdown(view: ClaimView): string {
     `**Status:** ${view.status}`,
     `**Ballot:** \`${view.ballotHash}\``,
     '',
-    '## Stances (the epistemic state — not a single truth)',
+    ...renderEpistemic(view),
+    `## Stances (the epistemic state — not a single truth)`,
     '',
     ...view.stances.map(renderStance),
     '',
+    ...renderFalsification(view),
+    ...renderLineage(view),
     `**Panel-state receipt (NI-9a):** ${view.panelState.size} validators — ${view.panelState.validators.join(', ')}`,
     '',
     '_This page is a projection of the signed consensus log. It records the epistemic state — consensus, credible dissent, and the honest unknown — never a decree of truth._',
