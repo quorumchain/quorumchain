@@ -14,6 +14,7 @@ import { selectAuditor } from './auditor-select.ts';
 import { buildAuditPrompt, parseAuditorOutput } from './auditor.ts';
 import { validateDossier } from './dossier-validate.ts';
 import { makeRemoteSigner } from './signer.ts';
+import type { EpistemicType } from './commons.ts';
 
 export interface AuditPlanItem {
   ballotHash: string;
@@ -22,6 +23,7 @@ export interface AuditPlanItem {
   prompt: string;
   context: string;
   ratifiedVerdict: string;
+  epistemicType: EpistemicType | null;
 }
 
 /** PURE: from the signed votes + registry, compute scope and the deterministic auditor per ballot. */
@@ -67,6 +69,7 @@ export function planAudit(votes: SignedVote[], registry: BallotRegistryEntry[]):
       prompt: reg?.prompt ?? '',
       context: reg?.context ?? '',
       ratifiedVerdict: vs[0]?.verdict ?? '',
+      epistemicType: metaByBallot.get(s.ballotHash)?.meta?.epistemicType ?? null,
     });
   }
   return plan;
@@ -97,7 +100,7 @@ async function main() {
     try {
       const raw = await signer.audit(buildAuditPrompt(item.prompt, item.context, item.ratifiedVerdict));
       const unsigned = parseAuditorOutput(raw, item.ballotHash, item.auditorId);
-      const validity = validateDossier(unsigned, { eligible: true });
+      const validity = validateDossier(unsigned, { eligible: true, epistemicType: item.epistemicType });
       if (!validity.valid) {
         console.error(`[run-auditor] ${item.ballotHash.slice(0, 12)} invalid dossier: ${validity.reason}`);
         continue;
