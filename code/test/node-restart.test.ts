@@ -90,6 +90,25 @@ test('bootVerify is degraded when current is signed by an unpinned (rogue) valid
   assert.match(b.reason ?? '', /unpinned validator VX/);
 });
 
+test('bootVerify is degraded for a PINNED validatorId whose signature is invalid (linkage valid, sig bad)', () => {
+  // The vote claims validatorId 'V1' (a PINNED id) but is signed with a DIFFERENT (non-pinned)
+  // private key. appendVote computes the entryHash over the vote AS SIGNED, so the hash chain
+  // (verifyEntries linkage) is self-consistent — yet verifyVote(vote, pinnedV1PublicKey) fails.
+  // This isolates the SIGNATURE branch (NI-D7) from the linkage branch.
+  const data = mkdtempSync(join(tmpdir(), 'qrm-boot-'));
+  const lp = join(mkdtempSync(join(tmpdir(), 'qrm-bl-')), 'votes.log');
+  const wrong = generateValidatorKey();
+  appendVote(lp, signVote({ validatorId: 'V1', privateKeyPem: wrong.privateKeyPem, ballotHash: ballotHash('Q', 'C'), verdict: 'YES', rawOutput: 'V1:YES' }));
+  const log = readFileSync(lp, 'utf8');
+  const realHead = realHeadOf(log);
+  stageRelease(data, 'h', { votesLog: log, ballots: '' });
+  commitRelease(data, 'h', { chainId: 'c', valid: true, length: 1, headHash: realHead, verifiedAt: 't' });
+  writeCheckpoint(data, { chainId: 'c', length: 1, headHash: realHead, publishedAt: 't' });
+  const b = bootVerify(data, 'c', keyring);
+  assert.equal(b.mode, 'degraded');
+  assert.match(b.reason ?? '', /invalid signature for V1/);
+});
+
 test('bootVerify is degraded when actual on-disk length differs from the checkpoint', () => {
   // Pinned-signed, chain intact, head matches — but the checkpoint claims a longer
   // chain than is actually on disk. Must NOT boot live.

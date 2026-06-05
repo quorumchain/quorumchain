@@ -95,7 +95,7 @@ export function createNode(cfg: NodeConfig, getMode: () => 'live' | 'degraded' =
       if (req.method === 'GET' && path === '/healthz') return send(res, 200, handleHealth(data, ref, mode).body);
       if (mode === 'degraded' && (path === '/submit' || path.startsWith('/admin') || path.startsWith('/inbox')))
         return send(res, 503, { error: 'degraded: chain invalid' });
-      if (!ref) return send(res, 503, { error: 'no chain published yet' });
+      if (!ref && path !== '/admin/publish') return send(res, 503, { error: 'no chain published yet' });
 
       if (req.method === 'GET' && path === '/chain/verify') return send(res, 200, handleVerify(data, ref).body);
       if (req.method === 'GET' && path === '/commons') return reply(res, handleCommons(data, ref));

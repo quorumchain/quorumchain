@@ -190,6 +190,60 @@ test('isSafeCommonsName allowlist + stageRelease throws on unsafe commons name',
   assert.throws(() => stageRelease(data, 'h', { votesLog: '', ballots: '', commons: { '../votes.log': 'x' } }), /unsafe commons filename/);
 });
 
+// An EMPTY data dir: no staged/committed release, no checkpoint — a fresh, never-published node.
+async function startEmptyNode() {
+  const data = mkdtempSync(join(tmpdir(), 'qrm-empty-'));
+  const cfg = { dataDir: data, port: 0, submitToken: 'S', adminToken: 'A', pinnedKeyring: keyring, chainId: 'c', quorum: 2,
+    limits: { maxBodyBytes: 1 << 20, maxQuestionLen: 200, maxContextLen: 800, rateWindowMs: 60000, rateMaxPerWindow: 100, inboxMaxBytes: 1e9, nearDupThreshold: 0.8 } };
+  const node = createNode(cfg);
+  await node.listen();
+  return { node, base: `http://127.0.0.1:${node.port()}`, data };
+}
+
+test('first publish from an empty node succeeds (bootstrap); read routes 503 until then', async () => {
+  const { node, base } = await startEmptyNode();
+  try {
+    // 1. /healthz is up on a fresh node.
+    assert.equal((await fetch(`${base}/healthz`)).status, 200);
+    // 4. Before any publish, public reads 503 'no chain published yet' (guard still protects them).
+    const pre = await fetch(`${base}/chain/verify`);
+    assert.equal(pre.status, 503);
+    assert.equal((await pre.json()).error, 'no chain published yet');
+
+    // 2. Build a VALID genesis snapshot: pinned-signed forward chain extending [].
+    const gen = join(mkdtempSync(join(tmpdir(), 'qrm-gen-')), 'votes.log');
+    appendVote(gen, signVote({ validatorId: 'V1', privateKeyPem: keys.V1.privateKeyPem, ballotHash: ballotHash('G', 'C'), verdict: 'YES', rawOutput: 'V1:YES' }));
+    appendVote(gen, signVote({ validatorId: 'V2', privateKeyPem: keys.V2.privateKeyPem, ballotHash: ballotHash('G', 'C'), verdict: 'YES', rawOutput: 'V2:YES' }));
+    const entries = readLog(gen);
+    const head = entries[entries.length - 1].entryHash;
+    const snap = { votesLog: readFileSync(gen, 'utf8'), ballots: '', commons: { 'INDEX.md': '# genesis' } };
+    const res = await fetch(`${base}/admin/publish`, { method: 'POST', headers: { authorization: 'Bearer A', 'content-type': 'application/json' }, body: JSON.stringify(snap) });
+    assert.equal(res.status, 200); // NOT 503 — the bootstrap publish must reach the handler
+    const pub = await res.json();
+    assert.equal(pub.headHash, head);
+    assert.equal(pub.length, entries.length);
+
+    // 3. After the first publish, the chain is served.
+    const after = await fetch(`${base}/chain/verify`);
+    assert.equal(after.status, 200);
+    const av = await after.json();
+    assert.equal(av.length, entries.length);
+    assert.equal(av.headHash, head);
+  } finally { node.close(); }
+});
+
+test('first publish on an empty node still requires the admin token (401 without it)', async () => {
+  const { node, base } = await startEmptyNode();
+  try {
+    const gen = join(mkdtempSync(join(tmpdir(), 'qrm-gen2-')), 'votes.log');
+    appendVote(gen, signVote({ validatorId: 'V1', privateKeyPem: keys.V1.privateKeyPem, ballotHash: ballotHash('G', 'C'), verdict: 'YES', rawOutput: 'V1:YES' }));
+    const snap = { votesLog: readFileSync(gen, 'utf8'), ballots: '', commons: { 'INDEX.md': '# genesis' } };
+    // No bearer token: must be 401, not 200/503.
+    const res = await fetch(`${base}/admin/publish`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(snap) });
+    assert.equal(res.status, 401);
+  } finally { node.close(); }
+});
+
 test('degraded mode blocks writes but still serves /healthz', async () => {
   const data = bootData();
   const cfg = { dataDir: data, port: 0, submitToken: 'S', adminToken: 'A', pinnedKeyring: keyring, chainId: 'c', quorum: 2,
