@@ -4,7 +4,7 @@ import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { generateValidatorKey, signVote, ballotHash } from '../src/signed-vote.ts';
-import { appendVote, readLog } from '../src/vote-log.ts';
+import { appendVote } from '../src/vote-log.ts';
 import { stageRelease, commitRelease, writeCheckpoint } from '../src/release-store.ts';
 import { createNode } from '../src/node-server.ts';
 
