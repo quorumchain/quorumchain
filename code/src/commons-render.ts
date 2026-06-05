@@ -33,18 +33,31 @@ function renderEpistemic(view: ClaimView): string[] {
   return [line, ''];
 }
 
-// CIP-13 v0.2 (§5): surface the CIP-10 auditor's contrary-evidence weight and the
-// falsification conditions — WHAT anchored evidence would warrant re-adjudication.
-// MATERIAL/DECISIVE on an EMPIRICAL_LIVE claim flags it as a re-adjudication candidate.
-// Descriptive only (NI-12b): this records what the auditor found; it decrees nothing.
-function renderFalsification(view: ClaimView): string[] {
-  if (!view.contraryWeight && (!view.falsificationConditions || view.falsificationConditions.length === 0)) return [];
-  const out: string[] = [];
-  if (view.contraryWeight) {
-    const candidate = view.epistemicType === 'EMPIRICAL_LIVE' && (view.contraryWeight === 'MATERIAL' || view.contraryWeight === 'DECISIVE');
-    out.push(`**Contrary-evidence weight (CIP-10 auditor):** ${view.contraryWeight}${candidate ? ' — flagged as a re-adjudication candidate' : ''}.`, '');
+// CIP-10 amendment: the cohesive adversarial-review section. The dossier is DESCRIPTIVE
+// (NI-12b) — it records the strongest anchored contrary case (incl. NEGLIGIBLE), never a decree.
+// Always rendered: an absent dossier shows an explicit "not on record yet" so the angle is visible.
+function renderAuditorDossier(view: ClaimView): string[] {
+  const out: string[] = ['## Adversarial review (CIP-10 auditor)', ''];
+  if (!view.auditorId && !view.contraryWeight) {
+    out.push('_No adversarial review on record yet._', '');
+    return out;
   }
-  if (view.falsificationConditions && view.falsificationConditions.length > 0) {
+  const candidate = view.epistemicType === 'EMPIRICAL_LIVE' && (view.contraryWeight === 'MATERIAL' || view.contraryWeight === 'DECISIVE');
+  out.push(`auditor: **${view.auditorId ?? '—'}** · contrary-evidence weight: **${view.contraryWeight ?? '—'}**${candidate ? ' — flagged as a re-adjudication candidate' : ''}.`, '');
+  if (view.contraryAnchors.length > 0) {
+    out.push('### Contrary anchors (each clears the symmetric anchor bar)', '');
+    for (const a of view.contraryAnchors) out.push(`- **${a.anchorType}** — ${a.source}: contradicts _${a.claimItContradicts}_`);
+    out.push('');
+  }
+  if (view.searchedRejectedAnchors.length > 0) {
+    out.push('### Searched, rejected (suppression audit-trail, NI-AA8)', '');
+    for (const r of view.searchedRejectedAnchors) out.push(`- ${r.source}: rejected — ${r.whyRejected}`);
+    out.push('');
+  }
+  if (view.negligibleCoSigners.length > 0) {
+    out.push(`_Negligible finding co-signed by ${view.negligibleCoSigners.join(', ')} (no anchored contrary evidence cleared the bar)._`, '');
+  }
+  if (view.falsificationConditions.length > 0) {
     out.push('### Falsification conditions (what anchored evidence would warrant re-adjudication)', '');
     for (const f of view.falsificationConditions) out.push(`- toward **${f.towardVerdict}**: ${f.requiredAnchoredEvidence}`);
     out.push('');
@@ -103,7 +116,7 @@ export function renderClaimMarkdown(view: ClaimView): string {
     '',
     ...view.stances.map(renderStance),
     '',
-    ...renderFalsification(view),
+    ...renderAuditorDossier(view),
     ...renderLineage(view),
     `**Panel-state receipt (NI-9a):** ${view.panelState.size} validators — ${view.panelState.validators.join(', ')}`,
     '',
