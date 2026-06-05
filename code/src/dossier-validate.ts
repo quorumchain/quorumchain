@@ -18,13 +18,6 @@ export function validateDossier(d: ContraryDossier, ctx: { eligible: boolean; ep
       return { valid: false, reason: 'contrary anchor missing provenanceClass (NI-AA4)' };
     }
   }
-  // NI-AA4 monoculture guard (T2-a): ≥2 anchors must not all share the same provenanceClass.
-  if (d.contraryAnchors.length >= 2) {
-    const classes = new Set(d.contraryAnchors.map((a) => a.provenanceClass.trim().toLowerCase()));
-    if (classes.size === 1) {
-      return { valid: false, reason: 'contrary anchors all share the same provenanceClass — provenance monoculture not permitted (NI-AA4)' };
-    }
-  }
   // NI-AA8 — a NEGLIGIBLE on an audit-eligible class must be accountable.
   // T3 (ballot 8415ba86): for EMPIRICAL_LIVE, require BOTH co-signers AND searchedRejectedAnchors.
   // For all other eligible types, the existing either-or sufficiency applies.

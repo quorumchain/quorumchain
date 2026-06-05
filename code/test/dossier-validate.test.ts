@@ -48,12 +48,12 @@ test('NI-AA4: a contrary anchor with blank provenanceClass is INVALID', () => {
   assert.match(r.reason!, /provenance/i);
 });
 
-test('NI-AA4: two contrary anchors of the SAME provenanceClass is INVALID (monoculture)', () => {
+test('NI-AA4: same-provenanceClass anchors are VALID after monoculture guard removed (ballot 730d9108)', () => {
   const d = { ...emptyDossier('bh','V1'), assessedWeight:'MATERIAL' as const, contraryAnchors:[
-    { source:'a', anchorType:'court', claimItContradicts:'X', provenanceClass:'news' },
-    { source:'b', anchorType:'court', claimItContradicts:'Y', provenanceClass:'news' },
+    { source:'a', anchorType:'court', claimItContradicts:'X', provenanceClass:'peer-reviewed' },
+    { source:'b', anchorType:'court', claimItContradicts:'Y', provenanceClass:'peer-reviewed' },
   ] };
-  assert.equal(validateDossier(d, { eligible: true }).valid, false);
+  assert.equal(validateDossier(d, { eligible: true }).valid, true);
 });
 
 test('NI-AA4: two contrary anchors of DISTINCT provenanceClass is VALID', () => {
