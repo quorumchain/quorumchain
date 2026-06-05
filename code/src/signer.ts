@@ -21,6 +21,7 @@
 import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { ballotHash, signVote, type SignedVote, type ValidatorKey } from './signed-vote.ts';
+import { signDossier as signDossierFn, type ContraryDossier } from './dossier.ts';
 
 export interface Signer {
   readonly validatorId: string;
@@ -38,6 +39,10 @@ export interface Signer {
    *  and cannot be swapped post-vote. Both are derived by the orchestrator from the same declared
    *  meta the registry records, so the registry entry, every vote, and ratify share one preimage. */
   signBallot(prompt: string, context: string, verdicts?: string[], nonce?: string, boundType?: string, anchorCommitment?: string): Promise<SignedVote>;
+  /** Sign a CIP-10 contrary-evidence dossier with this validator's key (child-side). */
+  signDossier(dossier: ContraryDossier): Promise<ContraryDossier>;
+  /** Run this validator's model invoker on a prompt and return raw output (CIP-10 audit). */
+  audit(prompt: string): Promise<string>;
 }
 
 export function makeLocalSigner(params: {
@@ -57,6 +62,12 @@ export function makeLocalSigner(params: {
       const bh = ballotHash(prompt, context, boundType, anchorCommitment); // derived here — never caller-supplied (CIP-14 type + CIP-15 anchors when present)
       const { verdict, rawOutput } = await deliberate(prompt, context, verdicts);
       return signVote({ validatorId, privateKeyPem, ballotHash: bh, verdict, rawOutput, nonce });
+    },
+    async signDossier(dossier) {
+      return signDossierFn(dossier, privateKeyPem);
+    },
+    async audit(_prompt) {
+      throw new Error('audit not supported on local signer');
     },
   };
 }
@@ -120,6 +131,14 @@ export function makeRemoteSigner(params: { validatorId: string; hostPath: string
     async signBallot(prompt: string, context: string, verdicts?: string[], nonce?: string, boundType?: string, anchorCommitment?: string) {
       const res = await rpc({ type: 'sign', prompt, context, verdicts, nonce, boundType, anchorCommitment });
       return res.vote as SignedVote;
+    },
+    async signDossier(dossier: ContraryDossier) {
+      const res = await rpc({ type: 'signDossier', dossier });
+      return res.dossier as ContraryDossier;
+    },
+    async audit(prompt: string) {
+      const res = await rpc({ type: 'audit', prompt });
+      return res.rawOutput as string;
     },
     close() {
       child.stdin!.end();

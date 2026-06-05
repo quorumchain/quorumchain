@@ -11,6 +11,7 @@
 
 import { ballotHash, signVote, type ValidatorKey } from './signed-vote.ts';
 import { buildPrompt, parseVerdict, type ValidatorInvoker } from './panel.ts';
+import { signDossier, type ContraryDossier } from './dossier.ts';
 
 export interface HostRequest {
   id?: number;
@@ -21,6 +22,7 @@ export interface HostRequest {
   nonce?: string;
   boundType?: string; // CIP-14: a hash-bound epistemic type, derived into the hash child-side
   anchorCommitment?: string; // CIP-15 NI-15e: the canonical anchor-set commitment, derived into the hash child-side
+  dossier?: ContraryDossier; // CIP-10: unsigned dossier for child-side signing
 }
 
 /** Build the handler. `key`'s private half is captured in the closure; only the
@@ -46,6 +48,15 @@ export function makeHostHandler(params: { validatorId: string; key: ValidatorKey
       const verdict = parseVerdict(rawOutput); // decided here, not by the orchestrator
       const bh = ballotHash(prompt, context, req.boundType, req.anchorCommitment); // derived here, not caller-supplied (CIP-14 type + CIP-15 anchors when present)
       return { vote: signVote({ validatorId, privateKeyPem, ballotHash: bh, verdict, rawOutput, nonce: req.nonce }) };
+    }
+    if (req.type === 'signDossier') {
+      const d = req.dossier;
+      if (!d) return { error: 'signDossier: missing dossier' };
+      if (d.auditorId !== validatorId) return { error: `signDossier: auditorId ${d.auditorId} != host ${validatorId}` };
+      return { dossier: signDossier(d, privateKeyPem) };
+    }
+    if (req.type === 'audit') {
+      return { rawOutput: await invoke(req.prompt!) };
     }
     return { error: 'unknown request type' }; // no request returns the private key or sets a verdict
   };
