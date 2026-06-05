@@ -14,7 +14,7 @@ const keyringPath = process.env.QRM_KEYRING ?? join(HERE, '..', 'pinned-keyring.
 const keyring = JSON.parse(readFileSync(keyringPath, 'utf8')) as Record<string, string>;
 const cfg = loadConfig(process.env, keyring);
 
-const state = bootVerify(cfg.dataDir, cfg.chainId);
+const state = bootVerify(cfg.dataDir, cfg.chainId, cfg.pinnedKeyring);
 console.error(`[run-node] boot: mode=${state.mode} chainValid=${state.chainValid}${state.reason ? ` reason=${state.reason}` : ''} chainId=${cfg.chainId.slice(0, 12)}`);
 
 const node = createNode(cfg, () => state.mode);
