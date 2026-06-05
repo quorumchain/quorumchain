@@ -12,8 +12,8 @@ import { tmpdir } from 'node:os';
 import type { NodeConfig } from './node-config.ts';
 import { currentRelease, stageRelease, commitRelease, writeCheckpoint, readCheckpoint, readReleaseFile, type Snapshot } from './release-store.ts';
 import { verifyPublish } from './publish-verify.ts';
-import { handleHealth, handleVerify, handleLog, handleBallot, handleCommons } from './node-handlers.ts';
-import { submit, listInbox, getSubmission, decide } from './inbox.ts';
+import { handleHealth, handleVerify, handleLog, handleBallot, handleCommons, VALID_HASH } from './node-handlers.ts';
+import { submit, listInbox, getSubmission, decide, markConvened } from './inbox.ts';
 import { screen, type Corpus } from './screening.ts';
 import { ballotHash } from './signed-vote.ts';
 import { loadRegistry } from './ballot-registry.ts';
@@ -134,6 +134,16 @@ export function createNode(cfg: NodeConfig, getMode: () => 'live' | 'degraded' =
         const s = decide(inboxPath, id, decision, reason);
         audit(auditPath, 'DECISION', { id, decision, reason: reason ?? null });
         return send(res, 200, { id: s.id, status: s.status });
+      }
+      if (req.method === 'POST' && path.startsWith('/inbox/') && path.endsWith('/convened')) {
+        const id = path.slice('/inbox/'.length, -('/convened'.length));
+        const raw = await readBody(req, res); if (raw === null) return; // 413 already sent
+        let parsed: any; try { parsed = JSON.parse(raw); } catch { return send(res, 400, { error: 'bad json' }); }
+        const { convenedBallotHash } = parsed;
+        if (typeof convenedBallotHash !== 'string' || !VALID_HASH.test(convenedBallotHash)) return send(res, 400, { error: 'invalid convenedBallotHash' });
+        let s; try { s = markConvened(inboxPath, id, convenedBallotHash); } catch (e) { return send(res, 409, { error: (e as Error).message }); }
+        audit(auditPath, 'DECISION', { id, decision: 'CONVENE', convenedBallotHash });
+        return send(res, 200, { id: s.id, status: s.status, convenedBallotHash: s.convenedBallotHash });
       }
       if (req.method === 'POST' && path === '/admin/publish') {
         const raw = await readBody(req, res); if (raw === null) return; // 413 already sent

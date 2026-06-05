@@ -87,6 +87,35 @@ test('oversized body is rejected 413; admin can list and decide', async () => {
   } finally { node.close(); }
 });
 
+test('accepted submission can be marked CONVENED end-to-end; public read reflects it', async () => {
+  const { node, base } = await startNode();
+  try {
+    const sub = await (await fetch(`${base}/submit`, { method: 'POST', headers: { authorization: 'Bearer S', 'content-type': 'application/json' }, body: JSON.stringify({ question: 'convene me please', context: 'ctx' }) })).json();
+    const dec = await fetch(`${base}/inbox/${sub.id}/decision`, { method: 'POST', headers: { authorization: 'Bearer A', 'content-type': 'application/json' }, body: JSON.stringify({ decision: 'ACCEPT' }) });
+    assert.equal(dec.status, 200);
+    const cbh = 'a'.repeat(64);
+    const conv = await fetch(`${base}/inbox/${sub.id}/convened`, { method: 'POST', headers: { authorization: 'Bearer A', 'content-type': 'application/json' }, body: JSON.stringify({ convenedBallotHash: cbh }) });
+    assert.equal(conv.status, 200);
+    assert.equal((await conv.json()).status, 'CONVENED');
+    const st = await (await fetch(`${base}/submissions/${sub.id}`)).json();
+    assert.equal(st.status, 'CONVENED');
+    assert.equal(st.convenedBallotHash, cbh);
+  } finally { node.close(); }
+});
+
+test('convening a non-accepted submission returns 409; a non-hex ballotHash returns 400', async () => {
+  const { node, base } = await startNode();
+  try {
+    const sub = await (await fetch(`${base}/submit`, { method: 'POST', headers: { authorization: 'Bearer S', 'content-type': 'application/json' }, body: JSON.stringify({ question: 'still pending', context: 'ctx' }) })).json();
+    // still PENDING_REVIEW (never accepted) → 409
+    const bad = await fetch(`${base}/inbox/${sub.id}/convened`, { method: 'POST', headers: { authorization: 'Bearer A', 'content-type': 'application/json' }, body: JSON.stringify({ convenedBallotHash: 'a'.repeat(64) }) });
+    assert.equal(bad.status, 409);
+    // non-hex ballotHash → 400
+    const badHash = await fetch(`${base}/inbox/${sub.id}/convened`, { method: 'POST', headers: { authorization: 'Bearer A', 'content-type': 'application/json' }, body: JSON.stringify({ convenedBallotHash: 'not-hex' }) });
+    assert.equal(badHash.status, 400);
+  } finally { node.close(); }
+});
+
 test('admin publish rejects a snapshot with an unpinned validator (409) and does not mutate the served chain', async () => {
   const { node, base } = await startNode();
   try {
