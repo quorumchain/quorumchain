@@ -32,8 +32,12 @@ export interface Signer {
    *  `nonce` (round-57) is the orchestrator's per-convening token: the signer binds
    *  it into the signed payload so the vote cannot be replayed into another convening.
    *  `boundType` (CIP-14) is a hash-bound epistemic type: when a recognized token, the
-   *  signer derives the hash WITH it, so the type enters the signature (the NI-13a ideal). */
-  signBallot(prompt: string, context: string, verdicts?: string[], nonce?: string, boundType?: string): Promise<SignedVote>;
+   *  signer derives the hash WITH it, so the type enters the signature (the NI-13a ideal).
+   *  `anchorCommitment` (CIP-15 NI-15e) is the canonical commitment over the ballot's anchor
+   *  set: when present, the signer derives the hash WITH it, so the anchors enter the signature
+   *  and cannot be swapped post-vote. Both are derived by the orchestrator from the same declared
+   *  meta the registry records, so the registry entry, every vote, and ratify share one preimage. */
+  signBallot(prompt: string, context: string, verdicts?: string[], nonce?: string, boundType?: string, anchorCommitment?: string): Promise<SignedVote>;
 }
 
 export function makeLocalSigner(params: {
@@ -49,8 +53,8 @@ export function makeLocalSigner(params: {
   return {
     validatorId,
     publicKeyPem,
-    async signBallot(prompt, context, verdicts, nonce, boundType) {
-      const bh = ballotHash(prompt, context, boundType); // derived here — never caller-supplied (CIP-14: type-bound when present)
+    async signBallot(prompt, context, verdicts, nonce, boundType, anchorCommitment) {
+      const bh = ballotHash(prompt, context, boundType, anchorCommitment); // derived here — never caller-supplied (CIP-14 type + CIP-15 anchors when present)
       const { verdict, rawOutput } = await deliberate(prompt, context, verdicts);
       return signVote({ validatorId, privateKeyPem, ballotHash: bh, verdict, rawOutput, nonce });
     },
@@ -113,8 +117,8 @@ export function makeRemoteSigner(params: { validatorId: string; hostPath: string
   return rpc({ type: 'pubkey' }).catch((err) => { child.kill(); throw err; }).then((res) => ({
     validatorId: params.validatorId,
     publicKeyPem: res.publicKeyPem as string,
-    async signBallot(prompt: string, context: string, verdicts?: string[], nonce?: string, boundType?: string) {
-      const res = await rpc({ type: 'sign', prompt, context, verdicts, nonce, boundType });
+    async signBallot(prompt: string, context: string, verdicts?: string[], nonce?: string, boundType?: string, anchorCommitment?: string) {
+      const res = await rpc({ type: 'sign', prompt, context, verdicts, nonce, boundType, anchorCommitment });
       return res.vote as SignedVote;
     },
     close() {

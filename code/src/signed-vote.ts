@@ -59,12 +59,18 @@ const BOUND_TYPES = new Set(['SETTLED', 'EMPIRICAL_LIVE', 'NORMATIVE']);
  *  hashed object — exactly like the round-57 nonce's optional-append — so the type enters
  *  the hash and thus every signature (the NI-13a ideal: the type is SIGNED, not declared).
  *  Any other value (absent / undefined / null / '' / unrecognized) produces the v1 hash
- *  byte-identically: the `epistemicType` key is NEVER emitted as null/empty (NI-14a/f). */
-export function ballotHash(prompt: string, context: string, boundType?: string): string {
-  if (typeof boundType === 'string' && BOUND_TYPES.has(boundType)) {
-    return sha256hex(JSON.stringify({ prompt, context, epistemicType: boundType }));
-  }
-  return sha256hex(JSON.stringify({ prompt, context }));
+ *  byte-identically: the `epistemicType` key is NEVER emitted as null/empty (NI-14a/f).
+ *
+ *  CIP-15 NI-15e: `anchorCommitment` (computed by anchor.ts over the anchor SET) is appended
+ *  under the SAME optional-append discipline, AFTER epistemicType, so the anchors enter the
+ *  hash and every signature and cannot be swapped/added/dropped post-vote. The two optionals
+ *  compose by distinct keys: each combination (none / type-only / anchor-only / both) yields a
+ *  distinct preimage with no collision, and the empty-args call stays byte-identical to v1. */
+export function ballotHash(prompt: string, context: string, boundType?: string, anchorCommitment?: string): string {
+  const obj: Record<string, unknown> = { prompt, context };
+  if (typeof boundType === 'string' && BOUND_TYPES.has(boundType)) obj.epistemicType = boundType;
+  if (typeof anchorCommitment === 'string' && anchorCommitment.length > 0) obj.anchorCommitment = anchorCommitment;
+  return sha256hex(JSON.stringify(obj));
 }
 
 export function generateValidatorKey(): ValidatorKey {

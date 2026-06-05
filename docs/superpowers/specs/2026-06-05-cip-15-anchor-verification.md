@@ -369,7 +369,30 @@ deferred), `structurallyAdmissible` with the NI-15g origin-family count, the P1b
 `buildClaimIndex` anchor-policy param (absent ⇒ empirical supersedes uncreditable), and the honest
 `pendingReview` render label. NI-15b enforced: an empirical supersede that clears the structural
 gate is admitted to content review but the head moves ONLY on `contentConfirmed` (NORMATIVE still
-promotes on ratification). **Slice 3 (next):** the NI-15e `anchorCommitment` ballot-hash binding —
-the full CIP-14-style signer/IPC plumbing (registry + signer + host-core + convene) so the anchor
-set enters every signature and cannot be swapped post-vote. Deferred deliberately: binding only
-the registry side would make anchored votes fail ratification (vote hash ≠ registry hash).
+promotes on ratification). **Slice 3 — the NI-15e `anchorCommitment` ballot-hash binding — is
+BUILT** (`anchor.ts`, `signed-vote.ts`, `ballot-registry.ts`, `panel.ts`, `signer.ts`,
+`signer-host-core.ts`, `test/cip15-binding.test.ts`; GP3a–d green, suite 297→301). `anchorCommitment(anchors)`
+canonicalizes the set (reduce to the four identity fields, NFC-normalize `citedAssertion`, reject a
+duplicate `contentHash`, sort by `contentHash`, forbid the empty set) and `ballotHash` appends it as
+a SECOND optional field after CIP-14's `epistemicType` — the same optional-append discipline, so the
+four combinations (none / type-only / anchor-only / both) yield distinct preimages with no collision
+and the empty-args call stays byte-identical to v1 (legacy + CIP-14 hashes unshifted, verified by
+GP3b and the still-green CIP-14 suite). `anchorCommitmentOf(meta)` derives it from `meta.anchors`
+ONCE in `convene` and threads it through the full signer/IPC path (local + remote) so the registry
+entry, every vote, and ratify share one preimage; swapping/adding/dropping any anchor after the vote
+changes the commitment and fails `verifyEntry`/`ratify` (GP3c, GP3d). The earlier deferral concern
+(binding only the registry side ⇒ vote hash ≠ registry hash) is resolved by deriving the commitment
+on the orchestrator side and passing it to every signer, exactly as CIP-14 does for the bound type.
+
+Ratified 3/3 YES (ballot `62bab9f7`). **Commitment scoping (folded from V1's consult note).** The
+commitment binds exactly the four *identity* fields — the issuer-signed triple `{contentHash, issuer,
+anchorType}` plus the proposer's `citedAssertion` — and deliberately NOT the evidentiary payload
+(`signature`, `timestampProof`, `provenanceClass`, `asOf`). This is sound, not a gap: credit in
+`structurallyAdmissible` is re-derived at adjudication by verifying the issuer signature over
+`(contentHash, issuer, anchorType)` and the TSA proof over `contentHash` against **pinned** keys, and
+every one of those inputs is in the commitment — so an attacker cannot upgrade a non-credited anchor
+to credited without forging a pinned-key signature, and binding `citedAssertion` blocks re-pointing a
+bound artifact at a new supersede claim. The only mutation the scoping leaves open is a proposer
+stripping a valid signature off their *own* anchor (self-harming griefing, never a swap-in of
+unverified content). Binding the issuer-signed triple plus the proposer's claim is therefore the
+correct, minimal preimage.

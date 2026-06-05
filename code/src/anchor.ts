@@ -86,6 +86,24 @@ export function signTsaTimestamp(privateKeyPem: string, p: { contentHash: string
   return cryptoSign(null, Buffer.from(tsaPayload(p), 'utf8'), createPrivateKey(privateKeyPem)).toString('hex');
 }
 
+/** NI-15e: a deterministic, replay-stable commitment over the anchor SET, bound into the ballot
+ *  hash (CIP-14 optional-append) so the set enters every validator signature and cannot be
+ *  swapped/added/dropped post-vote. Canonicalization (the red-team's demand): reduce each anchor
+ *  to the four identity fields, NFC-normalize the one free-text field, REJECT a duplicate
+ *  contentHash (an anchor's identity is its content), sort by contentHash so order is irrelevant,
+ *  and FORBID the empty set (an empty commitment would be indistinguishable from "no anchors"). */
+export function anchorCommitment(anchors: Anchor[]): string {
+  if (!anchors || anchors.length === 0) throw new Error('anchorCommitment: empty anchor set forbidden (NI-15e)');
+  const seen = new Set<string>();
+  const reduced = anchors.map((a) => {
+    if (seen.has(a.contentHash)) throw new Error(`anchorCommitment: duplicate contentHash ${a.contentHash} (NI-15e)`);
+    seen.add(a.contentHash);
+    return { anchorType: a.anchorType, contentHash: a.contentHash, citedAssertion: a.citedAssertion.normalize('NFC'), issuer: a.issuer };
+  });
+  reduced.sort((x, y) => (x.contentHash < y.contentHash ? -1 : x.contentHash > y.contentHash ? 1 : 0));
+  return sha256hex(JSON.stringify(reduced));
+}
+
 /** Recompute the content hash over supplied artifact bytes (NI-15a). */
 export function contentHashMatches(artifactBytes: string, contentHash: string): boolean {
   return sha256hex(artifactBytes) === contentHash;

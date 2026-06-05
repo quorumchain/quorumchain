@@ -7,6 +7,7 @@
 
 import { existsSync, readFileSync, appendFileSync } from 'node:fs';
 import { ballotHash } from './signed-vote.ts';
+import { anchorCommitment } from './anchor.ts';
 import type { BallotMeta, ContraryDossier } from './commons.ts';
 
 export interface BallotRegistryEntry {
@@ -31,11 +32,26 @@ export function boundTypeOf(meta?: BallotMeta): string | undefined {
   return meta?.typeBinding === 'hashed' ? meta.epistemicType : undefined;
 }
 
-/** True iff the entry's prompt+context (+ bound type, CIP-14) actually hash to its ballotHash.
- *  A v1 entry's advisory type is NOT in the hash; a v2 entry's bound type IS, so flipping a
- *  bound type fails this check (NI-14b) while relabeling an advisory type does not. */
+/** CIP-15 NI-15e: the anchor-set commitment a ballot binds INTO its hash, or undefined when the
+ *  ballot carries no anchors. Unlike the epistemic type there is no opt-in flag — anchors, when
+ *  present, are ALWAYS bound (there is no advisory anchor; an anchor that doesn't bind is a swap
+ *  vector). anchorCommitment canonicalizes + rejects a malformed set, so flipping/adding/dropping
+ *  an anchor changes the commitment and fails verifyEntry. */
+export function anchorCommitmentOf(meta?: BallotMeta): string | undefined {
+  return meta?.anchors && meta.anchors.length > 0 ? anchorCommitment(meta.anchors) : undefined;
+}
+
+/** True iff the entry's prompt+context (+ bound type, CIP-14; + anchor commitment, CIP-15) actually
+ *  hash to its ballotHash. A v1 entry's advisory type is NOT in the hash; a v2 entry's bound type
+ *  IS, so flipping a bound type fails this check (NI-14b) while relabeling an advisory type does
+ *  not. An anchored entry's anchor set is bound (NI-15e), so a post-vote anchor swap fails too. A
+ *  malformed anchor set (duplicate contentHash) throws in canonicalization → treated as invalid. */
 export function verifyEntry(entry: BallotRegistryEntry): boolean {
-  return ballotHash(entry.prompt, entry.context, boundTypeOf(entry.meta)) === entry.ballotHash;
+  try {
+    return ballotHash(entry.prompt, entry.context, boundTypeOf(entry.meta), anchorCommitmentOf(entry.meta)) === entry.ballotHash;
+  } catch {
+    return false;
+  }
 }
 
 /** CIP-13 production read path: project the registry's declared meta/dossier into the
@@ -77,7 +93,7 @@ export function appendBallot(
   context: string,
   extra: { meta?: BallotMeta; dossier?: ContraryDossier } = {},
 ): void {
-  const bh = ballotHash(prompt, context, boundTypeOf(extra.meta)); // CIP-14: bind the type iff flagged
+  const bh = ballotHash(prompt, context, boundTypeOf(extra.meta), anchorCommitmentOf(extra.meta)); // CIP-14 type + CIP-15 anchors
   if (loadRegistry(path).some((e) => e.ballotHash === bh)) return;
   const entry: BallotRegistryEntry = { ballotHash: bh, prompt, context };
   if (extra.meta) entry.meta = extra.meta;

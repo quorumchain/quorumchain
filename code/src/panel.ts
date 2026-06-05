@@ -6,7 +6,7 @@
 import { randomBytes } from 'node:crypto';
 import { ballotHash, ratify, type SignedVote, type RatifyResult } from './signed-vote.ts';
 import { appendVote } from './vote-log.ts';
-import { appendBallot, boundTypeOf } from './ballot-registry.ts';
+import { appendBallot, boundTypeOf, anchorCommitmentOf } from './ballot-registry.ts';
 import { type Signer } from './signer.ts';
 import type { BallotMeta, ContraryDossier } from './commons.ts';
 
@@ -77,10 +77,12 @@ export async function convene(params: {
   dossier?: ContraryDossier; // CIP-10: contrary-evidence dossier recorded with the ballot
 }): Promise<ConveneResult> {
   // CIP-14: if the ballot declares a hash-bound type, it enters the hash (and every
-  // signature). boundType is derived once and used for BOTH the ratify hash and each
-  // signer's derivation, so the registry entry, the votes, and ratify all agree.
+  // signature). CIP-15 NI-15e: if it carries anchors, their canonical commitment enters too.
+  // boundType + anchorComm are derived ONCE and used for BOTH the ratify hash and each signer's
+  // derivation, so the registry entry, the votes, and ratify all agree on one preimage.
   const boundType = boundTypeOf(params.meta);
-  const bh = ballotHash(params.prompt, params.context, boundType);
+  const anchorComm = anchorCommitmentOf(params.meta);
+  const bh = ballotHash(params.prompt, params.context, boundType, anchorComm);
   // Record the human-readable statement for the read surface (round-58). The registry is
   // self-verifying (the statement must re-hash to bh), so this persists provenance, not trust.
   // CIP-13/CIP-10 declared meta/dossier travel with the ballot when supplied.
@@ -104,7 +106,7 @@ export async function convene(params: {
   // arrived: 2/3 is of the whole registered panel, so absences count against the bar.
   for (const s of params.signers) {
     try {
-      const vote = await s.signBallot(params.prompt, params.context, params.verdicts, nonce, boundType);
+      const vote = await s.signBallot(params.prompt, params.context, params.verdicts, nonce, boundType, anchorComm);
       if (vote.nonce !== nonce) {
         // a vote not bound to THIS convening (stale/replayed) is recorded as a failure,
         // never logged or counted — the orchestrator only accepts the nonce it issued
