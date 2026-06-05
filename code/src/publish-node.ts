@@ -10,9 +10,10 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const base = process.env.QRM_NODE_BASE!;
 const token = process.env.QRM_ADMIN_TOKEN!;
 const localData = process.argv[2] ?? join(HERE, '..', 'data');
+const commonsDir = process.env.QRM_COMMONS_DIR ?? join(HERE, '..', '..', 'docs', 'commons');
 
 const run = async () => {
-  const snap = packageSnapshot(localData);
+  const snap = packageSnapshot(localData, commonsDir);
   const r = await api(base, '/admin/publish', { method: 'POST', token, body: snap });
   console.log(r.status, JSON.stringify(r.body));
   if (r.status !== 200) process.exit(1);

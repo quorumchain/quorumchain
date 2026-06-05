@@ -30,3 +30,24 @@ test('packageSnapshot reads local votes.log + ballots.jsonl into a Snapshot', ()
   assert.equal(snap.votesLog, readFileSync(lp, 'utf8'));
   assert.equal(typeof snap.ballots, 'string');
 });
+
+test('packageSnapshot reads commons from an explicit commonsDir', () => {
+  const dataDir = mkdtempSync(join(tmpdir(), 'qrm-pkg-data-'));
+  writeFileSync(join(dataDir, 'votes.log'), '');
+  writeFileSync(join(dataDir, 'ballots.jsonl'), '');
+  const commonsDir = mkdtempSync(join(tmpdir(), 'qrm-pkg-commons-'));
+  writeFileSync(join(commonsDir, 'INDEX.md'), '# Index\n');
+  writeFileSync(join(commonsDir, 'abc123.md'), '# Entry abc123\n');
+  const snap = packageSnapshot(dataDir, commonsDir);
+  assert.equal(snap.commons['INDEX.md'], '# Index\n');
+  assert.equal(snap.commons['abc123.md'], '# Entry abc123\n');
+});
+
+test('packageSnapshot returns empty commons when commonsDir lacks INDEX.md', () => {
+  const dataDir = mkdtempSync(join(tmpdir(), 'qrm-pkg-data-'));
+  writeFileSync(join(dataDir, 'votes.log'), '');
+  const commonsDir = mkdtempSync(join(tmpdir(), 'qrm-pkg-commons-'));
+  writeFileSync(join(commonsDir, 'orphan.md'), '# no index\n');
+  const snap = packageSnapshot(dataDir, commonsDir);
+  assert.deepEqual(snap.commons, {});
+});

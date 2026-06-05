@@ -116,7 +116,7 @@ accepting it.
 | `GET /commons` | Published Commons index |
 | `GET /commons/:hash` | A single Commons entry |
 | `GET /ballot/:hash` | A single published ballot |
-| `GET /log` | Audit log (supports `?from=` and `?limit=`) |
+| `GET /log` | Paginated vote-log entries (supports `?from=` and `?limit=`, max 500) |
 | `GET /submissions/:id` | Public status of a submission |
 
 **Submit (anti-spam token):**

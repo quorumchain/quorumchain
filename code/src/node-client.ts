@@ -23,13 +23,13 @@ export function renderSubmission(s: { id: string; status: string; ballotHash: st
   ].join('\n');
 }
 
-export function packageSnapshot(localDataDir: string): Snapshot {
+export function packageSnapshot(localDataDir: string, commonsDir?: string): Snapshot {
   const v = join(localDataDir, 'votes.log');
   const b = join(localDataDir, 'ballots.jsonl');
-  const commonsDir = join(localDataDir, '..', 'docs', 'commons');
+  const cDir = commonsDir ?? join(localDataDir, '..', 'docs', 'commons');
   const commons: Record<string, string> = {};
-  if (existsSync(join(commonsDir, 'INDEX.md'))) {
-    for (const f of readdirSync(commonsDir)) if (f.endsWith('.md')) commons[f] = readFileSync(join(commonsDir, f), 'utf8');
+  if (existsSync(join(cDir, 'INDEX.md'))) {
+    for (const f of readdirSync(cDir)) if (f.endsWith('.md')) commons[f] = readFileSync(join(cDir, f), 'utf8');
   }
   return {
     votesLog: existsSync(v) ? readFileSync(v, 'utf8') : '',
