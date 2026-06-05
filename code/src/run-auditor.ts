@@ -109,27 +109,36 @@ async function main() {
   const pending = selectPending(plan, alreadyAudited, limit);
   console.error(`[run-auditor] ${plan.length} in-scope, ${alreadyAudited.size} already audited (verified, current-schema), ${pending.length} to process this run (limit=${limit ?? 'none'})`);
 
+  let attached = 0;
+  let failed = 0;
   for (const item of pending) {
-    const signer = await makeRemoteSigner({
-      validatorId: item.auditorId,
-      hostPath: DELIB_HOST,
-      timeoutMs: 600_000,
-      env: { QRM_KEYSTORE_DIR: KEYSTORE },
-    });
+    let signer: Awaited<ReturnType<typeof makeRemoteSigner>> | undefined;
     try {
+      signer = await makeRemoteSigner({
+        validatorId: item.auditorId,
+        hostPath: DELIB_HOST,
+        timeoutMs: 600_000,
+        env: { QRM_KEYSTORE_DIR: KEYSTORE },
+      });
       const raw = await signer.audit(buildAuditPrompt(item.prompt, item.context, item.ratifiedVerdict));
       const unsigned = parseAuditorOutput(raw, item.ballotHash, item.auditorId);
       const validity = validateDossier(unsigned, { eligible: true, epistemicType: item.epistemicType });
       if (!validity.valid) {
         console.error(`[run-auditor] ${item.ballotHash.slice(0, 12)} invalid dossier: ${validity.reason}`);
+        failed++;
         continue;
       }
       const signed = await signer.signDossier(unsigned);
       attachDossier(REG, item.ballotHash, signed);
       console.error(`[run-auditor] ${item.ballotHash.slice(0, 12)} auditor=${item.auditorId} weight=${signed.assessedWeight} attached`);
+      attached++;
+    } catch (e) {
+      console.error(`[run-auditor] ${item.ballotHash.slice(0, 12)} FAILED: ${e instanceof Error ? e.message : String(e)} — skipping (stays pending)`);
+      failed++;
     } finally {
-      signer.close();
+      if (signer) signer.close();
     }
   }
+  console.error(`[run-auditor] done: ${attached} attached, ${failed} failed/skipped this run`);
 }
 if (process.argv[1] && process.argv[1].endsWith('run-auditor.ts')) main();
