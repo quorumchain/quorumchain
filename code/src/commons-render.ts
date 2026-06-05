@@ -39,11 +39,16 @@ function renderEpistemic(view: ClaimView): string[] {
 function renderAuditorDossier(view: ClaimView): string[] {
   const out: string[] = ['## Adversarial review (CIP-10 auditor)', ''];
   if (!view.auditorId && !view.contraryWeight) {
-    out.push('_No adversarial review on record yet._', '');
+    if (view.epistemicType === 'SETTLED') {
+      out.push('_Out of audit scope (SETTLED fact — adversarial review not required)._', '');
+    } else {
+      out.push('_Adversarial review pending (in-scope claim — dossier not yet produced)._', '');
+    }
     return out;
   }
   const candidate = view.epistemicType === 'EMPIRICAL_LIVE' && (view.contraryWeight === 'MATERIAL' || view.contraryWeight === 'DECISIVE');
-  out.push(`auditor: **${view.auditorId ?? '—'}** · contrary-evidence weight: **${view.contraryWeight ?? '—'}**${candidate ? ' — flagged as a re-adjudication candidate' : ''}.`, '');
+  const constructionNote = view.dossierConstruction === 'A' ? ' — retrospective audit (Construction A) — produced after vote' : '';
+  out.push(`auditor: **${view.auditorId ?? '—'}** · contrary-evidence weight: **${view.contraryWeight ?? '—'}**${candidate ? ' — flagged as a re-adjudication candidate' : ''}${constructionNote}.`, '');
   if (view.contraryAnchors.length > 0) {
     out.push('### Contrary anchors (each clears the symmetric anchor bar)', '');
     for (const a of view.contraryAnchors) out.push(`- **${a.anchorType}** — ${a.source}: contradicts _${a.claimItContradicts}_`);

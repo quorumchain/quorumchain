@@ -37,6 +37,7 @@ export interface ClaimView {
   falsificationConditions: FalsificationCondition[];
   // CIP-10 amendment (§4): the full auditor view, projected from the VERIFIED dossier (null/empty when none).
   auditorId: string | null;
+  dossierConstruction: 'A' | 'B' | null;
   contraryAnchors: ContraryAnchor[];
   searchedRejectedAnchors: SearchedRejectedAnchor[];
   negligibleCoSigners: string[];
@@ -65,6 +66,7 @@ export function viewClaim(claim: Claim, registry: BallotRegistryEntry[], chainVa
     contraryWeight: claim.contraryWeight,
     falsificationConditions: claim.falsificationConditions,
     auditorId: claim.auditorId,
+    dossierConstruction: claim.dossierConstruction,
     contraryAnchors: claim.contraryAnchors,
     searchedRejectedAnchors: claim.searchedRejectedAnchors,
     negligibleCoSigners: claim.negligibleCoSigners,

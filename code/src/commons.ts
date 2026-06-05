@@ -170,6 +170,7 @@ export interface Claim {
   falsificationConditions: FalsificationCondition[]; // what anchored evidence would warrant re-adjudication (§5)
   // CIP-10 amendment (§4): the full auditor view, projected from the VERIFIED dossier (null/empty when none).
   auditorId: string | null;
+  dossierConstruction: 'A' | 'B' | null;
   contraryAnchors: import('./dossier.ts').ContraryAnchor[];
   searchedRejectedAnchors: import('./dossier.ts').SearchedRejectedAnchor[];
   negligibleCoSigners: string[];
@@ -276,6 +277,7 @@ export function buildClaimIndex(
       contraryWeight: dossiers[bh]?.assessedWeight ?? null,
       falsificationConditions: dossiers[bh]?.falsificationConditions ?? [],
       auditorId: dossiers[bh]?.auditorId ?? null,
+      dossierConstruction: dossiers[bh]?.dossierConstruction ?? null,
       contraryAnchors: dossiers[bh]?.contraryAnchors ?? [],
       searchedRejectedAnchors: dossiers[bh]?.searchedRejectedAnchors ?? [],
       negligibleCoSigners: dossiers[bh]?.negligibleCoSigners ?? [],
