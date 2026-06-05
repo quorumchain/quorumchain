@@ -46,3 +46,15 @@ test('a different key does not verify', () => {
   const d = signDossier(material(), k.privateKeyPem);
   assert.equal(verifyDossier(d, other.publicKeyPem), false);
 });
+
+test('canonical sort is unambiguous for prefix-colliding anchor fields (NI-AA2 determinism)', () => {
+  const mk = (anchors: any[]): any => ({
+    ballotHash: 'bh', auditorId: 'V2', contraryAnchors: anchors,
+    searchedRejectedAnchors: [], assessedWeight: 'MATERIAL',
+    falsificationConditions: [], negligibleCoSigners: [], signature: '',
+  });
+  const a1 = { source: 'ab', anchorType: 'court', claimItContradicts: 'c' };
+  const a2 = { source: 'a', anchorType: 'court', claimItContradicts: 'bc' };
+  // same two anchors, opposite input order → payload must be identical
+  assert.equal(dossierPayload(mk([a1, a2])), dossierPayload(mk([a2, a1])));
+});

@@ -36,13 +36,13 @@ const DOMAIN = 'QRM-CONTRARY-DOSSIER-v1';
 export function dossierPayload(d: ContraryDossier): string {
   const anchors = d.contraryAnchors
     .map((a) => ({ source: a.source.normalize('NFC'), anchorType: a.anchorType.normalize('NFC'), claimItContradicts: a.claimItContradicts.normalize('NFC') }))
-    .sort((x, y) => (x.source + x.claimItContradicts < y.source + y.claimItContradicts ? -1 : 1));
+    .sort((x, y) => (x.source + '\x00' + x.claimItContradicts < y.source + '\x00' + y.claimItContradicts ? -1 : 1));
   const rejected = d.searchedRejectedAnchors
     .map((r) => ({ source: r.source.normalize('NFC'), whyRejected: r.whyRejected.normalize('NFC') }))
-    .sort((x, y) => (x.source + x.whyRejected < y.source + y.whyRejected ? -1 : 1));
+    .sort((x, y) => (x.source + '\x00' + x.whyRejected < y.source + '\x00' + y.whyRejected ? -1 : 1));
   const conditions = d.falsificationConditions
     .map((f) => ({ towardVerdict: f.towardVerdict.normalize('NFC'), requiredAnchoredEvidence: f.requiredAnchoredEvidence.normalize('NFC') }))
-    .sort((x, y) => (x.towardVerdict + x.requiredAnchoredEvidence < y.towardVerdict + y.requiredAnchoredEvidence ? -1 : 1));
+    .sort((x, y) => (x.towardVerdict + '\x00' + x.requiredAnchoredEvidence < y.towardVerdict + '\x00' + y.requiredAnchoredEvidence ? -1 : 1));
   const coSigners = [...d.negligibleCoSigners].sort();
   return JSON.stringify({
     domain: DOMAIN,
