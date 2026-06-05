@@ -119,15 +119,9 @@ export interface FalsificationCondition {
   requiredAnchoredEvidence: string;
 }
 
-// CIP-13 v0.2 — the subset of the CIP-10 ContraryDossier that the read path consumes.
-// The dossier is a signed artifact recorded alongside the ballot; CIP-13 records its
-// falsification conditions so a later supersession is principled, not arbitrary (§5).
-export interface ContraryDossier {
-  ballotHash: string;
-  auditorId: string;
-  assessedWeight: AssessedWeight;
-  falsificationConditions: FalsificationCondition[];
-}
+// CIP-10 §4 full dossier type (defined in dossier.ts; re-exported here so existing importers
+// continue to resolve ContraryDossier from commons.ts without change).
+export type { ContraryDossier, ContraryAnchor, SearchedRejectedAnchor } from './dossier.ts';
 
 // CIP-13 v0.2 — an EMPIRICAL_LIVE claim the operational layer should review for
 // re-adjudication. SURFACED, never auto-triggered (§5 — triggering is operational).
