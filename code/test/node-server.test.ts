@@ -4,7 +4,7 @@ import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { generateValidatorKey, signVote, ballotHash } from '../src/signed-vote.ts';
-import { appendVote } from '../src/vote-log.ts';
+import { appendVote, readLog } from '../src/vote-log.ts';
 import { stageRelease, commitRelease, writeCheckpoint } from '../src/release-store.ts';
 import { createNode } from '../src/node-server.ts';
 
@@ -55,5 +55,41 @@ test('oversized body is rejected 413; admin can list and decide', async () => {
     assert.ok(list.submissions.some((s) => s.id === sub.id));
     const dec = await fetch(`${base}/inbox/${sub.id}/decision`, { method: 'POST', headers: { authorization: 'Bearer A', 'content-type': 'application/json' }, body: JSON.stringify({ decision: 'ACCEPT' }) });
     assert.equal(dec.status, 200);
+  } finally { node.close(); }
+});
+
+test('admin publish rejects a snapshot with an unpinned validator (409) and does not mutate the served chain', async () => {
+  const { node, base } = await startNode();
+  try {
+    const before = await (await fetch(`${base}/chain/verify`)).json();
+    const rogue = generateValidatorKey();
+    const tmp = join(mkdtempSync(join(tmpdir(), 'qrm-rogue-')), 'votes.log');
+    appendVote(tmp, signVote({ validatorId: 'VX', privateKeyPem: rogue.privateKeyPem, ballotHash: ballotHash('bad', ''), verdict: 'YES', rawOutput: 'x' }));
+    const snap = { votesLog: readFileSync(tmp, 'utf8'), ballots: '', commons: { 'INDEX.md': '# x' } };
+    const res = await fetch(`${base}/admin/publish`, { method: 'POST', headers: { authorization: 'Bearer A', 'content-type': 'application/json' }, body: JSON.stringify(snap) });
+    assert.equal(res.status, 409);
+    const after = await (await fetch(`${base}/chain/verify`)).json();
+    assert.deepEqual(after, before); // served chain unchanged after a rejected publish
+  } finally { node.close(); }
+});
+
+test('admin publish with malformed JSON returns 400, not 500', async () => {
+  const { node, base } = await startNode();
+  try {
+    const res = await fetch(`${base}/admin/publish`, { method: 'POST', headers: { authorization: 'Bearer A', 'content-type': 'application/json' }, body: '{not json' });
+    assert.equal(res.status, 400);
+  } finally { node.close(); }
+});
+
+test('degraded mode blocks writes but still serves /healthz', async () => {
+  const data = bootData();
+  const cfg = { dataDir: data, port: 0, submitToken: 'S', adminToken: 'A', pinnedKeyring: keyring, chainId: 'c', quorum: 2,
+    limits: { maxBodyBytes: 1024, maxQuestionLen: 200, maxContextLen: 800, rateWindowMs: 60000, rateMaxPerWindow: 100, inboxMaxBytes: 1e9, nearDupThreshold: 0.8 } };
+  const node = createNode(cfg, () => 'degraded');
+  await node.listen();
+  const base = `http://127.0.0.1:${node.port()}`;
+  try {
+    assert.equal((await fetch(`${base}/healthz`)).status, 200);
+    assert.equal((await fetch(`${base}/submit`, { method: 'POST', headers: { authorization: 'Bearer S', 'content-type': 'application/json' }, body: JSON.stringify({ question: 'q', context: 'c' }) })).status, 503);
   } finally { node.close(); }
 });

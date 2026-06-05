@@ -129,14 +129,15 @@ export function createNode(cfg: NodeConfig, getMode: () => 'live' | 'degraded' =
       if (req.method === 'POST' && path.startsWith('/inbox/') && path.endsWith('/decision')) {
         const id = path.slice('/inbox/'.length, -('/decision'.length));
         const raw = await readBody(req, res); if (raw === null) return; // 413 already sent
-        const { decision, reason } = JSON.parse(raw);
+        let parsed: any; try { parsed = JSON.parse(raw); } catch { return send(res, 400, { error: 'bad json' }); }
+        const { decision, reason } = parsed;
         const s = decide(inboxPath, id, decision, reason);
         audit(auditPath, 'DECISION', { id, decision, reason: reason ?? null });
         return send(res, 200, { id: s.id, status: s.status });
       }
       if (req.method === 'POST' && path === '/admin/publish') {
         const raw = await readBody(req, res); if (raw === null) return; // 413 already sent
-        const snap = JSON.parse(raw) as Snapshot;
+        let snap: Snapshot; try { snap = JSON.parse(raw) as Snapshot; } catch { return send(res, 400, { error: 'bad json' }); }
         const lp = materialize(snap.votesLog, 'votes.log')!;
         const staged = readLog(lp);
         const cur = ref ? readLog(materialize(readReleaseFile(data, ref, 'votes.log'), 'votes.log')!) : [];
