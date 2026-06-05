@@ -362,7 +362,14 @@ change yet, zero regression): the typed `Anchor`/`AnchorPolicy`, content-hash re
 issuer-signature verification with P1a domain separation + validator-keyring rejection, the
 ED25519_TSA timestamp scheme grounding `surfacedAt` (OTS_BITCOIN / RFC3161_CMS recognized but
 deferred), `structurallyAdmissible` with the NI-15g origin-family count, the P1b
-`tier1_structural_anchor_only` label, and `anchorGatePasses`. **Slice 2 (next):** wire
-`anchorGatePasses` into the commons.ts lineage as the `reviewAdmissible()`/`promotable()` split
-(NI-15b), add `BallotMeta.anchors[]` + the NI-15e `anchorCommitment` ballot-binding, and the
-content-pending render label.
+`tier1_structural_anchor_only` label, and `anchorGatePasses`. **Slice 2 — the lineage gate split — is BUILT** (`commons.ts`, `commons-render.ts`,
+`test/cip15-lineage.test.ts`; suite 291→297, CIP-13 lineage tests updated to CIP-15 semantics):
+`BallotMeta.anchors[]` + `contentConfirmed`, `Lineage.pendingReview`, the
+`reviewAdmissible()`/`promotable()` split wired to `anchorGatePasses` via an optional
+`buildClaimIndex` anchor-policy param (absent ⇒ empirical supersedes uncreditable), and the honest
+`pendingReview` render label. NI-15b enforced: an empirical supersede that clears the structural
+gate is admitted to content review but the head moves ONLY on `contentConfirmed` (NORMATIVE still
+promotes on ratification). **Slice 3 (next):** the NI-15e `anchorCommitment` ballot-hash binding —
+the full CIP-14-style signer/IPC plumbing (registry + signer + host-core + convene) so the anchor
+set enters every signature and cannot be swapped post-vote. Deferred deliberately: binding only
+the registry side would make anchored votes fail ratification (vote hash ≠ registry hash).

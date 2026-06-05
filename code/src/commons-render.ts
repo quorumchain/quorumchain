@@ -55,15 +55,34 @@ function renderFalsification(view: ClaimView): string[] {
 // CIP-13 NI-13d: a re-adjudicated claim shows its supersession history — what was
 // held before and why it changed — never deleted. Rendered only when a lineage exists.
 function renderLineage(view: ClaimView): string[] {
-  if (!view.lineage || view.lineage.priorVersions.length === 0) return [];
-  const isCurrent = view.lineage.current === view.ballotHash;
-  const head = isCurrent
-    ? '**Re-adjudication:** this is the *current* verdict in its lineage; prior versions are retained below (never deleted).'
-    : `**Re-adjudication:** superseded — the current verdict in this lineage is \`${view.lineage.current.slice(0, 12)}\`. This version is retained for the record.`;
-  const rows = view.lineage.priorVersions.map(
-    (p) => `- \`${p.ballotHash.slice(0, 12)}\` — verdict ${p.verdict ?? '—'} · as of ${p.evidenceTime}${p.supersededReason ? ` · reason: ${p.supersededReason}` : ''}`,
-  );
-  return [head, '', '### Prior versions (retained, never deleted)', '', ...rows, ''];
+  const pending = view.lineage?.pendingReview ?? [];
+  if (!view.lineage || (view.lineage.priorVersions.length === 0 && pending.length === 0)) return [];
+  const out: string[] = [];
+  if (view.lineage.priorVersions.length > 0) {
+    const isCurrent = view.lineage.current === view.ballotHash;
+    out.push(
+      isCurrent
+        ? '**Re-adjudication:** this is the *current* verdict in its lineage; prior versions are retained below (never deleted).'
+        : `**Re-adjudication:** superseded — the current verdict in this lineage is \`${view.lineage.current.slice(0, 12)}\`. This version is retained for the record.`,
+      '',
+      '### Prior versions (retained, never deleted)',
+      '',
+      ...view.lineage.priorVersions.map(
+        (p) => `- \`${p.ballotHash.slice(0, 12)}\` — verdict ${p.verdict ?? '—'} · as of ${p.evidenceTime}${p.supersededReason ? ` · reason: ${p.supersededReason}` : ''}`,
+      ),
+      '',
+    );
+  }
+  // CIP-15 NI-15b: gate-cleared supersedes awaiting content verification — the head has NOT moved.
+  if (pending.length > 0) {
+    out.push(
+      `**⏳ Re-adjudication pending content verification (CIP-15 NI-15b):** ${pending.length} supersede(s) cleared the structural anchor gate and are admitted to content review — but the current verdict has **NOT** changed (structural admissibility is never content confirmation; head movement awaits the deferred content layer).`,
+      '',
+      ...pending.map((bh) => `- \`${bh.slice(0, 12)}\` — anchor-structurally-admissible, content-verification-pending`),
+      '',
+    );
+  }
+  return out;
 }
 
 export function renderClaimMarkdown(view: ClaimView): string {

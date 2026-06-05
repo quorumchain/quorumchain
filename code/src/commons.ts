@@ -14,6 +14,7 @@
 
 import { ratify, verifyVote, type SignedVote } from './signed-vote.ts';
 import { sharesLineage, type Provenance } from './lifecycle.ts';
+import { anchorGatePasses, type Anchor, type AnchorPolicy } from './anchor.ts';
 
 // Re-exported so Commons consumers get the canonical provenance type from the read path.
 export type { Provenance } from './lifecycle.ts';
@@ -93,6 +94,13 @@ export interface BallotMeta {
   // a supersede ride-along, NI-13h).
   typesClaimFor?: string; // target ballotHash whose type this sub-claim adjudicates
   proposedType?: EpistemicType; // the type proposed for the target
+  // CIP-15 (ballot 02e3c6cb): a re-adjudicating supersede's cited anchors (replaces the
+  // unverified newAnchor:boolean). The anchor gate (anchorGatePasses) credits only anchors
+  // that pass the offline structural verifier. `contentConfirmed` is set ONLY by the deferred
+  // testnet content layer — pre-testnet it is never true, so an empirical supersede is admitted
+  // to content review (reviewAdmissible) but never promotes the head (NI-15b halt-over-degrade).
+  anchors?: Anchor[];
+  contentConfirmed?: boolean;
   // CIP-14 (core ballot e0d17747): when 'hashed', `epistemicType` is bound INTO the
   // ballotHash (and thus every validator signature) — the proposer's type declaration is
   // signed, not merely advisory. Set iff the type was actually hashed (NI-14f). Absent =
@@ -143,6 +151,11 @@ export interface PriorVersion {
 export interface Lineage {
   current: string;
   priorVersions: PriorVersion[];
+  // CIP-15 (NI-15b): supersedes that passed the structural anchor gate (reviewAdmissible) but
+  // were NOT promoted — admitted to content review, pending content verification. The head
+  // (`current`) has NOT moved for these. Empty unless an empirical/settled supersede cleared the
+  // anchor gate; pre-testnet these never promote (no content layer to set contentConfirmed).
+  pendingReview: string[];
 }
 
 export interface Claim {
@@ -174,6 +187,7 @@ export function buildClaimIndex(
   provenance: Record<string, Provenance> = {}, // CIP-12: optional; absent => explicit-null composition (NI-12g)
   ballotMeta: Record<string, BallotMeta> = {}, // CIP-13: optional; absent => untyped, no supersession (NI-13a)
   dossiers: Record<string, ContraryDossier> = {}, // CIP-13 v0.2: optional CIP-10 auditor dossiers, keyed by ballotHash
+  anchorPolicy?: AnchorPolicy, // CIP-15: optional pinned anchor policy; absent => no anchor can be credited (empirical supersedes stay unadmitted)
 ): Claim[] {
   // group by ballot, preserving first-seen order for determinism
   const order: string[] = [];
@@ -258,7 +272,7 @@ export function buildClaimIndex(
       epistemicType: ballotMeta[bh]?.epistemicType ?? null,
       typeRatified: false, // refined by the v0.3 panel-ratified-typing pass below
       evidenceTime: ballotMeta[bh]?.evidenceTime ?? logIndex.get(bh)!,
-      lineage: { current: bh, priorVersions: [] }, // default: stands alone; refined below
+      lineage: { current: bh, priorVersions: [], pendingReview: [] }, // default: stands alone; refined below
       // CIP-13 v0.2: descriptive consumption of the CIP-10 auditor dossier (NI-12b).
       contraryWeight: dossiers[bh]?.assessedWeight ?? null,
       falsificationConditions: dossiers[bh]?.falsificationConditions ?? [],
@@ -324,30 +338,43 @@ export function buildClaimIndex(
 
   for (const [root, members] of groups) {
     if (members.length === 1) continue; // no supersession — keep the stand-alone default
-    // A successor s validly supersedes head iff: ratified, same epistemicType
-    // (NI-13h), and — unless NORMATIVE (no external ground truth) — cites a new
-    // anchor (NI-13e). Head rule: pick the LATEST such successor in log order (NI-13g).
-    const promotable = (s: string, head: string): boolean => {
+    // CIP-15 splits the gate (NI-15b). reviewAdmissible: a successor s passes the STRUCTURAL
+    // anchor gate over head — ratified, type-consistent (NI-13h), and — unless NORMATIVE — its
+    // cited anchors clear anchorGatePasses (the verified, offline structural check that replaces
+    // the old newAnchor:boolean). promotable: ADDITIONALLY content-confirmed — and the only thing
+    // that moves the lineage head. Pre-testnet no content layer sets contentConfirmed, so an
+    // empirical/settled supersede is admitted to review but NEVER promotes (halt-over-degrade);
+    // NORMATIVE needs no anchor/content and promotes on ratification. Head rule unchanged: latest
+    // promotable successor in log order (NI-13g).
+    const reviewAdmissible = (s: string, head: string): boolean => {
       if ((ballotMeta[s]?.supersedes ?? null) !== head) return false;
       if (!ratified(s)) return false;
       if (typeOf(s) !== typeOf(head)) return false; // type cannot ride through
-      return typeOf(head) === 'NORMATIVE' ? true : ballotMeta[s]?.newAnchor === true;
+      if (typeOf(head) === 'NORMATIVE') return true; // conventional — no external anchor (NI-13f)
+      return anchorPolicy ? anchorGatePasses(ballotMeta[s]?.anchors ?? [], logIndex.get(head)!, typeOf(head)!, anchorPolicy) : false;
     };
+    const promotable = (s: string, head: string): boolean =>
+      reviewAdmissible(s, head) && (typeOf(head) === 'NORMATIVE' || ballotMeta[s]?.contentConfirmed === true);
     let head = root;
     for (;;) {
       const next = members.filter((s) => promotable(s, head));
       if (next.length === 0) break;
       head = next.reduce((a, b) => (logIndex.get(b)! > logIndex.get(a)! ? b : a));
     }
+    // NI-15b: supersedes that cleared the structural gate against their target but did NOT promote
+    // (no content confirmation) — admitted to content review, the head unchanged.
+    const pendingReview = members.filter(
+      (s) => s !== head && reviewAdmissible(s, ballotMeta[s]?.supersedes ?? '') && !promotable(s, ballotMeta[s]?.supersedes ?? ''),
+    );
     const priorVersions: PriorVersion[] = members
-      .filter((bh) => bh !== head)
+      .filter((bh) => bh !== head && !pendingReview.includes(bh)) // a pending-review challenger is not a prior version (head never moved)
       .map((bh) => ({
         ballotHash: bh,
         verdict: claimOf.get(bh)!.verdict,
         evidenceTime: claimOf.get(bh)!.evidenceTime,
         supersededReason: ballotMeta[bh]?.supersedeReason ?? null,
       }));
-    const lineage: Lineage = { current: head, priorVersions };
+    const lineage: Lineage = { current: head, priorVersions, pendingReview };
     for (const bh of members) claimOf.get(bh)!.lineage = lineage;
   }
 

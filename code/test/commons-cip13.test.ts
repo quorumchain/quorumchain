@@ -8,9 +8,16 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { generateValidatorKey, ballotHash, signVote, type SignedVote } from '../src/signed-vote.ts';
 import { buildClaimIndex, queryClaim, type BallotMeta } from '../src/commons.ts';
+import type { AnchorPolicy } from '../src/anchor.ts';
 
 const keys = { V1: generateValidatorKey(), V2: generateValidatorKey(), V3: generateValidatorKey() };
 const keyring = Object.fromEntries(Object.entries(keys).map(([id, k]) => [id, k.publicKeyPem]));
+
+// CIP-15: an empirical/settled supersede promotes only when it clears the anchor gate AND is
+// content-confirmed (NI-15b). These CIP-13 lineage-mechanics tests isolate HEAD SELECTION, so
+// they stub the gate OPEN (requiredFamilies=0 → passes) — the anchor verifier itself is tested
+// in cip15-anchor.test.ts — and set contentConfirmed:true on the supersede meant to promote.
+const GATE_OPEN: AnchorPolicy = { admissibleTypes: new Set(), issuerKeys: {}, tsaKeys: {}, validatorKeyring: {}, requiredFamiliesFor: () => 0 };
 
 function vote(id: 'V1' | 'V2' | 'V3', bh: string, verdict: string): SignedVote {
   return signVote({ validatorId: id, privateKeyPem: keys[id].privateKeyPem, ballotHash: bh, verdict, rawOutput: `${id}:${verdict}` });
@@ -66,9 +73,9 @@ test('G13c: a valid anchored supersede makes current=successor, prior retained',
   const votes = [...unanimous(B1, 'YES'), ...unanimous(B2, 'NO')];
   const meta: Record<string, BallotMeta> = {
     [B1]: { epistemicType: 'EMPIRICAL_LIVE' },
-    [B2]: { epistemicType: 'EMPIRICAL_LIVE', supersedes: B1, supersedeReason: 'new validated signal', newAnchor: true },
+    [B2]: { epistemicType: 'EMPIRICAL_LIVE', supersedes: B1, supersedeReason: 'new validated signal', contentConfirmed: true },
   };
-  const idx = buildClaimIndex(votes, keyring, 2, {}, meta);
+  const idx = buildClaimIndex(votes, keyring, 2, {}, meta, {}, GATE_OPEN);
   const c2 = queryClaim(idx, B2)!;
   assert.equal(c2.lineage.current, B2);
   const prior = c2.lineage.priorVersions.find((p) => p.ballotHash === B1)!;
@@ -112,9 +119,9 @@ test('G13d: a supersede with a valid new anchor AND matching type IS promoted', 
   const votes = [...unanimous(B1, 'YES'), ...unanimous(B2, 'NO')];
   const meta: Record<string, BallotMeta> = {
     [B1]: { epistemicType: 'EMPIRICAL_LIVE' },
-    [B2]: { epistemicType: 'EMPIRICAL_LIVE', supersedes: B1, supersedeReason: 'new court ruling', newAnchor: true },
+    [B2]: { epistemicType: 'EMPIRICAL_LIVE', supersedes: B1, supersedeReason: 'new court ruling', contentConfirmed: true },
   };
-  const idx = buildClaimIndex(votes, keyring, 2, {}, meta);
+  const idx = buildClaimIndex(votes, keyring, 2, {}, meta, {}, GATE_OPEN);
   assert.equal(queryClaim(idx, B1)!.lineage.current, B2);
 });
 
@@ -139,10 +146,10 @@ test('G13h: with two valid successors to one prior, current is the latest in log
   const votes = [...unanimous(B1, 'YES'), ...unanimous(B2, 'NO'), ...unanimous(B3, 'YES')];
   const meta: Record<string, BallotMeta> = {
     [B1]: { epistemicType: 'EMPIRICAL_LIVE' },
-    [B2]: { epistemicType: 'EMPIRICAL_LIVE', supersedes: B1, supersedeReason: 'r2', newAnchor: true },
-    [B3]: { epistemicType: 'EMPIRICAL_LIVE', supersedes: B1, supersedeReason: 'r3', newAnchor: true },
+    [B2]: { epistemicType: 'EMPIRICAL_LIVE', supersedes: B1, supersedeReason: 'r2', contentConfirmed: true },
+    [B3]: { epistemicType: 'EMPIRICAL_LIVE', supersedes: B1, supersedeReason: 'r3', contentConfirmed: true },
   };
-  const idx = buildClaimIndex(votes, keyring, 2, {}, meta);
+  const idx = buildClaimIndex(votes, keyring, 2, {}, meta, {}, GATE_OPEN);
   assert.equal(queryClaim(idx, B1)!.lineage.current, B3); // latest valid successor in log order
 });
 
@@ -279,10 +286,10 @@ test('v0.2 review hook: a SUPERSEDED (non-current) version is not a candidate �
   const votes = [...unanimous(B1, 'YES'), ...unanimous(B2, 'NO')];
   const meta = {
     [B1]: { epistemicType: 'EMPIRICAL_LIVE' as const },
-    [B2]: { epistemicType: 'EMPIRICAL_LIVE' as const, supersedes: B1, supersedeReason: 'new anchor', newAnchor: true },
+    [B2]: { epistemicType: 'EMPIRICAL_LIVE' as const, supersedes: B1, supersedeReason: 'new anchor', contentConfirmed: true },
   };
   // B1 carries a MATERIAL dossier, but B1 has been superseded by B2 — only the current head is reviewable
-  const idx = buildClaimIndex(votes, keyring, 2, {}, meta, { [B1]: dossier(B1, 'MATERIAL') });
+  const idx = buildClaimIndex(votes, keyring, 2, {}, meta, { [B1]: dossier(B1, 'MATERIAL') }, GATE_OPEN);
   const cands = reviewCandidates(idx);
   assert.ok(!cands.some((c) => c.ballotHash === B1)); // superseded version not re-reviewed
 });
