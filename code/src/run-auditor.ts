@@ -8,7 +8,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { SignedVote } from './signed-vote.ts';
 import { readLog } from './vote-log.ts';
-import { loadRegistry, attachDossier, deriveCip13Inputs, type BallotRegistryEntry } from './ballot-registry.ts';
+import { loadRegistry, attachDossier, deriveCip13InputsVerified, type BallotRegistryEntry } from './ballot-registry.ts';
+import { loadPinnedKeyring } from './keystore.ts';
 import { computeAuditScope, type ScopeClaim } from './audit-scope.ts';
 import { selectAuditor } from './auditor-select.ts';
 import { buildAuditPrompt, parseAuditorOutput } from './auditor.ts';
@@ -91,13 +92,21 @@ async function main() {
   const KEYSTORE = join(DATA, 'keystore');
   const DELIB_HOST = join(HERE, 'deliberating-signer-host.ts');
 
+  const PINNED = join(HERE, '..', 'pinned-keyring.json');
+
   const votes = readLog(LOG).map((e) => e.vote);
   const registry = loadRegistry(REG);
   const plan = planAudit(votes, registry);
-  const alreadyAudited = new Set(Object.keys(deriveCip13Inputs(registry).dossiers));
+  const keyring = loadPinnedKeyring(PINNED);
+  const verified = deriveCip13InputsVerified(registry, keyring).dossiers;
+  const alreadyAudited = new Set(
+    Object.entries(verified)
+      .filter(([, d]) => d.dossierConstruction === 'A' || d.dossierConstruction === 'B')
+      .map(([bh]) => bh),
+  );
   const limit = process.env.QRM_AUDIT_LIMIT ? parseInt(process.env.QRM_AUDIT_LIMIT, 10) : undefined;
   const pending = selectPending(plan, alreadyAudited, limit);
-  console.error(`[run-auditor] ${plan.length} in-scope, ${alreadyAudited.size} already audited, ${pending.length} to process this run (limit=${limit ?? 'none'})`);
+  console.error(`[run-auditor] ${plan.length} in-scope, ${alreadyAudited.size} already audited (verified, current-schema), ${pending.length} to process this run (limit=${limit ?? 'none'})`);
 
   for (const item of pending) {
     const signer = await makeRemoteSigner({
