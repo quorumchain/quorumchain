@@ -25,3 +25,13 @@ export function computeAuditScope(claims: ScopeClaim[], anchoredContraryRefs: Se
   inScope.sort((a, b) => (a.ballotHash < b.ballotHash ? -1 : a.ballotHash > b.ballotHash ? 1 : 0));
   return { inScope };
 }
+
+export function renderScopeRecord(scope: AuditScope): string {
+  const lines = ['# Audit scope (CIP-10 NI-AA9 — deterministic, replayable)', '',
+    '_Which claims are audit-eligible, and which on-chain rule matched. Rule 1 = type ≠ SETTLED; rule 2 = unanimous + anchored contrary reference._', ''];
+  if (scope.inScope.length === 0) { lines.push('_No claims in scope._', ''); return lines.join('\n'); }
+  lines.push('| claim | rule |', '|-------|------|');
+  for (const s of scope.inScope) lines.push(`| \`${s.ballotHash.slice(0, 12)}\` | rule ${s.rule} |`);
+  lines.push('');
+  return lines.join('\n');
+}

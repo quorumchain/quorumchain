@@ -10,6 +10,7 @@ import { readLog, verifyLog } from './vote-log.ts';
 import { loadRegistry } from './ballot-registry.ts';
 import { buildViews } from './commons-read.ts';
 import { renderClaimMarkdown, renderIndexMarkdown } from './commons-render.ts';
+import { computeAuditScope, renderScopeRecord, type ScopeClaim } from './audit-scope.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DATA = join(HERE, '..', 'data');
@@ -30,6 +31,14 @@ for (const v of views) {
   writeFileSync(join(OUT, `${v.ballotHash.slice(0, 12)}.md`), renderClaimMarkdown(v));
 }
 writeFileSync(join(OUT, 'INDEX.md'), renderIndexMarkdown(views));
+
+const scopeClaims: ScopeClaim[] = views.map((v) => ({
+  ballotHash: v.ballotHash, epistemicType: v.epistemicType,
+  unanimousSubstantive: v.status === 'RESOLVED' && v.stances.length === 1,
+}));
+const anchoredContraryRefs = new Set<string>(); // registry-derived; empty until anchored supersedes exist
+const scope = computeAuditScope(scopeClaims, anchoredContraryRefs);
+writeFileSync(join(OUT, 'AUDIT-SCOPE.md'), renderScopeRecord(scope));
 
 const withStatement = views.filter((v) => v.statement !== null).length;
 console.log(`Wrote ${views.length} claim pages + INDEX.md to docs/commons/ (chain valid: ${chainValid}; ${withStatement} with recorded statements)`);
