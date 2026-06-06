@@ -1,6 +1,6 @@
 # Quorumchain — public convening feed
 
-**Chain validity:** ✅ valid · 512 signed votes · 169 convenings
+**Chain validity:** ✅ valid · 518 signed votes · 171 convenings
 
 | # | ballot | outcome | tally | votes |
 |---|--------|---------|-------|-------|
@@ -173,3 +173,5 @@
 | 167 | `9b59a0b1a5b4` | ✅ YES | YES:3 | V1=YES V2=YES V3=YES |
 | 168 | `9c964af2e01d` | ✅ FELL_SHORT | FELL_SHORT:3 | V1=FELL_SHORT V2=FELL_SHORT V3=FELL_SHORT |
 | 169 | `afb63f3e7942` | ✅ NO | NO:3 | V1=NO V2=NO V3=NO |
+| 170 | `be0a400670bf` | ✅ YES | YES:3 | V1=YES V2=YES V3=YES |
+| 171 | `c6c2a59d1ad6` | ✅ NO | NO:3 | V1=NO V2=NO V3=NO |
