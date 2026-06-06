@@ -1,6 +1,6 @@
 # Quorumchain — public convening feed
 
-**Chain validity:** ✅ valid · 476 signed votes · 157 convenings
+**Chain validity:** ✅ valid · 503 signed votes · 166 convenings
 
 | # | ballot | outcome | tally | votes |
 |---|--------|---------|-------|-------|
@@ -161,3 +161,12 @@
 | 155 | `b66e0549beca` | ✅ YES | YES:3 | V1=YES V2=YES V3=YES |
 | 156 | `8415ba86b03c` | ✅ YES | YES:3 | V1=YES V2=YES V3=YES |
 | 157 | `730d91089d00` | ✅ YES | YES:3 | V1=YES V2=YES V3=YES |
+| 158 | `7583df9d7d09` | ✅ YES | YES:3 | V1=YES V2=YES V3=YES |
+| 159 | `942307e5fd49` | ✅ YES | YES:3 | V1=YES V2=YES V3=YES |
+| 160 | `7c64bd23e697` | ✅ YES | YES:3 | V1=YES V2=YES V3=YES |
+| 161 | `9c689ec14767` | ✅ YES | YES:3 | V1=YES V2=YES V3=YES |
+| 162 | `0021a9e7c578` | ✅ ABSTAIN | ABSTAIN:3 | V1=ABSTAIN V2=ABSTAIN V3=ABSTAIN |
+| 163 | `e31a244158b2` | ✅ INDETERMINATE | INDETERMINATE:3 | V1=INDETERMINATE V2=INDETERMINATE V3=INDETERMINATE |
+| 164 | `a531b155458a` | ✅ NO | NO:2 ABSTAIN:1 | V1=NO V2=NO V3=ABSTAIN |
+| 165 | `a611849bfe3c` | ✅ NO | YES:1 NO:2 | V1=YES V2=NO V3=NO |
+| 166 | `a9f6c5956578` | ✅ NO | NO:3 | V1=NO V2=NO V3=NO |
