@@ -61,6 +61,10 @@ async function main() {
   if (E.QRM_NEW_ANCHOR) meta.newAnchor = E.QRM_NEW_ANCHOR === '1' || E.QRM_NEW_ANCHOR === 'true';
   if (E.QRM_TYPES_FOR) meta.typesClaimFor = E.QRM_TYPES_FOR;
   if (E.QRM_PROPOSED_TYPE) meta.proposedType = E.QRM_PROPOSED_TYPE as BallotMeta['proposedType'];
+  // CIP-16 (ballot be0a4006): the Distinct-Question Separator. Recorded as declared meta in
+  // the same class as supersedes; UNHASHED (not in boundTypeOf/anchorCommitmentOf), so it
+  // never alters the ballot hash. Lets a supersede promote within its own sibling lineage.
+  if (E.QRM_QUESTION_ID) meta.questionId = E.QRM_QUESTION_ID;
   // CIP-14: QRM_BIND_TYPE binds QRM_TYPE INTO the ballot hash (and every signature) — the
   // type becomes signed, not advisory. Opt-in, so QRM_TYPE alone stays v1/advisory.
   if ((E.QRM_BIND_TYPE === '1' || E.QRM_BIND_TYPE === 'true') && meta.epistemicType) meta.typeBinding = 'hashed';

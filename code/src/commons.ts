@@ -106,6 +106,17 @@ export interface BallotMeta {
   // signed, not merely advisory. Set iff the type was actually hashed (NI-14f). Absent =
   // a v1 ballot whose type, if any, is advisory. Orthogonal to panel ratification (NI-14d).
   typeBinding?: 'hashed';
+  // CIP-16 (core ballot be0a4006): the Distinct-Question Separator. A short stable string
+  // naming WHICH question a ballot adjudicates within a supersede chain (e.g. "38-factual" /
+  // "38-procedural"). Declared meta in the SAME class as `supersedes` — advisory at
+  // declaration, read by the projection, and deliberately UNHASHED (NOT in boundTypeOf /
+  // anchorCommitmentOf), so adding it never breaks an already-signed ballot's verifyEntry.
+  // The lineage pass groups by (rootOf(bh), questionId ?? ''): ballots sharing a root but
+  // declaring DIFFERENT questionIds form SEPARATE sibling lineages (NI-16a). The separator
+  // may only PARTITION a group before the existing CIP-13/CIP-15 gates run — it can never
+  // merge groups or promote a successor those gates reject (NI-16b: promotions are
+  // monotone-downward under any partition).
+  questionId?: string;
 }
 
 // CIP-13 v0.2 — the contrary-evidence weight scale (CIP-10 amendment, ballot 88d756d6).
@@ -333,16 +344,32 @@ export function buildClaimIndex(
     }
   };
 
-  // Group every ballot by its lineage root, preserving log order within a group.
+  // CIP-16 (ballot be0a4006): group by the composite key (rootOf(bh), questionId ?? ''),
+  // not rootOf alone. Ballots sharing a supersede-root but declaring DIFFERENT questionIds
+  // form SEPARATE sibling lineages (NI-16a); same-or-absent questionId groups as before. The
+  // separator only PARTITIONS the member set before the per-group gates below run (NI-16b) —
+  // it never merges groups and never relaxes a gate. The key is a pure function of the log
+  // (NI-13g determinism preserved); ' ' separates the components unambiguously.
+  const groupKey = (bh: string) => `${rootOf(bh)} ${ballotMeta[bh]?.questionId ?? ''}`;
   const groups = new Map<string, string[]>();
   for (const bh of order) {
-    const root = rootOf(bh);
-    if (!groups.has(root)) groups.set(root, []);
-    groups.get(root)!.push(bh);
+    const key = groupKey(bh);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(bh);
   }
 
-  for (const [root, members] of groups) {
+  for (const [, members] of groups) {
     if (members.length === 1) continue; // no supersession — keep the stand-alone default
+    // The sibling group's local base: the earliest member (log order) whose supersedes target
+    // is NOT in this same sibling group. With CIP-16 a sibling may not contain the bare lineage
+    // root (the root can belong to a different questionId partition), so seed the head walk from
+    // the group's own base rather than rootOf. members[0] is the first-seen member (order is
+    // preserved above); its supersedes either points outside the group or is the chain origin.
+    const inGroup = new Set(members);
+    const root = members.find((bh) => {
+      const sup = ballotMeta[bh]?.supersedes;
+      return !sup || !inGroup.has(sup);
+    })!;
     // CIP-15 splits the gate (NI-15b). reviewAdmissible: a successor s passes the STRUCTURAL
     // anchor gate over head — ratified, type-consistent (NI-13h), and — unless NORMATIVE — its
     // cited anchors clear anchorGatePasses (the verified, offline structural check that replaces
