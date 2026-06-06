@@ -86,7 +86,9 @@ _Which claims are audit-eligible, and which on-chain rule matched. Rule 1 = type
 | `989e5532c602` | rule 1 |
 | `9927006a75b5` | rule 1 |
 | `9b53e408780d` | rule 1 |
+| `9b59a0b1a5b4` | rule 1 |
 | `9c689ec14767` | rule 1 |
+| `9c964af2e01d` | rule 1 |
 | `a531b155458a` | rule 1 |
 | `a611849bfe3c` | rule 1 |
 | `a89c676a47b0` | rule 1 |
@@ -96,6 +98,7 @@ _Which claims are audit-eligible, and which on-chain rule matched. Rule 1 = type
 | `ab7064516f23` | rule 1 |
 | `ae4abf0b8a78` | rule 1 |
 | `aecf01411331` | rule 1 |
+| `afb63f3e7942` | rule 1 |
 | `b0c6ef7bf8d5` | rule 1 |
 | `b54660b9cabc` | rule 1 |
 | `b644657f7fc8` | rule 1 |
