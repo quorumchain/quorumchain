@@ -1,6 +1,6 @@
 {
   "chainValid": true,
-  "entryCount": 470,
+  "entryCount": 476,
   "convenings": [
     {
       "ballotHash": "0bed297e5dd0e680a8beb092f89eb6bdf8ea73a3021a9fca1f241ca070d9e370",
@@ -3610,6 +3610,52 @@
     },
     {
       "ballotHash": "b66e0549beca31bf82e46a9004152b98b2c45bf52e30ea8c0f959e0f28f5d5fa",
+      "ratified": true,
+      "verdict": "YES",
+      "required": 2,
+      "tally": {
+        "YES": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "YES"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "YES"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "YES"
+        }
+      ]
+    },
+    {
+      "ballotHash": "8415ba86b03c5eb8a06fbf2ff2e81ea263197e0b18eb0c11a33b51fa75d666cd",
+      "ratified": true,
+      "verdict": "YES",
+      "required": 2,
+      "tally": {
+        "YES": 3
+      },
+      "votes": [
+        {
+          "validatorId": "V1",
+          "verdict": "YES"
+        },
+        {
+          "validatorId": "V2",
+          "verdict": "YES"
+        },
+        {
+          "validatorId": "V3",
+          "verdict": "YES"
+        }
+      ]
+    },
+    {
+      "ballotHash": "730d91089d0005e631a0de6fb1a17091be9b78ebf2b84836ea7e1bae96e2407a",
       "ratified": true,
       "verdict": "YES",
       "required": 2,

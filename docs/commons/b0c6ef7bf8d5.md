@@ -11,11 +11,9 @@
 
 - **YES** — CONSENSUS · held by V1, V2, V3 · panel votes: 3 · support: not externally anchored
 
-**Contrary-evidence weight (CIP-10 auditor):** WEAK.
+## Adversarial review (CIP-10 auditor)
 
-### Falsification conditions (what anchored evidence would warrant re-adjudication)
-
-- toward **re-adjudication**: (anchor-gated, for any CIP-13 re-adjudication): 1. A Second Circuit (or Supreme Court) opinion reversing or vacating the programmatic-sales holding on the merits — would directly impair the "a federal court held" framing if it erased the holding's standing. 2. Discovery that the frozen claim i
+_Adversarial review pending (in-scope claim — dossier not yet produced)._
 
 **Panel-state receipt (NI-9a):** 3 validators — V1, V2, V3
 

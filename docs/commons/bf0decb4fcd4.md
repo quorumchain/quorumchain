@@ -11,11 +11,9 @@
 
 - **YES** — CONSENSUS · held by V1, V2, V3 · panel votes: 3 · support: not externally anchored
 
-**Contrary-evidence weight (CIP-10 auditor):** NEGLIGIBLE.
+## Adversarial review (CIP-10 auditor)
 
-### Falsification conditions (what anchored evidence would warrant re-adjudication)
-
-- toward **re-adjudication**: re-adjudication would be warranted by a primary appellate/Supreme Court order vacating or reversing Van Loon, an en banc rehearing superseding the panel, an official correction showing the relevant holding/date was misstated, or a later controlling decision holding that OFAC did have statutory autho
+_Out of audit scope (SETTLED fact — adversarial review not required)._
 
 **Panel-state receipt (NI-9a):** 3 validators — V1, V2, V3
 

@@ -9,6 +9,27 @@
 
 - **YES** — CONSENSUS · held by V1, V2, V3 · panel votes: 3 · support: not externally anchored
 
+## Adversarial review (CIP-10 auditor)
+
+auditor: **V1** · contrary-evidence weight: **NEGLIGIBLE** — retrospective audit (Construction A) — produced after vote.
+
+### Searched, rejected (suppression audit-trail, NI-AA8)
+
+- Chainlink OCR (Off-Chain Reporting) protocol documentation — nodes co-sign an aggregated report, posted on-chain via a single transmit tx with the aggregate signature set: rejected — Confirms, does not contradict, the spec's 'verify OCR aggregate signature + on-chain round' and 'one feed = one family (shared aggregation contract)' characterization. The single shared aggregator output is real; treating it as one family is factually correct.
+- Pyth Network documentation — first-party publishers (exchanges/market-makers post their own prices) relayed cross-chain via Wormhole VAA: rejected — Confirms the 'Pyth (Wormhole VAA)' label. Pyth's first-party model IS a genuinely different data-generating process from Chainlink's third-party aggregation, which could argue the family-collapse rule OVER-collapses when both nominally read the same venue — but that is a design judgment, and conservative collapse on shared upstream is the SAFE direction (over-collapse fails toward halt, never toward false-diversity), so it is not anchored evidence of unsoundness.
+- UMA Optimistic Oracle documentation — assert-and-dispute with economic bonds, no continuous price feed: rejected — Confirms the 'distinct economic-dispute family' classification; nothing contradicts treating it as a separate family from data-feed oracles.
+- Mango Markets oracle-price-manipulation exploit (Oct 2022) and Synthetix sKRW feed incident (June 2019) — on-chain records of oracle outputs being manipulated/wrong: rejected — These document that a signed oracle value can be FALSE — which is precisely what NI-15b asserts ('SAID X ≠ X is TRUE', structural-pass labeled content-verification-pending, never RESOLVED-as-truth). They corroborate the halt-over-degrade design rather than refute it.
+- Tether reserve controversy — CFTC order (Oct 2021) and NYAG settlement (Feb 2021); BDO publishes attestations, not full audits: rejected — The worked example loosely says 'audit' where 'attestation' is more accurate, but it is illustrating ANCHOR TYPES counting toward family diversity, not asserting Tether's backing is true. NI-15b explicitly forbids structural-pass from being read as truth-confirmed, so the unresolved factual status of Tether's reserves does not make the spec's example unsound.
+- TLSNotary / zkTLS protocol literature — proves transcript authenticity (a named origin returned this response), with documented trust assumptions (notary, selective-disclosure limits): rejected — Confirms the spec's claim that zkTLS 'proves an HTTPS response came from a named origin' and bridges class-2 docs into verifiable form; the protocol's known limits are exactly the 'said ≠ true' caveat the spec already carries.
+- RFC-3161 timestamping / OpenTimestamps specifications — bind data to a time, prove nothing about content truth: rejected — Confirms the spec's 'proves time only' characterization verbatim. No contradiction.
+- Legal-procedure record class — court records unsealed after the fact, FOIA/embargoed filings released later than their internal date (e.g., grand-jury or settlement documents surfaced post-dated): rejected — This is the one real-world phenomenon that pressures the freshness rule (asOf must postdate the superseded head's evidenceTime would block a legitimately-newer-SURFACED but older-DATED document). But it is a logic/semantics caveat about whether asOf means artifact-date vs observation/attestation-date, resolvable by defining asOf as surfacing/attestation time — a foldable caveat the panel explicitly invited, not anchored evidence that the spec requires redesign.
+
+### Falsification conditions (what anchored evidence would warrant re-adjudication)
+
+- toward **MATERIAL/NO**: Primary documentation (Chainlink/Pyth/UMA official docs or audited source) showing a NAMED factual claim in the taxonomy is wrong — e.g. Pyth does NOT use Wormhole, or Chainlink OCR exposes no verifiable aggregate signature/round — such that the offline structural verifier could not actually perform the verification the spec specifies.
+- toward **MATERIAL/NO**: A documented case of two oracle networks the spec would treat as SEPARATE families (e.g. Chainlink + a non-overlapping network) that in fact share a single point of failure invisible to provenanceTrace (shared signing infra, shared aggregator codebase, common custodial data vendor), demonstrating the family rule structurally UNDER-collapses on a real dependency.
+- toward **WEAK/caveat**: A concrete, dated re-adjudication precedent (court unsealing / delayed regulatory disclosure) whose only admissible anchor carries an artifact-date older than the superseded head's evidenceTime AND whose attestation/surfacing time is also unrecoverable — proving the freshness monotonicity would permanently block a legitimate supersede rather than merely require an asOf-semantics clarification.
+
 **Panel-state receipt (NI-9a):** 3 validators — V1, V2, V3
 
 _This page is a projection of the signed consensus log. It records the epistemic state — consensus, credible dissent, and the honest unknown — never a decree of truth._

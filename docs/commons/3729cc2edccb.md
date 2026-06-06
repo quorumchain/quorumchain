@@ -17,6 +17,25 @@ Vote RATIFY if the amended draft is now sound to adopt as the binding direction;
 
 - **RATIFY** — CONSENSUS · held by V1, V2, V3 · panel votes: 3 · support: not externally anchored
 
+## Adversarial review (CIP-10 auditor)
+
+auditor: **V2** · contrary-evidence weight: **NEGLIGIBLE** — retrospective audit (Construction A) — produced after vote.
+
+### Searched, rejected (suppression audit-trail, NI-AA8)
+
+- src/commons.ts: lineage pass reviewAdmissible/promotable: rejected — Checked for the prior V2 sequencing flaw. The projection does not promote a supersede unless it is ratified, type-consistent, and anchor-gated; prior stays current when the gate fails.
+- src/commons.ts: NI-13h typeOf(s) !== typeOf(head) guard: rejected — Checked for the prior V1 re-type ride-along flaw. Type mismatch prevents promotion even where other gate conditions could pass.
+- test/commons-cip13.test.ts: G13d/NI-13h tests: rejected — Tests explicitly cover no-anchor non-promotion, different-type non-promotion, and matching-type valid promotion.
+- test/commons-cip13.test.ts: G13h test: rejected — Checked for silent competing-successor ambiguity. Test anchors the stated convention: latest valid successor in log order becomes current.
+- src/anchor.ts and test/cip15-anchor.test.ts: rejected — Later CIP-15 anchor verifier is stricter than CIP-13's draft-level anchor gate, not a contradiction: it structurally verifies anchor provenance and still does not move the head without content confirmation.
+- src/signed-vote.ts and src/ballot-registry.ts: rejected — Checked for hash/signature binding gaps around epistemicType. CIP-14/CIP-15 add optional hash binding for type and anchor commitments; this is a downstream hardening path, not anchored evidence that the amended CIP-13 direction remains unsound.
+
+### Falsification conditions (what anchored evidence would warrant re-adjudication)
+
+- toward **REJECT**: Primary protocol text or implementation showing a superseding SETTLED/EMPIRICAL_LIVE ballot can become lineage.current in v0.1 without passing an external-anchor gate.
+- toward **REJECT**: Primary protocol text or implementation showing a superseding ballot with a different epistemicType from its predecessor can be promoted within the same lineage.
+- toward **REJECT**: Primary protocol text or implementation showing competing valid successors are resolved by an unstated or nondeterministic tie-break rather than the explicit latest-valid-successor log-order convention or a CIP-5 fork.
+
 **Panel-state receipt (NI-9a):** 3 validators — V1, V2, V3
 
 _This page is a projection of the signed consensus log. It records the epistemic state — consensus, credible dissent, and the honest unknown — never a decree of truth._

@@ -11,11 +11,9 @@
 
 - **YES** — CONSENSUS · held by V1, V2, V3 · panel votes: 3 · support: not externally anchored
 
-**Contrary-evidence weight (CIP-10 auditor):** NEGLIGIBLE.
+## Adversarial review (CIP-10 auditor)
 
-### Falsification conditions (what anchored evidence would warrant re-adjudication)
-
-- toward **re-adjudication**: Re-adjudication would require new anchored evidence of a kind that does not exist and is not physically expected — e.g., a reproduced, peer-reviewed, reference-body-endorsed determination overturning the 2:1 H:O stoichiometry or the covalent two-H/one-O structure of the water molecule, or an authori
+_Out of audit scope (SETTLED fact — adversarial review not required)._
 
 **Panel-state receipt (NI-9a):** 3 validators — V1, V2, V3
 
