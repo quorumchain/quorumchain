@@ -11,10 +11,12 @@ import { loadRegistry } from './ballot-registry.ts';
 import { buildViews } from './commons-read.ts';
 import { renderClaimMarkdown, renderIndexMarkdown } from './commons-render.ts';
 import { computeAuditScope, renderScopeRecord, type ScopeClaim } from './audit-scope.ts';
+import { anchorTipAtPublish, rpcFromEnv } from './anchor-publish.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DATA = join(HERE, '..', 'data');
 const LOG = join(DATA, 'votes.log');
+const ANCHORS = join(DATA, 'anchors.jsonl');
 const REGISTRY = join(DATA, 'ballots.jsonl');
 const PINNED = join(HERE, '..', 'pinned-keyring.json');
 const OUT = join(HERE, '..', '..', 'docs', 'commons');
@@ -42,3 +44,9 @@ writeFileSync(join(OUT, 'AUDIT-SCOPE.md'), renderScopeRecord(scope));
 
 const withStatement = views.filter((v) => v.statement !== null).length;
 console.log(`Wrote ${views.length} claim pages + INDEX.md to docs/commons/ (chain valid: ${chainValid}; ${withStatement} with recorded statements)`);
+
+// CIP-17: always write the Layer-B tip commitment; submit to Solana when configured.
+// Anchoring NEVER blocks publishing — on outage it degrades to Layer-B-only (NI-17a).
+const anchor = await anchorTipAtPublish({ logPath: LOG, anchorPath: ANCHORS, rpc: await rpcFromEnv(), now: Date.now() });
+if (anchor.skipped) console.log(`Anchor: skipped (${anchor.note})`);
+else console.log(`Anchor: seq ${anchor.anchorSeq} for tip ${anchor.tipHash?.slice(0, 12)} — ${anchor.degraded ? `DEGRADED to Layer-B-only (${anchor.note})` : `witnessed on Solana (${anchor.signature})`}`);

@@ -2,3 +2,10 @@
 # never be committed. The vote log is a local transcript; publish a specific
 # convening deliberately with `git add -f data/votes.log` if/when desired.
 data/
+
+# Installed dependencies (CIP-17 added @solana/web3.js; commit package.json +
+# lockfile, never the tree). The Solana anchoring keypair secret is local-only
+# (treated like a validator key) and lives under data/ above; never commit it.
+node_modules/
+*.solana-keypair.json
+solana-anchor-key.json
