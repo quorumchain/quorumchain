@@ -119,6 +119,7 @@ _Which claims are audit-eligible, and which on-chain rule matched. Rule 1 = type
 | `cea2d144bf4b` | rule 1 |
 | `cf9b24b05acb` | rule 1 |
 | `d0cfa8dd48e2` | rule 1 |
+| `d0ddf78ac831` | rule 1 |
 | `d34702c44c57` | rule 1 |
 | `d3de540c8685` | rule 1 |
 | `d44c592c8d0d` | rule 1 |
