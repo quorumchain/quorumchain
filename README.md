@@ -65,7 +65,7 @@ Invoke: V2 `codex exec --skip-git-repo-check "…"` · V3 `hermes chat -q "…"`
 ### Done — consensus & decisions
 
 - **19 CIPs (0–18) ratified; 7 of the core also red-teamed** (CIP-4/5/6/7/8/9/10 + CIP-0 D10). Both product pillars (CIP-8 Ledger + CIP-9 Commons) and the node-economics/L1-graduation design (CIP-10) are ratified and red-teamed. The latest additions: **CIP-17** Solana memo external anchoring (now **live on mainnet-beta**, witness-only) and **CIP-18** the proof-of-inference attestation envelope (descriptive vote-payload provenance, never gates consensus).
-- **Full 3-AI panel online; 60-plus signed convening rounds** (CIP-18 ratified at round 63) — a hash-chained, independently-verifiable log (200-plus entries, verified valid).
+- **Full 3-AI panel online; 173 signed convening rounds** — a hash-chained, independently-verifiable log (524 entries, verified valid).
 - **Live case studies, decided by independent per-validator research:** the $85M MicroStrategy/Polymarket dispute (r29, **YES 3/3** on frozen criteria) · the Henry Nowak police-response controversy (r40, **FELL_SHORT 3/3** on the duty of care) · three contested Polymarket resolutions (r41–43) — the $7M Ukraine mineral deal (**NO 2/3**, UMA whale-capture; V2 dissent on the broad "announcement qualifies" clause), U.S. intervention in Venezuela (**NO 3/3** — the panel *defended* the resolution on the frozen territorial-control criteria), and Barron Trump's DJT memecoin (**INDETERMINATE 2/3**; V3's NO dissent arguably the stronger reading under the frozen "preponderance of evidence" standard).
 
 ### Done — code, panel-reviewed under TDD
