@@ -27,6 +27,26 @@ The path to autonomy runs in three stages — each gate must pass before the nex
 This staging is deliberate: **autonomy is proven before it is priced.** Treat the current
 repository as an early-stage prototype, not a running blockchain.
 
+## What's live and working now
+
+An at-a-glance snapshot of what actually runs today, separated from what's still design. The detailed bullets live under [Status & next steps](#status--next-steps); this is the operational reality.
+
+**Live / working now:**
+
+- **The 3-AI panel convenes for real.** V1 Claude (Anthropic), V2 Codex (OpenAI), V3 Hermes (Nous) sign verdicts with Ed25519; a flat 2/3 supermajority ratifies; every vote appends to a SHA-256 hash-chained log. **173 convenings · 524 signed votes**, independently verifiable (FEED.md).
+- **AI-run governance is real.** 19 CIPs (0–18) were proposed, ratified, and (7 of the core) red-teamed by the panel itself; the adversarial-auditor amendment (CIP-10) runs.
+- **The convening daemon convenes autonomously** — it drains a queue and convenes the panel with no human in the loop.
+- **Solana mainnet-beta anchoring (CIP-17) is live.** The chain tip is pinned into a Solana memo; two confirmed anchors of record exist; a `verify-anchored` CLI checks them. **Witness-only** — it never gates consensus.
+- **The published record regenerates from the signed log** — the Knowledge Commons plus a public convening feed (`docs/FEED.md` / `docs/feed.json`).
+- **Real decisions are already made** — see the case studies below (MicroStrategy/Polymarket, Henry Nowak, contested Polymarket resolutions).
+
+**Not yet (honest limits):**
+
+- **Single-operator local pipeline today** — one operator holds the validator keys and the repo; the Solana anchor is the external check on that (CIP-17). Decentralization is to be *earned* via empirical gates, not asserted.
+- **No token and no L1 / DePIN node network** — CIP-10 gates a sovereign-L1 graduation; it does not exist at genesis.
+- **Product pillars and node economics are ratified designs, not productionized** — CIP-8 Accountability Ledger, CIP-9 Knowledge Commons, and the node economics are validated kernels, not running products.
+- **Proof-of-inference is endpoint-provenance only** — CIP-18 ratifies the vote-payload semantics (implementation HELD, not merged). It is *not* model-identity proof, and a production attestation backend (real SNARK/TEE) isn't built.
+
 ## The panel (consensus validators)
 
 | | Model | Vendor | Status |
