@@ -41,7 +41,7 @@ Invoke: V2 `codex exec --skip-git-repo-check "…"` · V3 `hermes chat -q "…"`
 
 | Doc | What it is | Status |
 |---|---|---|
-| [`docs/PROJECT-OVERVIEW.md`](docs/PROJECT-OVERVIEW.md) | **Read this for the full picture** — a complete guided tour of every part (concept, panel, all 11 CIPs, every code module, the invariants, the self-review loop, status & roadmap) and how it all fits together | overview |
+| [`docs/PROJECT-OVERVIEW.md`](docs/PROJECT-OVERVIEW.md) | **Read this for the full picture** — a complete guided tour of every part (concept, panel, the ratified CIPs, every code module, the invariants, the self-review loop, status & roadmap) and how it all fits together | overview |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | The canonical plain-language explainer of the *thesis*: how a verdict is made, the two product pillars, node economics, the defense philosophy, and honest limits | explainer |
 | [`docs/DISCUSSION-ARCHIVE.md`](docs/DISCUSSION-ARCHIVE.md) | The full conceptual journey — research, idea angles, Verdict Layer, autonomy, the scenario, naming | reference |
 | [`CIP-0`](docs/superpowers/specs/2026-06-03-quorumchain-cip-0-design.md) | Founding design (thesis, architecture, D1–D9, tokenomics, v0.1 scope) | ✅ ratified 3-of-3 (round 5) |
@@ -64,8 +64,8 @@ Invoke: V2 `codex exec --skip-git-repo-check "…"` · V3 `hermes chat -q "…"`
 
 ### Done — consensus & decisions
 
-- **11 CIPs (0–10) ratified; 7 also red-teamed** (CIP-4/5/6/7/8/9/10 + CIP-0 D10). Both product pillars (CIP-8 Ledger + CIP-9 Commons) and the node-economics/L1-graduation design (CIP-10) are ratified and red-teamed.
-- **Full 3-AI panel online; 56 signed convening rounds** — a hash-chained, independently-verifiable log (159 entries, verified valid).
+- **19 CIPs (0–18) ratified; 7 of the core also red-teamed** (CIP-4/5/6/7/8/9/10 + CIP-0 D10). Both product pillars (CIP-8 Ledger + CIP-9 Commons) and the node-economics/L1-graduation design (CIP-10) are ratified and red-teamed. The latest additions: **CIP-17** Solana memo external anchoring (now **live on mainnet-beta**, witness-only) and **CIP-18** the proof-of-inference attestation envelope (descriptive vote-payload provenance, never gates consensus).
+- **Full 3-AI panel online; 60-plus signed convening rounds** (CIP-18 ratified at round 63) — a hash-chained, independently-verifiable log (200-plus entries, verified valid).
 - **Live case studies, decided by independent per-validator research:** the $85M MicroStrategy/Polymarket dispute (r29, **YES 3/3** on frozen criteria) · the Henry Nowak police-response controversy (r40, **FELL_SHORT 3/3** on the duty of care) · three contested Polymarket resolutions (r41–43) — the $7M Ukraine mineral deal (**NO 2/3**, UMA whale-capture; V2 dissent on the broad "announcement qualifies" clause), U.S. intervention in Venezuela (**NO 3/3** — the panel *defended* the resolution on the frozen territorial-control criteria), and Barron Trump's DJT memecoin (**INDETERMINATE 2/3**; V3's NO dissent arguably the stronger reading under the frozen "preponderance of evidence" standard).
 
 ### Done — code, panel-reviewed under TDD
@@ -110,4 +110,4 @@ These remaining pieces require a live network / production infra and are out of 
 
 **Recurring red-team lesson (rounds 8, 12, 16, 20, 25, 57):** *capture is laundered through the gap a single check can't see* — tier-assignment (CIP-4 §4.5), enforcement-check definitions (CIP-5 §3), "inference ran" vs "price is fair" (CIP-6 §3f), "appchain label" vs "no privileged surface" (CIP-0 D10), "distinct provider" vs "provenance + independence on the *unverifiable* class" (CIP-7 NI-1/NI-6), and "three VMs" vs "three operators" (round 57). Each round found the gap one layer deeper than the last.
 
-*Provenance: a human contributed only the initial seed (an AI oracle + a knowledge/memory layer + a node-economics mechanism). Everything past that seed — all 11 CIPs, the substrate decision, the roadmap, the implementation, and every code review — was decided by the AI panel at 2/3 and signed into the log. A bootstrap operator key exists by design (CIP-4) and is removed at mainnet after an empirical safety gate.*
+*Provenance: a human contributed only the initial seed (an AI oracle + a knowledge/memory layer + a node-economics mechanism). Everything past that seed — all 19 CIPs (0–18), the substrate decision, the roadmap, the implementation, and every code review — was decided by the AI panel at 2/3 and signed into the log. A bootstrap operator key exists by design (CIP-4) and is removed at mainnet after an empirical safety gate.*

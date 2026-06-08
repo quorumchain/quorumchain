@@ -329,10 +329,15 @@ entryHash = sha256( prevHash + serialized(vote) )      genesis prevHash = 0…0 
 
 Any edit, deletion, or reordering breaks the chain, and verification recomputes end-to-end,
 so the log is **tamper-evident and append-only** — *not* unrewritable. The local file can be
-edited; what the chain guarantees is that the edit is *detectable*. True immutability is
-reserved for the **anchored head**: the planned anchor is on-chain hash-pinning, periodically
-committing the chain head on-chain, and the anchor-trust-boundary caveat of §2 applies to
-that anchor as it would to any other.
+edited; what the chain guarantees is that the edit is *detectable*. Stronger immutability is
+reserved for the **anchored head**: external anchoring is on-chain hash-pinning, periodically
+committing the chain head on-chain. This is now **live** — CIP-17 commits the tip hash into a
+Solana mainnet-beta memo at cadence, making a rewrite at or before the latest anchored tip
+detectable against a substrate Quorumchain does not control (two confirmed anchors of record
+exist). Anchoring is **witness-only**: per NI-17a it never gates consensus and the chain
+operates unchanged if Solana is unreachable, and the anchor-trust-boundary caveat of §2 applies
+to that anchor as it would to any other. The unanchored suffix — entries newer than the latest
+confirmed anchor — is honestly not claimed externally witnessed (NI-17d).
 
 ### What can be put to the panel
 
@@ -993,8 +998,8 @@ trajectory, not a finished system: today a single-operator local pipeline, with 
 economics, and the decentralization to be *earned* through empirical gates rather than asserted.
 
 > **Knowledge by consensus, immutable by design** — where "immutable" denotes the property of §3:
-> tamper-evident today on the hash-chained log, and anchored-immutable once the chain head is
-> pinned on-chain.
+> tamper-evident on the hash-chained log, and externally witnessed for anchored history now that
+> the chain head is pinned to a Solana mainnet-beta memo at cadence (CIP-17, witness-only).
 
 ---
 
@@ -1019,6 +1024,8 @@ economics, and the decentralization to be *earned* through empirical gates rathe
 - **CIP-14** — type-bound ballot hash: binds `epistemicType` into the ballot hash (and thus every validator signature) via the same optional-append discipline as the round-57 nonce, so the type becomes SIGNED not merely declared (closing the CIP-13 NI-13a ideal). Legacy hashes stay byte-identical (NI-14a); `meta.typeBinding='hashed'` is the recompute discriminator (NI-14f); binding is the proposer's declaration, orthogonal to panel ratification (NI-14d). Ratified ballot `e0d17747…`.
 - **CIP-15** — the Tier-1 anchor verifier: replaces CIP-13's unverified `newAnchor:boolean` re-adjudication gate with a typed anchor object + an offline structural verifier (Chainlink/Pyth/UMA/zkTLS/… in the CIP-4 frozen type policy). Structural-now / content-deferred / class-1-first: a structural pass is labelled "verification-pending" and never confirmed-as-truth (NI-15b halt-over-degrade), one oracle network = one family regardless of node count (NI-11b family rule), and the anchor-set commitment is bound into the hash so a post-vote swap fails (NI-15e). Ratified ballot `e1bef9df…`.
 - **CIP-16** — the Distinct-Question Separator: an optional UNHASHED declared `meta.questionId` plus a composite lineage grouping key `(rootOf(bh), questionId ?? '')`, so two genuinely distinct questions that share a supersede-root project as separate sibling lineages instead of being silently merged (NI-16a). The separator may only partition a group before the existing CIP-13/CIP-15 gates run — never merge groups or grant a promotion those gates would reject (NI-16b, monotone-downward on promotions). Ratified ballot `be0a4006…`, round 61.
+- **CIP-17** — Solana memo external anchoring: an external, third-party **anchor of record** for the signed log — the chain's tip hash is periodically committed into a Solana mainnet-beta memo transaction, so a rewrite of local history becomes detectable against a substrate Quorumchain does not control. Three layers: Layer A (the unchanged Ed25519/SHA-256 source chain), Layer B (an in-repo append-only tip-commitment chain binding `{anchorSeq, tipHash, solanaTxSig, slot, asOf}`), Layer C (the mainnet-beta memo witness; devnet for tests only). Witness-only — no protocol decision is ever gated on Solana availability and Layer A operates unchanged when Layer C is unreachable (NI-17a); anchoring binds a confirmed mainnet-beta commitment at cadence (NI-17b); a rewrite at/before the latest anchored tip is detectable (NI-17c); the unanchored suffix is honestly *not* claimed detectable (NI-17d). A dedicated low-privilege anchoring key — distinct from every validator key — can only pay for/sign memo submissions; its worst-case compromise is spurious or withheld anchors, never a Layer-A integrity failure. Ratified ballot `d0ddf78a…`, round 62. **Live on mainnet-beta:** two confirmed anchors of record exist (CIP-17 head + CIP-18 head); a `verify-anchored` CLI checks them offline-then-online, and an endpoint is trusted as mainnet-beta only if its real `getGenesisHash()` matches the canonical mainnet genesis (this defeats a mislabeled devnet/testnet/private endpoint; it is *not* a defense against a fully-adversarial RPC).
+- **CIP-18** — the proof-of-inference attestation envelope: an optional, signed `attestation` envelope on the vote payload that records *how a vote's output was obtained* (endpoint provenance) as descriptive, signed evidence. Backend-agnostic — it governs the vote-payload contract, not any specific attestor backend. Provenance never gates consensus and degrades open: bands/reasons and every attestation field are descriptive-only, never enter `ballotHash` or the 2/3 tally (NI-18a); an attested envelope binds `responseHash == rawOutputHash` plus a ballot-binding `requestCommitment` (NI-18b); the Ed25519 signature covers the canonical attestation envelope (NI-18c); and a backend that cannot attest within the latency budget falls back unattested/degraded rather than ever throwing into the vote path (NI-18d). Appended under the same `!== undefined` discipline as the round-57 nonce, so legacy/unattested votes stay byte-identical and verify unchanged. **Honest ceiling:** this is endpoint provenance, *not* model-identity proof — even perfect attestation proves "the operator received this response from the vendor endpoint with `model=X`", not that the vendor ran those weights; the residual vendor-honesty gap is named, not hidden. The report distinguishes a signer's claimed-`attested` band from verified-attested (artifact present + checked). Ratified ballot `6c833607…`, round 63.
 
 > **Note on numbering.** These entries match the on-chain / `docs/consensus/` record one-to-one — there is no renumbering between the whitepaper and the signed chain. CIP-10 is *node economics and progressive decentralization* in both; the **Adversarial Auditor** is an amendment *within* CIP-10 (§5 / NI-AA1..AA9, ratified ballot `88d756d6…`), and the correlated-error defense is the round-60 amendment to the same CIP — neither is a separate CIP number. Consult `docs/consensus/` for the authoritative per-CIP records and ballots.
 
