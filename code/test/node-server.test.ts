@@ -50,14 +50,104 @@ function extendSnapshot(seedLog: string, count: number): { votesLog: string; bal
   return { votesLog: readFileSync(ext, 'utf8'), ballots: '', commons: { 'INDEX.md': '# c2' }, head: entries[entries.length - 1].entryHash, length: entries.length };
 }
 
-async function startNode() {
+async function startNode(allowedOrigins: string[] = []) {
   const data = bootData();
-  const cfg = { dataDir: data, port: 0, submitToken: 'S', adminToken: 'A', pinnedKeyring: keyring, chainId: 'c', quorum: 2,
+  const cfg = { dataDir: data, port: 0, submitToken: 'S', adminToken: 'A', pinnedKeyring: keyring, chainId: 'c', quorum: 2, allowedOrigins,
     limits: { maxBodyBytes: 1024, maxQuestionLen: 200, maxContextLen: 800, rateWindowMs: 60000, rateMaxPerWindow: 100, inboxMaxBytes: 1e9, nearDupThreshold: 0.8 } };
   const node = createNode(cfg);
   await node.listen();
   return { node, base: `http://127.0.0.1:${node.port()}`, data };
 }
+
+const ORIGIN = 'http://127.0.0.1:8765';
+
+test('CORS preflight from an allowed origin → 204 with ACAO + Allow-Methods/Headers', async () => {
+  const { node, base } = await startNode([ORIGIN]);
+  try {
+    const res = await fetch(`${base}/submit`, { method: 'OPTIONS', headers: { origin: ORIGIN, 'access-control-request-method': 'POST' } });
+    assert.equal(res.status, 204);
+    assert.equal(res.headers.get('access-control-allow-origin'), ORIGIN);
+    assert.equal(res.headers.get('vary'), 'Origin');
+    assert.equal(res.headers.get('access-control-allow-methods'), 'GET, POST, OPTIONS');
+    assert.equal(res.headers.get('access-control-allow-headers'), 'authorization, content-type');
+    assert.equal(res.headers.get('access-control-max-age'), '86400');
+  } finally { node.close(); }
+});
+
+test('CORS preflight from a disallowed origin gets NO ACAO and falls through to default routing', async () => {
+  const { node, base } = await startNode([ORIGIN]);
+  try {
+    // Disallowed origin → no CORS short-circuit; OPTIONS /submit falls through to 404.
+    const res = await fetch(`${base}/submit`, { method: 'OPTIONS', headers: { origin: 'http://evil.test', 'access-control-request-method': 'POST' } });
+    assert.equal(res.status, 404);
+    assert.equal(res.headers.get('access-control-allow-origin'), null);
+  } finally { node.close(); }
+});
+
+test('actual POST /submit from an allowed origin carries the ACAO header', async () => {
+  const { node, base } = await startNode([ORIGIN]);
+  try {
+    const res = await fetch(`${base}/submit`, { method: 'POST', headers: { origin: ORIGIN, authorization: 'Bearer S', 'content-type': 'application/json' }, body: JSON.stringify({ question: 'a real question', context: 'ctx' }) });
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get('access-control-allow-origin'), ORIGIN);
+    assert.equal(res.headers.get('vary'), 'Origin');
+  } finally { node.close(); }
+});
+
+test('with allowedOrigins empty (default), no ACAO header anywhere', async () => {
+  const { node, base } = await startNode([]);
+  try {
+    const post = await fetch(`${base}/submit`, { method: 'POST', headers: { origin: ORIGIN, authorization: 'Bearer S', 'content-type': 'application/json' }, body: JSON.stringify({ question: 'a real question', context: 'ctx' }) });
+    assert.equal(post.status, 200);
+    assert.equal(post.headers.get('access-control-allow-origin'), null);
+  } finally { node.close(); }
+});
+
+// F2: with CORS off (empty allowlist), OPTIONS must fall through to the SAME default routing
+// as before the change — never a CORS 204 short-circuit.
+test('F2: with allowedOrigins empty, OPTIONS falls through to default routing (byte-identical)', async () => {
+  const { node, base } = await startNode([]);
+  try {
+    // /submit is a POST route → OPTIONS is not matched → 404 not found (no auth carried).
+    const sub = await fetch(`${base}/submit`, { method: 'OPTIONS', headers: { origin: ORIGIN } });
+    assert.equal(sub.status, 404);
+    assert.equal(sub.headers.get('access-control-allow-origin'), null);
+    // /inbox is admin-gated → OPTIONS with no admin token → 401 unauthorized.
+    const inbox = await fetch(`${base}/inbox`, { method: 'OPTIONS', headers: { origin: ORIGIN } });
+    assert.equal(inbox.status, 401);
+    assert.equal(inbox.headers.get('access-control-allow-origin'), null);
+  } finally { node.close(); }
+});
+
+// F2: with an allowlisted origin, preflight still returns 204 + full headers (unchanged).
+test('F2: allowlisted origin preflight still returns 204 with full headers', async () => {
+  const { node, base } = await startNode([ORIGIN]);
+  try {
+    const res = await fetch(`${base}/inbox`, { method: 'OPTIONS', headers: { origin: ORIGIN, 'access-control-request-method': 'GET' } });
+    assert.equal(res.status, 204);
+    assert.equal(res.headers.get('access-control-allow-origin'), ORIGIN);
+    assert.equal(res.headers.get('access-control-allow-methods'), 'GET, POST, OPTIONS');
+  } finally { node.close(); }
+});
+
+// F1: a literal '*' in the allowlist must NOT open CORS to arbitrary origins.
+test('F1: a literal "*" in allowedOrigins never grants ACAO to a non-listed origin', async () => {
+  const { node, base } = await startNode(['*']);
+  try {
+    // arbitrary, non-listed origin → no ACAO on preflight, OPTIONS falls through to 404
+    const pre = await fetch(`${base}/submit`, { method: 'OPTIONS', headers: { origin: 'http://evil.test', 'access-control-request-method': 'POST' } });
+    assert.equal(pre.status, 404);
+    assert.equal(pre.headers.get('access-control-allow-origin'), null);
+    // and the actual POST carries no ACAO either
+    const post = await fetch(`${base}/submit`, { method: 'POST', headers: { origin: 'http://evil.test', authorization: 'Bearer S', 'content-type': 'application/json' }, body: JSON.stringify({ question: 'a real question', context: 'ctx' }) });
+    assert.equal(post.status, 200);
+    assert.equal(post.headers.get('access-control-allow-origin'), null);
+    // even a non-browser client literally sending `Origin: *` must NOT get a blanket '*' echoed
+    const star = await fetch(`${base}/submit`, { method: 'POST', headers: { origin: '*', authorization: 'Bearer S', 'content-type': 'application/json' }, body: JSON.stringify({ question: 'a real question', context: 'ctx' }) });
+    assert.equal(star.status, 200);
+    assert.equal(star.headers.get('access-control-allow-origin'), null);
+  } finally { node.close(); }
+});
 
 test('public reads work without a token; admin/submit require their token', async () => {
   const { node, base } = await startNode();

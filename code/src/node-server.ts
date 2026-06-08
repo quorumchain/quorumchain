@@ -27,8 +27,8 @@ function bearer(req: IncomingMessage): string | null {
   const h = req.headers.authorization;
   return h && h.startsWith('Bearer ') ? h.slice(7) : null;
 }
-function send(res: ServerResponse, status: number, body: unknown): void {
-  res.writeHead(status, { 'content-type': 'application/json' });
+function sendRaw(res: ServerResponse, status: number, body: unknown, extra: Record<string, string> = {}): void {
+  res.writeHead(status, { 'content-type': 'application/json', ...extra });
   res.end(JSON.stringify(body));
 }
 function materialize(content: string | null, name: string): string | null {
@@ -57,7 +57,7 @@ export function createNode(cfg: NodeConfig, getMode: () => 'live' | 'degraded' =
   // On overflow we send 413 ourselves, FLUSH it, then destroy the request stream (spec §11:
   // body cap returns 413 and destroys the stream). Destroying before the response is flushed
   // resets the socket and the client never sees the 413, so respond-then-destroy is required.
-  const readBody = (req: IncomingMessage, res: ServerResponse): Promise<string | null> =>
+  const readBody = (req: IncomingMessage, res: ServerResponse, cors: Record<string, string> = {}): Promise<string | null> =>
     new Promise((resolve) => {
       let size = 0; const chunks: Buffer[] = []; let over = false;
       req.on('data', (c: Buffer) => {
@@ -65,7 +65,7 @@ export function createNode(cfg: NodeConfig, getMode: () => 'live' | 'degraded' =
         size += c.length;
         if (size > cfg.limits.maxBodyBytes) {
           over = true;
-          res.writeHead(413, { 'content-type': 'application/json', connection: 'close' });
+          res.writeHead(413, { 'content-type': 'application/json', connection: 'close', ...cors });
           res.end(JSON.stringify({ error: 'body too large' }), () => req.destroy());
           resolve(null);
         } else chunks.push(c);
@@ -82,9 +82,24 @@ export function createNode(cfg: NodeConfig, getMode: () => 'live' | 'degraded' =
     return { prompts: [...reg.map((e) => `${e.prompt} ${e.context}`), ...pend.map((x) => x.p)], hashes: [...reg.map((e) => e.ballotHash), ...pend.map((x) => x.h)] };
   };
 
-  const reply = (res: ServerResponse, out: { status: number; body: any }) => send(res, out.status, out.body);
+  // CORS (config-gated). When QRM_ALLOWED_ORIGINS is unset the allowlist is empty and NO CORS
+  // header is ever emitted — byte-for-byte the prior behavior. An origin is allowed iff it
+  // EXACTLY matches an allowlist entry; there is no wildcard branch. We also never echo a
+  // literal '*' as the Origin (even if a non-browser client sends `Origin: *` and '*' was
+  // listed), so a blanket '*' is never emitted and an allowlisted node stays a strict
+  // allowlist. We echo the specific request Origin, never a blanket '*'.
+  const allowlist = cfg.allowedOrigins ?? [];
+  const corsFor = (req: IncomingMessage): Record<string, string> => {
+    const origin = req.headers.origin;
+    if (!origin || origin === '*' || allowlist.length === 0) return {};
+    if (allowlist.includes(origin)) return { 'Access-Control-Allow-Origin': origin, Vary: 'Origin' };
+    return {};
+  };
 
   const server: Server = createServer(async (req, res) => {
+    const cors = corsFor(req);
+    const send = (status: number, body: unknown) => sendRaw(res, status, body, cors);
+    const reply = (out: { status: number; body: any }) => send(out.status, out.body);
     try {
       const url = new URL(req.url ?? '/', 'http://x');
       const path = url.pathname;
@@ -92,69 +107,79 @@ export function createNode(cfg: NodeConfig, getMode: () => 'live' | 'degraded' =
       const mode = getMode();
       const ref = currentRelease(data);
 
-      if (req.method === 'GET' && path === '/healthz') return send(res, 200, handleHealth(data, ref, mode).body);
-      if (mode === 'degraded' && (path === '/submit' || path.startsWith('/admin') || path.startsWith('/inbox')))
-        return send(res, 503, { error: 'degraded: chain invalid' });
-      if (!ref && path !== '/admin/publish') return send(res, 503, { error: 'no chain published yet' });
+      // CORS preflight: short-circuit with 204 ONLY when CORS is actually enabled for THIS
+      // request (i.e. the Origin is allowlisted, so `cors` is non-empty). It carries no auth,
+      // so this allowed-origin branch MUST precede auth/rate checks. When CORS is off or the
+      // origin is not allowlisted, OPTIONS falls through to the SAME default routing as before
+      // this change (404 / 401 on admin paths / 503 when no chain or degraded) — byte-identical.
+      if (req.method === 'OPTIONS' && Object.keys(cors).length) {
+        res.writeHead(204, { ...cors, 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'authorization, content-type', 'Access-Control-Max-Age': '86400' });
+        return res.end();
+      }
 
-      if (req.method === 'GET' && path === '/chain/verify') return send(res, 200, handleVerify(data, ref).body);
-      if (req.method === 'GET' && path === '/commons') return reply(res, handleCommons(data, ref));
-      if (req.method === 'GET' && path.startsWith('/commons/')) return reply(res, handleCommons(data, ref, path.slice('/commons/'.length)));
-      if (req.method === 'GET' && path.startsWith('/ballot/')) return reply(res, handleBallot(data, ref, path.slice('/ballot/'.length)));
-      if (req.method === 'GET' && path === '/log') return reply(res, handleLog(data, ref, Number(url.searchParams.get('from') ?? 0), Math.min(Number(url.searchParams.get('limit') ?? 100), 500)));
+      if (req.method === 'GET' && path === '/healthz') return send(200, handleHealth(data, ref, mode).body);
+      if (mode === 'degraded' && (path === '/submit' || path.startsWith('/admin') || path.startsWith('/inbox')))
+        return send(503, { error: 'degraded: chain invalid' });
+      if (!ref && path !== '/admin/publish') return send(503, { error: 'no chain published yet' });
+
+      if (req.method === 'GET' && path === '/chain/verify') return send(200, handleVerify(data, ref).body);
+      if (req.method === 'GET' && path === '/commons') return reply(handleCommons(data, ref));
+      if (req.method === 'GET' && path.startsWith('/commons/')) return reply(handleCommons(data, ref, path.slice('/commons/'.length)));
+      if (req.method === 'GET' && path.startsWith('/ballot/')) return reply(handleBallot(data, ref, path.slice('/ballot/'.length)));
+      if (req.method === 'GET' && path === '/log') return reply(handleLog(data, ref, Number(url.searchParams.get('from') ?? 0), Math.min(Number(url.searchParams.get('limit') ?? 100), 500)));
       if (req.method === 'GET' && path.startsWith('/submissions/')) {
         const s = getSubmission(inboxPath, path.slice('/submissions/'.length));
-        return s ? send(res, 200, { id: s.id, status: s.status, ballotHash: s.ballotHash, reason: s.decision?.reason ?? null, convenedBallotHash: s.convenedBallotHash ?? null }) : send(res, 404, { error: 'not found' });
+        return s ? send(200, { id: s.id, status: s.status, ballotHash: s.ballotHash, reason: s.decision?.reason ?? null, convenedBallotHash: s.convenedBallotHash ?? null }) : send(404, { error: 'not found' });
       }
 
       if (req.method === 'POST' && path === '/submit') {
-        if (!bearer(req) || !tokenEq(bearer(req)!, cfg.submitToken)) return send(res, 401, { error: 'unauthorized' });
-        if (!allowed(`submit:${ip}`)) return send(res, 429, { error: 'rate limited' });
-        const raw = await readBody(req, res);
+        if (!bearer(req) || !tokenEq(bearer(req)!, cfg.submitToken)) return send(401, { error: 'unauthorized' });
+        if (!allowed(`submit:${ip}`)) return send(429, { error: 'rate limited' });
+        const raw = await readBody(req, res, cors);
         if (raw === null) return; // 413 already sent by readBody on overflow
-        let parsed: any; try { parsed = JSON.parse(raw); } catch { return send(res, 400, { error: 'bad json' }); }
+        let parsed: any; try { parsed = JSON.parse(raw); } catch { return send(400, { error: 'bad json' }); }
         const question = String(parsed.question ?? ''), context = String(parsed.context ?? '');
-        if (question.length > cfg.limits.maxQuestionLen || context.length > cfg.limits.maxContextLen) return send(res, 413, { error: 'field too long' });
+        if (question.length > cfg.limits.maxQuestionLen || context.length > cfg.limits.maxContextLen) return send(413, { error: 'field too long' });
         const bh = ballotHash(question, context);
         const sig = screen({ question, context, ballotHash: bh }, corpus(), { minLen: 8, maxLen: cfg.limits.maxQuestionLen, nearDupThreshold: cfg.limits.nearDupThreshold }, !allowed(`subwin:${ip}`));
         const s = submit(inboxPath, { question, context, ballotHash: bh, screening: sig }, cfg.limits.inboxMaxBytes);
-        return send(res, 200, { id: s.id, ballotHash: bh });
+        return send(200, { id: s.id, ballotHash: bh });
       }
 
       const isAdmin = bearer(req) && tokenEq(bearer(req)!, cfg.adminToken);
       if (path === '/inbox' || path.startsWith('/inbox/') || path === '/admin/publish') {
-        if (!isAdmin) return send(res, 401, { error: 'unauthorized' });
+        if (!isAdmin) return send(401, { error: 'unauthorized' });
       }
-      if (req.method === 'GET' && path === '/inbox') return send(res, 200, { submissions: listInbox(inboxPath, (url.searchParams.get('status') as any) || undefined) });
+      if (req.method === 'GET' && path === '/inbox') return send(200, { submissions: listInbox(inboxPath, (url.searchParams.get('status') as any) || undefined) });
       if (req.method === 'POST' && path.startsWith('/inbox/') && path.endsWith('/decision')) {
         const id = path.slice('/inbox/'.length, -('/decision'.length));
-        const raw = await readBody(req, res); if (raw === null) return; // 413 already sent
-        let parsed: any; try { parsed = JSON.parse(raw); } catch { return send(res, 400, { error: 'bad json' }); }
+        const raw = await readBody(req, res, cors); if (raw === null) return; // 413 already sent
+        let parsed: any; try { parsed = JSON.parse(raw); } catch { return send(400, { error: 'bad json' }); }
         const { decision, reason } = parsed;
         const s = decide(inboxPath, id, decision, reason);
         audit(auditPath, 'DECISION', { id, decision, reason: reason ?? null });
-        return send(res, 200, { id: s.id, status: s.status });
+        return send(200, { id: s.id, status: s.status });
       }
       if (req.method === 'POST' && path.startsWith('/inbox/') && path.endsWith('/convened')) {
         const id = path.slice('/inbox/'.length, -('/convened'.length));
-        const raw = await readBody(req, res); if (raw === null) return; // 413 already sent
-        let parsed: any; try { parsed = JSON.parse(raw); } catch { return send(res, 400, { error: 'bad json' }); }
+        const raw = await readBody(req, res, cors); if (raw === null) return; // 413 already sent
+        let parsed: any; try { parsed = JSON.parse(raw); } catch { return send(400, { error: 'bad json' }); }
         const { convenedBallotHash } = parsed;
-        if (typeof convenedBallotHash !== 'string' || !VALID_HASH.test(convenedBallotHash)) return send(res, 400, { error: 'invalid convenedBallotHash' });
-        let s; try { s = markConvened(inboxPath, id, convenedBallotHash); } catch (e) { return send(res, 409, { error: (e as Error).message }); }
+        if (typeof convenedBallotHash !== 'string' || !VALID_HASH.test(convenedBallotHash)) return send(400, { error: 'invalid convenedBallotHash' });
+        let s; try { s = markConvened(inboxPath, id, convenedBallotHash); } catch (e) { return send(409, { error: (e as Error).message }); }
         audit(auditPath, 'DECISION', { id, decision: 'CONVENE', convenedBallotHash });
-        return send(res, 200, { id: s.id, status: s.status, convenedBallotHash: s.convenedBallotHash });
+        return send(200, { id: s.id, status: s.status, convenedBallotHash: s.convenedBallotHash });
       }
       if (req.method === 'POST' && path === '/admin/publish') {
-        const raw = await readBody(req, res); if (raw === null) return; // 413 already sent
-        let snap: Snapshot; try { snap = JSON.parse(raw) as Snapshot; } catch { return send(res, 400, { error: 'bad json' }); }
+        const raw = await readBody(req, res, cors); if (raw === null) return; // 413 already sent
+        let snap: Snapshot; try { snap = JSON.parse(raw) as Snapshot; } catch { return send(400, { error: 'bad json' }); }
         const lp = materialize(snap.votesLog, 'votes.log')!;
         const staged = readLog(lp);
         const cur = ref ? readLog(materialize(readReleaseFile(data, ref, 'votes.log'), 'votes.log')!) : [];
         const r = verifyPublish({ staged, current: cur, checkpoint: readCheckpoint(data), keyring: cfg.pinnedKeyring, chainId: cfg.chainId, quorum: cfg.quorum });
         audit(auditPath, 'PUBLISH', { ok: r.ok, reason: r.reason ?? null, headHash: r.headHash, length: r.length });
-        if (!r.ok) return send(res, 409, { error: r.reason });
-        try { stageRelease(data, r.headHash, snap); } catch (e) { audit(auditPath, 'PUBLISH', { ok: false, reason: (e as Error).message, headHash: r.headHash, length: r.length }); return send(res, 409, { error: (e as Error).message }); }
+        if (!r.ok) return send(409, { error: r.reason });
+        try { stageRelease(data, r.headHash, snap); } catch (e) { audit(auditPath, 'PUBLISH', { ok: false, reason: (e as Error).message, headHash: r.headHash, length: r.length }); return send(409, { error: (e as Error).message }); }
         // Re-verify the staged votes.log ON DISK (defends NI-D3/NI-D6 against a commons write that
         // overwrote the just-verified log): it must be intact AND its head must still equal r.headHash.
         const stagedRef = { headHash: r.headHash, dir: join(data, 'releases', r.headHash) };
@@ -163,15 +188,15 @@ export function createNode(cfg: NodeConfig, getMode: () => 'live' | 'degraded' =
         const sHead = sEntries.length ? sEntries[sEntries.length - 1].entryHash : '0'.repeat(64);
         if (!verifyEntries(sEntries).valid || sHead !== r.headHash) {
           audit(auditPath, 'PUBLISH', { ok: false, reason: 'staged votes.log re-verification failed', headHash: r.headHash, length: r.length });
-          return send(res, 409, { error: 'staged votes.log re-verification failed' });
+          return send(409, { error: 'staged votes.log re-verification failed' });
         }
         commitRelease(data, r.headHash, { chainId: cfg.chainId, valid: true, length: r.length, headHash: r.headHash, verifiedAt: new Date().toISOString() });
         writeCheckpoint(data, { chainId: cfg.chainId, length: r.length, headHash: r.headHash, publishedAt: new Date().toISOString() });
-        return send(res, 200, { headHash: r.headHash, length: r.length });
+        return send(200, { headHash: r.headHash, length: r.length });
       }
-      return send(res, 404, { error: 'not found' });
+      return send(404, { error: 'not found' });
     } catch (e) {
-      return send(res, 500, { error: (e as Error).message });
+      return send(500, { error: (e as Error).message });
     }
   });
   server.requestTimeout = 15_000;

@@ -15,6 +15,7 @@ export interface NodeLimits {
 export interface NodeConfig {
   dataDir: string; port: number; submitToken: string; adminToken: string;
   pinnedKeyring: Record<string, string>; chainId: string; quorum: number; limits: NodeLimits;
+  allowedOrigins: string[];
 }
 
 const DEFAULT_LIMITS: NodeLimits = {
@@ -36,6 +37,18 @@ export function loadConfig(env: Record<string, string | undefined>, keyring: Rec
     return v;
   };
   if (Object.keys(keyring).length === 0) throw new Error('empty pinned keyring');
+  // QRM_MAX_BODY_BYTES override: must be a finite positive integer within a sane bound.
+  // Upper bound = 64 MiB (still comfortably admits the ~3 MB published snapshot). On a bad
+  // value we throw at load rather than silently falling back, consistent with require().
+  const MAX_BODY_BYTES_CEILING = 64 * 1024 * 1024;
+  const maxBodyBytes = ((): number => {
+    const v = env.QRM_MAX_BODY_BYTES;
+    if (v === undefined || v === '') return DEFAULT_LIMITS.maxBodyBytes;
+    const n = Number(v);
+    if (!Number.isInteger(n) || n <= 0 || n > MAX_BODY_BYTES_CEILING)
+      throw new Error(`invalid QRM_MAX_BODY_BYTES: must be a positive integer <= ${MAX_BODY_BYTES_CEILING}`);
+    return n;
+  })();
   return {
     dataDir: require('QRM_NODE_DATA'),
     port: env.QRM_NODE_PORT ? Number(env.QRM_NODE_PORT) : 8787,
@@ -44,6 +57,7 @@ export function loadConfig(env: Record<string, string | undefined>, keyring: Rec
     pinnedKeyring: keyring,
     chainId: chainIdFor(keyring),
     quorum: env.QRM_QUORUM ? Number(env.QRM_QUORUM) : 2,
-    limits: DEFAULT_LIMITS,
+    limits: { ...DEFAULT_LIMITS, maxBodyBytes },
+    allowedOrigins: (env.QRM_ALLOWED_ORIGINS ?? '').split(',').map((s) => s.trim()).filter(Boolean),
   };
 }
