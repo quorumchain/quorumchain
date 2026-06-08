@@ -119,6 +119,48 @@ test('a devnet witness does not count as an anchor of record (§7.7 / NI-17b)', 
   assert.equal(res.confirmedAnchorCount, 0); // devnet never counts
 });
 
+// NI-17b cryptographic identity (Codex follow-up #1): if the read-only RPC's endpoint genesis
+// hash does NOT match mainnet-beta (a devnet/hostile override labelled mainnet-beta), none of
+// its memos may count as confirmed anchors of record. The verifier must NOT crash; it reports
+// honestly (a clear reason) and confirmedAnchorCount stays 0. ok stays true (this is a degraded
+// witness, not a tamper) — mirroring the NI-17a degraded-coverage stance.
+test('a mainnet-beta-labelled RPC whose genesis is NOT mainnet-beta confirms NOTHING (NI-17b identity)', async () => {
+  const { path: logPath, tips } = buildLog(3);
+  const anchorPath = tmp('anchors.jsonl');
+  appendAnchor(anchorPath, { tipHash: tips[2], asOf: 1, solanaTxSig: 'sigG', slot: 3, cluster: 'mainnet-beta' });
+  const memo = buildCommitment({ anchorSeq: 0, tipHash: tips[2] });
+  const rpc: SolanaRpc = {
+    ...witnessRpc({ sigG: { memo, cluster: 'mainnet-beta' } }),
+    async assertClusterIdentity() { throw new Error('endpoint genesis != mainnet-beta genesis (NI-17b identity check failed)'); },
+  };
+  const res = await verifyAnchored(readLog(logPath), readAnchors(anchorPath), rpc);
+  assert.equal(res.confirmedAnchorCount, 0, 'a non-mainnet endpoint witness is never an anchor of record');
+  assert.equal(res.anchoredTip, null);
+  assert.equal(res.ok, true, 'a failed identity check is a degraded witness, not a tamper');
+  assert.match(res.reasons.join(' '), /genesis|identity|not.*mainnet-beta/i);
+});
+
+// a matching genesis (identity OK) confirms the witness exactly as before — and the genesis is
+// asserted at most once per verify run (cached), not per anchor.
+test('a mainnet-beta RPC with a matching genesis confirms normally, asserting identity once (cached)', async () => {
+  const { path: logPath, tips } = buildLog(3);
+  const anchorPath = tmp('anchors.jsonl');
+  appendAnchor(anchorPath, { tipHash: tips[1], asOf: 1, solanaTxSig: 'sigH1', slot: 4, cluster: 'mainnet-beta' });
+  appendAnchor(anchorPath, { tipHash: tips[2], asOf: 2, solanaTxSig: 'sigH2', slot: 5, cluster: 'mainnet-beta' });
+  let idCalls = 0;
+  const rpc: SolanaRpc = {
+    ...witnessRpc({
+      sigH1: { memo: buildCommitment({ anchorSeq: 0, tipHash: tips[1] }), cluster: 'mainnet-beta' },
+      sigH2: { memo: buildCommitment({ anchorSeq: 1, tipHash: tips[2] }), cluster: 'mainnet-beta' },
+    }),
+    async assertClusterIdentity() { idCalls++; },
+  };
+  const res = await verifyAnchored(readLog(logPath), readAnchors(anchorPath), rpc);
+  assert.equal(res.confirmedAnchorCount, 2);
+  assert.equal(res.ok, true, res.reasons.join('; '));
+  assert.equal(idCalls, 1, 'identity asserted once per verify run, not per anchor');
+});
+
 // no-RPC (pure offline) path: still validates Layer-A + Layer-B internal consistency
 test('offline (no RPC) verification validates Layer-A and Layer-B internal consistency', async () => {
   const { path: logPath, tips } = buildLog(3);

@@ -7,6 +7,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   MEMO_PROGRAM_ID,
+  MAINNET_BETA_GENESIS,
   buildCommitment,
   parseCommitment,
   clusterEndpoint,
@@ -15,7 +16,9 @@ import {
   anchoringKeypairFromSecret,
   submitMemo,
   fetchMemo,
+  assertClusterIdentity,
   type SolanaRpc,
+  type GenesisSeam,
 } from '../src/solana-anchor.ts';
 
 const TIP = 'a'.repeat(64);
@@ -47,6 +50,49 @@ test('isAnchorOfRecord: only a confirmed mainnet-beta witness counts (NI-17b)', 
   assert.equal(isAnchorOfRecord('devnet'), false);
   assert.equal(isAnchorOfRecord('testnet'), false);
   assert.equal(isAnchorOfRecord(null), false);
+});
+
+test('MAINNET_BETA_GENESIS is the canonical mainnet-beta genesis hash (NI-17b cryptographic identity)', () => {
+  // Confirmed by a single read-only getGenesisHash() against api.mainnet-beta.solana.com.
+  assert.equal(MAINNET_BETA_GENESIS, '5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d');
+});
+
+// assertClusterIdentity: for a mainnet-beta logical cluster the endpoint's REAL genesis hash
+// must match MAINNET_BETA_GENESIS, else the connection is refused (a devnet/hostile override
+// URL labelled mainnet-beta cannot masquerade as the anchor of record). Non-mainnet clusters
+// are not gated. The genesis is fetched at most ONCE (cached per seam instance). No network:
+// the genesis fetch is injected.
+function genesisSeam(genesis: string): GenesisSeam & { calls: number } {
+  let calls = 0;
+  return {
+    get calls() { return calls; },
+    async getGenesisHash() { calls++; return genesis; },
+  };
+}
+
+test('assertClusterIdentity: mainnet-beta label + matching genesis passes', async () => {
+  const seam = genesisSeam(MAINNET_BETA_GENESIS);
+  await assertClusterIdentity('mainnet-beta', seam); // resolves
+  assert.equal(seam.calls, 1);
+});
+
+test('assertClusterIdentity: mainnet-beta label + MISMATCHED genesis throws (devnet/hostile override)', async () => {
+  const seam = genesisSeam('DEVNETgenesisHashNotMainnet1111111111111111');
+  await assert.rejects(() => assertClusterIdentity('mainnet-beta', seam), /genesis|mainnet-beta|identity/i);
+});
+
+test('assertClusterIdentity: a non-mainnet cluster is not genesis-gated and never fetches', async () => {
+  const seam = genesisSeam('whatever');
+  await assertClusterIdentity('devnet', seam); // resolves, no gate
+  assert.equal(seam.calls, 0, 'devnet does not trigger a genesis fetch');
+});
+
+test('assertClusterIdentity: the genesis hash is fetched at most once (cached) across repeated asserts', async () => {
+  const seam = genesisSeam(MAINNET_BETA_GENESIS);
+  await assertClusterIdentity('mainnet-beta', seam);
+  await assertClusterIdentity('mainnet-beta', seam);
+  await assertClusterIdentity('mainnet-beta', seam);
+  assert.equal(seam.calls, 1, 'genesis fetched once, then served from cache');
 });
 
 test('the anchoring keypair is a Solana key, NOT a validator Ed25519 PEM (§2.5 key separation)', () => {

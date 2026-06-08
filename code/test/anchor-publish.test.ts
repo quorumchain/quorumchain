@@ -75,6 +75,30 @@ test('on Solana outage, anchoring DEGRADES to Layer-B-only and never throws (NI-
   assert.equal(a.solanaTxSig, null); // but no witness
 });
 
+// NI-17b cryptographic identity (Codex follow-up #1): a mainnet-beta-LABELLED endpoint whose
+// real genesis hash is NOT mainnet-beta (e.g. a devnet/hostile QRM_ANCHOR_RPC_URL) must make
+// the send FAIL — never silently stamp a non-mainnet endpoint as an anchor of record. The
+// failure propagates exactly like any Solana outage, so publish DEGRADES to Layer-B-only.
+test('a mainnet-beta-labelled endpoint with a mismatched genesis FAILS the send and degrades to Layer-B-only (NI-17a/17b)', async () => {
+  const { path: logPath, tip } = buildLog(3);
+  const anchorPath = tmp('anchors.jsonl');
+  let sent = 0;
+  const rpc: SolanaRpc = {
+    cluster: 'mainnet-beta',
+    async assertClusterIdentity() { throw new Error('endpoint genesis 5xDevnet… != mainnet-beta genesis (NI-17b identity check failed)'); },
+    async sendMemo() { sent++; return { signature: 'shouldNotHappen', slot: 1 }; },
+    async getMemo() { return null; },
+  };
+  const res = await anchorTipAtPublish({ logPath, anchorPath, rpc, now: 4000 });
+  assert.equal(res.degraded, true, 'a genesis mismatch must degrade, not stamp');
+  assert.equal(sent, 0, 'a non-mainnet endpoint must never have a memo sent to it as a mainnet anchor');
+  assert.match(res.note ?? '', /genesis|identity|degrad|Layer-B-only/i);
+  const a = readAnchors(anchorPath)[0].record;
+  assert.equal(a.tipHash, tip); // Layer-B still written
+  assert.equal(a.solanaTxSig, null); // but no (false) witness
+  assert.equal(a.cluster, null);
+});
+
 test('anchoring an empty log is a no-op (nothing to commit)', async () => {
   const logPath = tmp('votes.log');
   const anchorPath = tmp('anchors.jsonl');

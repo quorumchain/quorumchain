@@ -55,6 +55,21 @@ export async function verifyAnchored(
   let anchoredTip: string | null = null;
   let anchoredThroughIndex: number | null = null;
 
+  // NI-17b hardening (Codex follow-up #1): before trusting ANY of this RPC's memos as anchors of
+  // record, confirm the endpoint cryptographically IS mainnet-beta (its genesis hash matches). A
+  // devnet/hostile override URL labelled mainnet-beta fails this check; we then count NONE of its
+  // witnesses (honest degraded coverage, not a tamper — so `ok` is unaffected). Asserted once per
+  // run (the seam caches the genesis); a failure here disables online confirmation entirely.
+  let identityOk = true;
+  if (rpc && rpc.assertClusterIdentity) {
+    try {
+      await rpc.assertClusterIdentity();
+    } catch (e) {
+      identityOk = false;
+      reasons.push(`RPC endpoint failed the mainnet-beta genesis identity check (${(e as Error).message}); no witness from it counts as an anchor of record (NI-17b)`);
+    }
+  }
+
   for (const a of anchors) {
     const r = a.record;
     // (3) every Layer-B entry's tipHash MUST match a real Layer-A prefix tip.
@@ -75,6 +90,12 @@ export async function verifyAnchored(
     // (4) confirm the external mainnet-beta witness carries EXACTLY this commitment.
     if (!rpc) {
       reasons.push(`anchor seq ${r.anchorSeq}: no RPC supplied — external witness unconfirmed (offline coverage only)`);
+      continue;
+    }
+    if (!identityOk) {
+      // the endpoint failed its genesis identity check above; it cannot witness an anchor of
+      // record. Treat exactly like an unconfirmed/degraded witness — not counted, not a tamper.
+      reasons.push(`anchor seq ${r.anchorSeq}: endpoint failed the mainnet-beta identity check — witness uncounted (NI-17b)`);
       continue;
     }
     let hit;

@@ -28,6 +28,15 @@ import type { SolanaCluster } from './anchor-record.ts';
 /** Canonical SPL Memo program id (CIP-17 §2.1). */
 export const MEMO_PROGRAM_ID = 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr';
 
+/** Canonical Solana MAINNET-BETA genesis hash. NI-17b keys anchor-of-record off the LOGICAL
+ *  cluster label, but the label is operator-supplied and a custom RPC URL (QRM_ANCHOR_RPC_URL)
+ *  can point a `mainnet-beta`-labelled connection at a devnet/private/hostile endpoint. This
+ *  constant lets us CRYPTOGRAPHICALLY confirm an endpoint really is mainnet-beta — its genesis
+ *  hash is a fixed network identity that a counterfeit endpoint cannot fake — before any send
+ *  or verify trusts it as the anchor of record. Strengthens NI-17b; does not redefine it.
+ *  Verified by a single read-only getGenesisHash() against api.mainnet-beta.solana.com. */
+export const MAINNET_BETA_GENESIS = '5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d';
+
 const COMMITMENT_TAG = 'QRM-ANCHOR-v1';
 
 export interface Commitment {
@@ -78,6 +87,44 @@ export function isAnchorOfRecord(cluster: SolanaCluster | null): boolean {
   return cluster === 'mainnet-beta';
 }
 
+// --- Cryptographic cluster identity (NI-17b hardening; Codex review follow-up #1) ----------
+// isAnchorOfRecord keys off the LOGICAL cluster label, but that label is operator-supplied and
+// a custom RPC URL can point a `mainnet-beta`-labelled connection anywhere. assertClusterIdentity
+// closes that gap: when the logical cluster is mainnet-beta, the endpoint's REAL genesis hash
+// must equal MAINNET_BETA_GENESIS, else the connection is refused. A non-mainnet cluster is not
+// gated (devnet/testnet never count as anchors of record regardless). The genesis fetch is done
+// AT MOST ONCE per seam instance (cached), so a verify/anchor run pays one getGenesisHash.
+
+/** The minimal surface assertClusterIdentity needs: a read-only genesis-hash fetch. The real
+ *  Connection implements this; tests inject a deterministic stub so no network is required. */
+export interface GenesisSeam {
+  getGenesisHash(): Promise<string>;
+}
+
+// Per-seam cache of the in-flight/resolved genesis fetch, so repeated asserts against the same
+// connection/seam fetch the genesis only once. WeakMap keys off the seam instance identity.
+const genesisCache = new WeakMap<GenesisSeam, Promise<string>>();
+
+/** Assert the endpoint behind `seam` really IS the cluster it claims. For `mainnet-beta` the
+ *  endpoint's genesis hash MUST equal MAINNET_BETA_GENESIS; on mismatch this throws (the caller
+ *  treats the endpoint as NOT mainnet-beta and refuses to trust it). Non-mainnet clusters are
+ *  not gated and trigger no fetch. The genesis is fetched at most once per seam (cached). */
+export async function assertClusterIdentity(cluster: SolanaCluster, seam: GenesisSeam): Promise<void> {
+  if (cluster !== 'mainnet-beta') return; // only the anchor-of-record cluster is gated
+  let pending = genesisCache.get(seam);
+  if (!pending) {
+    pending = seam.getGenesisHash();
+    genesisCache.set(seam, pending);
+  }
+  const genesis = await pending;
+  if (genesis !== MAINNET_BETA_GENESIS) {
+    throw new Error(
+      `endpoint genesis ${genesis} != mainnet-beta genesis ${MAINNET_BETA_GENESIS} ` +
+        `(NI-17b identity check failed: this endpoint is NOT mainnet-beta and cannot be an anchor of record)`,
+    );
+  }
+}
+
 // --- The low-privilege anchoring keypair (§2.5) -----------------------------------
 // This is a Solana keypair whose ONLY capability is paying for / signing memo
 // submissions. It is NOT a validator key and holds no consensus authority. Structurally
@@ -112,10 +159,18 @@ export interface SolanaRpc {
   cluster: SolanaCluster;
   sendMemo(memo: string): Promise<{ signature: string; slot: number }>;
   getMemo(signature: string): Promise<{ memo: string; slot: number; cluster: SolanaCluster } | null>;
+  /** NI-17b hardening: assert the endpoint's real genesis matches its claimed cluster before it
+   *  is trusted (mainnet-beta only; throws on mismatch). Optional so test mocks may omit it; the
+   *  real web3Rpc/readOnlyRpc seams always provide it. Cached so it fetches at most once. */
+  assertClusterIdentity?(): Promise<void>;
 }
 
-/** Submit a memo commitment to Solana and return the witness coordinates. */
+/** Submit a memo commitment to Solana and return the witness coordinates. Before sending, the
+ *  endpoint's cluster identity is asserted (NI-17b): a mainnet-beta-labelled endpoint whose real
+ *  genesis is NOT mainnet-beta makes this THROW, so the memo is never sent to a counterfeit
+ *  endpoint and anchor-publish degrades to Layer-B-only (NI-17a) rather than silently stamping. */
 export async function submitMemo(rpc: SolanaRpc, memo: string): Promise<SubmitResult> {
+  if (rpc.assertClusterIdentity) await rpc.assertClusterIdentity();
   const { signature, slot } = await rpc.sendMemo(memo);
   return { signature, slot, cluster: rpc.cluster };
 }
@@ -273,6 +328,8 @@ export function web3Rpc(cluster: SolanaCluster, payer: Keypair, overrideUrl?: st
   });
   return {
     cluster,
+    // NI-17b hardening: the genesis is read straight off the live connection and cached per seam.
+    assertClusterIdentity: () => assertClusterIdentity(cluster, connection),
     async sendMemo(memo: string) {
       const signature = await sendConfirmMemo(memoSenderFor(memo), SEND_RETRY);
       const parsed = await connection.getParsedTransaction(signature, {
@@ -315,6 +372,9 @@ export function readOnlyRpc(cluster: SolanaCluster, overrideUrl?: string): Solan
   const connection = new Connection(clusterEndpoint(cluster, overrideUrl), 'finalized');
   return {
     cluster,
+    // NI-17b hardening: the verifier confirms the endpoint really is mainnet-beta (genesis match)
+    // before any of its memos may count as a confirmed anchor of record. Cached per seam.
+    assertClusterIdentity: () => assertClusterIdentity(cluster, connection),
     async sendMemo() {
       throw new Error('readOnlyRpc cannot send memos (no payer) — read-only verification only');
     },
