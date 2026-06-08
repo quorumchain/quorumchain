@@ -162,3 +162,56 @@ test('a still-pending tx is treated as not-yet-landed and retried within the bou
   assert.equal(sig, 'sig-2');
   assert.ok(sender.sendCount >= 2, 'pending did not short-circuit into returning an unconfirmed sig');
 });
+
+// --- recovery-path guard: send() itself throwing on the first attempt must NOT deref an
+// undefined signature. Before the guard, sendConfirmMemo declared `let sig: string` and ran
+// `sender.status(sig!)` on EVERY failed attempt — so a first-attempt send() throw left sig
+// undefined and the `sig!` assertion was unsound (status got an undefined "signature"). The
+// fix makes sig optional and only queries status when a signature actually exists. This mock's
+// status() asserts it is never handed a non-string sig, so the pre-guard code path would crash.
+
+test('first-attempt send() throw does not deref an undefined sig, then resend confirms', async () => {
+  // attempt 1: send() throws (no signature ever produced) -> must NOT call status(undefined).
+  // attempt 2: send() succeeds (sig-1 here, since sendCount only advances on a successful send)
+  // and confirms. The returned value must be a real signature, never undefined.
+  let sendCount = 0;
+  let statusCalls = 0;
+  const sender: MemoSender = {
+    async send() {
+      sendCount++;
+      if (sendCount === 1) throw new Error('send failed: connection refused');
+      return { signature: `sig-${sendCount}`, blockhash: `bh-${sendCount}`, lastValidBlockHeight: 100 + sendCount };
+    },
+    async confirm() {
+      // confirms whatever the (second) send produced
+    },
+    async status(sig) {
+      statusCalls++;
+      // hard guard: the orchestrator must never query status for a non-existent signature.
+      assert.equal(typeof sig, 'string', 'status() must never be called with an undefined sig');
+      return 'gone';
+    },
+  };
+  const sig = await sendConfirmMemo(sender, tinyRetry);
+  assert.equal(typeof sig, 'string', 'must return a real signature, never undefined');
+  assert.equal(sig, 'sig-2');
+  assert.equal(statusCalls, 0, 'no status query happened for the throwing first send (no sig existed)');
+});
+
+test('send() always throwing rejects after the bound (degrade-open, NI-17a) without an undefined deref', async () => {
+  // every attempt's send() throws -> no signature ever exists -> status() must never be called
+  // with undefined, and after `attempts` the last error propagates so anchor-publish degrades.
+  let sendCount = 0;
+  const sender: MemoSender = {
+    async send() {
+      sendCount++;
+      throw new Error('send failed: RPC down');
+    },
+    async confirm() { /* never reached */ },
+    async status(sig) {
+      assert.fail(`status() must not be called when no send ever succeeded (got sig=${String(sig)})`);
+    },
+  };
+  await assert.rejects(() => sendConfirmMemo(sender, tinyRetry), /send failed: RPC down/);
+  assert.equal(sendCount, 4, 'bounded: exactly `attempts` send attempts, then degrade-open');
+});

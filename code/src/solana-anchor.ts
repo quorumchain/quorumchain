@@ -195,7 +195,7 @@ export async function sendConfirmMemo(sender: MemoSender, opts: RetryOpts): Prom
   const sleep = opts.sleep ?? realSleep;
   let lastErr: unknown;
   for (let i = 0; i < opts.attempts; i++) {
-    let sig: string;
+    let sig: string | undefined;
     try {
       const sent = await sender.send();
       sig = sent.signature;
@@ -205,15 +205,19 @@ export async function sendConfirmMemo(sender: MemoSender, opts: RetryOpts): Prom
       lastErr = e;
     }
     // Confirm (or send) failed. Before resending, check whether the sig we just submitted
-    // actually landed — a confirm timeout does NOT mean the tx is gone.
-    try {
-      const st = await sender.status(sig!);
-      if (st === 'confirmed') return sig!; // it landed; returning it avoids a duplicate send
-      // 'gone' (dropped / blockhash expired) and 'pending' both fall through to retry: an
-      // expired-blockhash tx is guaranteed dropped, and a pending one is not yet proven landed,
-      // so a fresh send (fresh blockhash) is safe and necessary.
-    } catch (e) {
-      lastErr = e; // status query itself failed; fall through to a bounded retry
+    // actually landed — a confirm timeout does NOT mean the tx is gone. Only query status when
+    // a signature actually exists: if send() ITSELF threw, no tx was submitted, so there is
+    // nothing to query (querying status(undefined) would be unsound) — fall straight to retry.
+    if (sig !== undefined) {
+      try {
+        const st = await sender.status(sig);
+        if (st === 'confirmed') return sig; // it landed; returning it avoids a duplicate send
+        // 'gone' (dropped / blockhash expired) and 'pending' both fall through to retry: an
+        // expired-blockhash tx is guaranteed dropped, and a pending one is not yet proven landed,
+        // so a fresh send (fresh blockhash) is safe and necessary.
+      } catch (e) {
+        lastErr = e; // status query itself failed; fall through to a bounded retry
+      }
     }
     if (i < opts.attempts - 1) await sleep(opts.baseDelayMs * 2 ** i);
   }
