@@ -95,6 +95,23 @@ test('assertClusterIdentity: the genesis hash is fetched at most once (cached) a
   assert.equal(seam.calls, 1, 'genesis fetched once, then served from cache');
 });
 
+test('assertClusterIdentity: a REJECTED genesis fetch is evicted, so a later assert re-fetches and can succeed', async () => {
+  // First getGenesisHash() rejects (transient RPC error); the second resolves to the matching
+  // mainnet genesis. The rejected promise must NOT be cached: the first assert rejects, but a
+  // subsequent assert against the SAME seam must re-fetch and SUCCEED.
+  let calls = 0;
+  const seam: GenesisSeam = {
+    async getGenesisHash() {
+      calls++;
+      if (calls === 1) throw new Error('transient RPC error');
+      return MAINNET_BETA_GENESIS;
+    },
+  };
+  await assert.rejects(() => assertClusterIdentity('mainnet-beta', seam), /transient RPC error/);
+  await assertClusterIdentity('mainnet-beta', seam); // re-fetch (eviction) then succeed
+  assert.equal(calls, 2, 'rejected promise evicted, so the second assert re-fetched');
+});
+
 test('the anchoring keypair is a Solana key, NOT a validator Ed25519 PEM (§2.5 key separation)', () => {
   const kp = newAnchoringKeypair();
   // Solana secret is a 64-byte Uint8Array — structurally distinct from a PEM private key.

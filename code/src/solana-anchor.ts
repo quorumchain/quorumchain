@@ -31,9 +31,11 @@ export const MEMO_PROGRAM_ID = 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr';
 /** Canonical Solana MAINNET-BETA genesis hash. NI-17b keys anchor-of-record off the LOGICAL
  *  cluster label, but the label is operator-supplied and a custom RPC URL (QRM_ANCHOR_RPC_URL)
  *  can point a `mainnet-beta`-labelled connection at a devnet/private/hostile endpoint. This
- *  constant lets us CRYPTOGRAPHICALLY confirm an endpoint really is mainnet-beta — its genesis
- *  hash is a fixed network identity that a counterfeit endpoint cannot fake — before any send
- *  or verify trusts it as the anchor of record. Strengthens NI-17b; does not redefine it.
+ *  constant lets us confirm the endpoint REPORTS the mainnet-beta genesis hash before any send
+ *  or verify trusts it as the anchor of record — which defeats a mislabeled devnet/testnet/private
+ *  endpoint, the realistic misconfiguration. It does NOT defend against a fully-adversarial RPC
+ *  that lies consistently (genesis + memos + parsed txs); that requires multi-endpoint/quorum
+ *  verification and is out of scope. Strengthens NI-17b; does not redefine it.
  *  Verified by a single read-only getGenesisHash() against api.mainnet-beta.solana.com. */
 export const MAINNET_BETA_GENESIS = '5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d';
 
@@ -115,6 +117,9 @@ export async function assertClusterIdentity(cluster: SolanaCluster, seam: Genesi
   if (!pending) {
     pending = seam.getGenesisHash();
     genesisCache.set(seam, pending);
+    // Evict on rejection so a transient RPC error is not cached for the life of the seam: a
+    // later assert re-fetches. A resolved promise stays cached (fetch-once happy path).
+    pending.catch(() => genesisCache.delete(seam));
   }
   const genesis = await pending;
   if (genesis !== MAINNET_BETA_GENESIS) {

@@ -138,6 +138,9 @@ test('a mainnet-beta-labelled RPC whose genesis is NOT mainnet-beta confirms NOT
   assert.equal(res.anchoredTip, null);
   assert.equal(res.ok, true, 'a failed identity check is a degraded witness, not a tamper');
   assert.match(res.reasons.join(' '), /genesis|identity|not.*mainnet-beta/i);
+  // Fix 3: when all anchors are uncounted purely due to identity failure, the boundary note must
+  // read as degraded coverage (NI-17a), not the no-anchored-history branch.
+  assert.match(res.boundaryNote ?? '', /degraded coverage/i);
 });
 
 // a matching genesis (identity OK) confirms the witness exactly as before — and the genesis is

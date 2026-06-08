@@ -131,7 +131,7 @@ export async function verifyAnchored(
 
   let boundaryNote: string | null;
   if (anchoredThroughIndex === null) {
-    boundaryNote = confirmedAnchorCount === 0 && reasons.some((s) => /degrad|unreachable|not an anchor of record|no RPC/.test(s))
+    boundaryNote = confirmedAnchorCount === 0 && reasons.some((s) => /degrad|unreachable|not an anchor of record|no RPC|identity check|witness uncounted/.test(s))
       ? 'No confirmed mainnet-beta anchor of record; Layer-A is internally valid but no external witness is confirmed (degraded coverage, NI-17a).'
       : 'No anchored history; the entire log is the unanchored suffix and is protected only by the internal hash chain (NI-17d).';
   } else {
