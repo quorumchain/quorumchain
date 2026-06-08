@@ -21,7 +21,6 @@ import {
   PublicKey,
   Transaction,
   TransactionInstruction,
-  sendAndConfirmTransaction,
   clusterApiUrl,
 } from '@solana/web3.js';
 import type { SolanaCluster } from './anchor-record.ts';
@@ -158,6 +157,69 @@ export async function withRetry<T>(fn: () => Promise<T>, opts: RetryOpts): Promi
 /** Default send retry policy for real anchoring (overridable for the live test). */
 const SEND_RETRY: RetryOpts = { attempts: 4, baseDelayMs: 500 };
 
+// --- Send / confirm split (Codex review follow-up #2) -----------------------------
+// The earlier shape wrapped send+confirm together in withRetry, rebuilding the tx each
+// attempt. If attempt 1's memo LANDED on-chain but its confirmation threw/timed out,
+// attempt 2 sent a SECOND identical memo — a duplicate on-chain memo + a wasted fee.
+//
+// The fix separates SEND from CONFIRM and, before any resend, queries the prior
+// signature's status. A confirmation timeout is NOT proof the tx is gone, so we only
+// resend when the status query shows the tx is genuinely dropped (blockhash expired /
+// not found). If the prior sig is already confirmed we RETURN it (no resend); a still-
+// pending sig is treated as not-yet-landed and retried within the bound.
+//
+// PURE / network-free: the Solana surface is injected as a `MemoSender`, so the dedup
+// logic is unit-tested at the seam with a mock and NO network. After `opts.attempts`
+// the last error propagates — anchor-publish then degrades to Layer-B-only (NI-17a).
+
+/** Status of a previously-sent signature, as the orchestrator needs to decide resend-vs-return:
+ *  'confirmed' = it landed (return it, do NOT resend); 'gone' = dropped/blockhash expired (safe to
+ *  resend); 'pending' = inconclusive (treat as not-yet-landed and retry within the bound). */
+export type SigStatus = 'confirmed' | 'pending' | 'gone';
+
+/** The minimal lower-level Solana surface the send/confirm orchestrator drives. Splitting send
+ *  from confirm is what lets a confirm-timeout query the prior sig instead of blindly resending. */
+export interface MemoSender {
+  /** Send the memo transaction ONCE with a fresh blockhash; return the sig + its blockhash ctx. */
+  send(): Promise<{ signature: string; blockhash: string; lastValidBlockHeight: number }>;
+  /** Confirm a sent signature against its blockhash context; throws/rejects on timeout/failure. */
+  confirm(signature: string, blockhash: string, lastValidBlockHeight: number): Promise<void>;
+  /** Query whether a prior signature landed, is still pending, or is gone (drop/expired). */
+  status(signature: string): Promise<SigStatus>;
+}
+
+/** Send a memo and confirm it WITHOUT ever sending a duplicate on a confirm-timeout.
+ *  Bounded by opts.attempts; injectable sleep keeps tests instant. On the bound being
+ *  exhausted the last error is thrown so anchor-publish degrades to Layer-B-only (NI-17a). */
+export async function sendConfirmMemo(sender: MemoSender, opts: RetryOpts): Promise<string> {
+  const sleep = opts.sleep ?? realSleep;
+  let lastErr: unknown;
+  for (let i = 0; i < opts.attempts; i++) {
+    let sig: string;
+    try {
+      const sent = await sender.send();
+      sig = sent.signature;
+      await sender.confirm(sent.signature, sent.blockhash, sent.lastValidBlockHeight);
+      return sent.signature; // confirmed on this attempt
+    } catch (e) {
+      lastErr = e;
+    }
+    // Confirm (or send) failed. Before resending, check whether the sig we just submitted
+    // actually landed — a confirm timeout does NOT mean the tx is gone.
+    try {
+      const st = await sender.status(sig!);
+      if (st === 'confirmed') return sig!; // it landed; returning it avoids a duplicate send
+      // 'gone' (dropped / blockhash expired) and 'pending' both fall through to retry: an
+      // expired-blockhash tx is guaranteed dropped, and a pending one is not yet proven landed,
+      // so a fresh send (fresh blockhash) is safe and necessary.
+    } catch (e) {
+      lastErr = e; // status query itself failed; fall through to a bounded retry
+    }
+    if (i < opts.attempts - 1) await sleep(opts.baseDelayMs * 2 ** i);
+  }
+  throw lastErr;
+}
+
 // --- Real @solana/web3.js-backed RPC ----------------------------------------------
 
 const memoInstruction = (memo: string, payer: PublicKey): TransactionInstruction =>
@@ -171,18 +233,44 @@ const memoInstruction = (memo: string, payer: PublicKey): TransactionInstruction
  *  low-privilege anchoring keypair. Confirmations use `finalized` commitment. An optional
  *  overrideUrl (a custom/private RPC endpoint, e.g. QRM_ANCHOR_RPC_URL) replaces the public
  *  endpoint — transport only; the logical cluster (and thus anchor-of-record status) is
- *  unchanged. Sends are wrapped in a bounded retry/backoff; each attempt rebuilds the
- *  transaction so sendAndConfirmTransaction fetches a FRESH blockhash (the usual transient). */
+ *  unchanged. SEND and CONFIRM are split (see sendConfirmMemo): a confirm-timeout queries the
+ *  prior signature's status before any resend, so a tx that LANDED is never duplicated; only a
+ *  genuinely-dropped (expired/not-found) tx is resent with a FRESH blockhash. */
 export function web3Rpc(cluster: SolanaCluster, payer: Keypair, overrideUrl?: string): SolanaRpc {
   const connection = new Connection(clusterEndpoint(cluster, overrideUrl), 'finalized');
+  // A MemoSender for one specific memo, wrapping the lower-level send/confirm/status calls so
+  // sendConfirmMemo can dedup on a confirm-timeout. A fresh sender per submission keeps `send`
+  // pure w.r.t. the memo it commits.
+  const memoSenderFor = (memo: string): MemoSender => ({
+    async send() {
+      // one fresh blockhash per send; sign + raw-send so the signature exists BEFORE confirm.
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('finalized');
+      const tx = new Transaction({ feePayer: payer.publicKey, blockhash, lastValidBlockHeight })
+        .add(memoInstruction(memo, payer.publicKey));
+      tx.sign(payer);
+      const signature = await connection.sendRawTransaction(tx.serialize());
+      return { signature, blockhash, lastValidBlockHeight };
+    },
+    async confirm(signature, blockhash, lastValidBlockHeight) {
+      const res = await connection.confirmTransaction(
+        { signature, blockhash, lastValidBlockHeight },
+        'finalized',
+      );
+      if (res.value.err) throw new Error(`tx failed: ${JSON.stringify(res.value.err)}`);
+    },
+    async status(signature): Promise<SigStatus> {
+      const { value } = await connection.getSignatureStatus(signature, { searchTransactionHistory: true });
+      if (!value) return 'gone'; // not found -> dropped / blockhash expired -> safe to resend
+      if (value.err) return 'gone'; // failed on-chain -> resend a fresh tx
+      const cs = value.confirmationStatus;
+      if (cs === 'finalized' || cs === 'confirmed') return 'confirmed';
+      return 'pending';
+    },
+  });
   return {
     cluster,
     async sendMemo(memo: string) {
-      const signature = await withRetry(async () => {
-        // rebuild per attempt -> fresh blockhash fetched by sendAndConfirmTransaction
-        const tx = new Transaction().add(memoInstruction(memo, payer.publicKey));
-        return sendAndConfirmTransaction(connection, tx, [payer], { commitment: 'finalized' });
-      }, SEND_RETRY);
+      const signature = await sendConfirmMemo(memoSenderFor(memo), SEND_RETRY);
       const parsed = await connection.getParsedTransaction(signature, {
         commitment: 'finalized',
         maxSupportedTransactionVersion: 0,

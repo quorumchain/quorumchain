@@ -10,6 +10,8 @@ import {
   resolveRpcUrl,
   isAnchorOfRecord,
   withRetry,
+  sendConfirmMemo,
+  type MemoSender,
 } from '../src/solana-anchor.ts';
 
 // --- withRetry (pure, injectable sleep so the suite never really waits) ---
@@ -72,4 +74,91 @@ test('a URL override does NOT flip cluster identity / anchor-of-record off mainn
   clusterEndpoint('mainnet-beta', 'https://devnet-looking.example/rpc');
   assert.equal(isAnchorOfRecord('mainnet-beta'), true);
   assert.equal(isAnchorOfRecord('devnet'), false);
+});
+
+// --- send/confirm split: a confirm-timeout must NEVER cause a duplicate send ---
+// sendConfirmMemo drives a small MemoSender seam (send / confirm / status) so the
+// dedup logic is unit-tested with NO network. The cardinal property: if the FIRST
+// memo tx LANDS on-chain but its confirmation throws/times out, the function must
+// discover that via a signature-status query and return the landed signature WITHOUT
+// sending a second (duplicate, fee-wasting) memo.
+
+/** Build a scriptable MemoSender mock. `confirmOutcomes[i]` decides attempt i's confirm:
+ *  'ok' resolves, 'timeout' rejects. `statusFor(sig)` answers the pre-resend status query. */
+function mockSender(opts: {
+  confirmOutcomes: Array<'ok' | 'timeout'>;
+  statusFor: (sig: string) => 'confirmed' | 'pending' | 'gone';
+}): MemoSender & { sendCount: number; confirmCount: number; statusCount: number } {
+  let sendCount = 0;
+  let confirmCount = 0;
+  let statusCount = 0;
+  const self = {
+    get sendCount() { return sendCount; },
+    get confirmCount() { return confirmCount; },
+    get statusCount() { return statusCount; },
+    async send() {
+      sendCount++;
+      // a fresh blockhash per send; signature encodes which send produced it
+      return { signature: `sig-${sendCount}`, blockhash: `bh-${sendCount}`, lastValidBlockHeight: 100 + sendCount };
+    },
+    async confirm() {
+      const outcome = opts.confirmOutcomes[confirmCount] ?? 'timeout';
+      confirmCount++;
+      if (outcome === 'timeout') throw new Error('confirmation timed out');
+    },
+    async status(sig: string) {
+      statusCount++;
+      return opts.statusFor(sig);
+    },
+  };
+  return self as MemoSender & { sendCount: number; confirmCount: number; statusCount: number };
+}
+
+const tinyRetry = { attempts: 4, baseDelayMs: 1, sleep: async () => {} };
+
+test('land-then-confirm-timeout returns the landed sig with NO duplicate send', async () => {
+  // send #1 lands (sig-1) but its confirm times out; the status query reports sig-1 CONFIRMED,
+  // so we must return sig-1 and never send again.
+  const sender = mockSender({
+    confirmOutcomes: ['timeout'],
+    statusFor: (sig) => (sig === 'sig-1' ? 'confirmed' : 'gone'),
+  });
+  const sig = await sendConfirmMemo(sender, tinyRetry);
+  assert.equal(sig, 'sig-1');
+  assert.equal(sender.sendCount, 1, 'must send exactly once — no duplicate memo / extra fee');
+  assert.equal(sender.statusCount, 1, 'queried the prior sig status before any resend');
+});
+
+test('genuinely-dropped tx resends with a fresh blockhash and succeeds', async () => {
+  // send #1 confirm times out AND its status shows it is gone (blockhash expired / not found);
+  // a resend (send #2, fresh blockhash) then confirms.
+  const sender = mockSender({
+    confirmOutcomes: ['timeout', 'ok'],
+    statusFor: () => 'gone',
+  });
+  const sig = await sendConfirmMemo(sender, tinyRetry);
+  assert.equal(sig, 'sig-2', 'returned the freshly-resent, confirmed signature');
+  assert.equal(sender.sendCount, 2, 'a second send happened because the first was genuinely gone');
+});
+
+test('total failure throws after the bound so anchor-publish can degrade-open (NI-17a)', async () => {
+  // every confirm times out and statuses never confirm -> after `attempts` the error propagates.
+  const sender = mockSender({
+    confirmOutcomes: ['timeout', 'timeout', 'timeout', 'timeout'],
+    statusFor: () => 'gone',
+  });
+  await assert.rejects(() => sendConfirmMemo(sender, tinyRetry), /confirm|timed out|send/i);
+  assert.equal(sender.sendCount, 4, 'bounded: exactly `attempts` sends, then it gives up');
+});
+
+test('a still-pending tx is treated as not-yet-landed and retried within the bound', async () => {
+  // judgment call: a 'pending' status is NOT proof the tx landed, so we keep retrying (resend)
+  // rather than returning an unconfirmed sig. If it later confirms we return it.
+  const sender = mockSender({
+    confirmOutcomes: ['timeout', 'ok'],
+    statusFor: () => 'pending',
+  });
+  const sig = await sendConfirmMemo(sender, tinyRetry);
+  assert.equal(sig, 'sig-2');
+  assert.ok(sender.sendCount >= 2, 'pending did not short-circuit into returning an unconfirmed sig');
 });
