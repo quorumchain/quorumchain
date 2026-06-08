@@ -57,9 +57,20 @@ export function parseCommitment(memo: string): Commitment | null {
   return { anchorSeq: o.anchorSeq, tipHash: o.tipHash };
 }
 
-/** RPC endpoint for a cluster. Mainnet-beta and devnet are distinct substrates. */
-export function clusterEndpoint(cluster: SolanaCluster): string {
+/** RPC endpoint for a cluster. Mainnet-beta and devnet are distinct substrates. An optional
+ *  overrideUrl (a custom/private RPC endpoint) replaces the public endpoint — this is purely a
+ *  TRANSPORT choice and does NOT change the logical cluster or anchor-of-record status (NI-17b
+ *  keys off `cluster`, not the URL). An empty/whitespace override falls back to the public URL. */
+export function clusterEndpoint(cluster: SolanaCluster, overrideUrl?: string): string {
+  if (overrideUrl && overrideUrl.trim() !== '') return overrideUrl;
   return clusterApiUrl(cluster);
+}
+
+/** Resolve the RPC URL for a cluster given an optional override (typically QRM_ANCHOR_RPC_URL).
+ *  Thin wrapper over clusterEndpoint kept as a named seam so callers/tests read the override
+ *  intent explicitly. The override is transport-only; cluster identity is unchanged (NI-17b). */
+export function resolveRpcUrl(cluster: SolanaCluster, overrideUrl?: string): string {
+  return clusterEndpoint(cluster, overrideUrl);
 }
 
 /** NI-17b: ONLY a confirmed mainnet-beta witness counts as an anchor of record. A devnet
@@ -115,6 +126,38 @@ export async function fetchMemo(rpc: SolanaRpc, signature: string): Promise<Memo
   return rpc.getMemo(signature);
 }
 
+// --- Bounded retry with exponential backoff ---------------------------------------
+// A transient send failure (most commonly a stale/expired blockhash) is retried a bounded
+// number of times before the error is allowed to propagate. PURE and network-free: the work
+// and the sleep are injected, so it is unit-tested directly. Backoff is baseDelayMs * 2^i.
+// Crucially, after `attempts` failures the LAST error is re-thrown — anchor-publish then
+// catches it and degrades to Layer-B-only (NI-17a). withRetry never swallows the error.
+
+export interface RetryOpts {
+  attempts: number;
+  baseDelayMs: number;
+  sleep?: (ms: number) => Promise<void>;
+}
+
+const realSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+export async function withRetry<T>(fn: () => Promise<T>, opts: RetryOpts): Promise<T> {
+  const sleep = opts.sleep ?? realSleep;
+  let lastErr: unknown;
+  for (let i = 0; i < opts.attempts; i++) {
+    try {
+      return await fn();
+    } catch (e) {
+      lastErr = e;
+      if (i < opts.attempts - 1) await sleep(opts.baseDelayMs * 2 ** i);
+    }
+  }
+  throw lastErr;
+}
+
+/** Default send retry policy for real anchoring (overridable for the live test). */
+const SEND_RETRY: RetryOpts = { attempts: 4, baseDelayMs: 500 };
+
 // --- Real @solana/web3.js-backed RPC ----------------------------------------------
 
 const memoInstruction = (memo: string, payer: PublicKey): TransactionInstruction =>
@@ -125,16 +168,21 @@ const memoInstruction = (memo: string, payer: PublicKey): TransactionInstruction
   });
 
 /** Build a real RPC over the given cluster, signing memo submissions with the supplied
- *  low-privilege anchoring keypair. Confirmations use `finalized` commitment. */
-export function web3Rpc(cluster: SolanaCluster, payer: Keypair): SolanaRpc {
-  const connection = new Connection(clusterEndpoint(cluster), 'finalized');
+ *  low-privilege anchoring keypair. Confirmations use `finalized` commitment. An optional
+ *  overrideUrl (a custom/private RPC endpoint, e.g. QRM_ANCHOR_RPC_URL) replaces the public
+ *  endpoint — transport only; the logical cluster (and thus anchor-of-record status) is
+ *  unchanged. Sends are wrapped in a bounded retry/backoff; each attempt rebuilds the
+ *  transaction so sendAndConfirmTransaction fetches a FRESH blockhash (the usual transient). */
+export function web3Rpc(cluster: SolanaCluster, payer: Keypair, overrideUrl?: string): SolanaRpc {
+  const connection = new Connection(clusterEndpoint(cluster, overrideUrl), 'finalized');
   return {
     cluster,
     async sendMemo(memo: string) {
-      const tx = new Transaction().add(memoInstruction(memo, payer.publicKey));
-      const signature = await sendAndConfirmTransaction(connection, tx, [payer], {
-        commitment: 'finalized',
-      });
+      const signature = await withRetry(async () => {
+        // rebuild per attempt -> fresh blockhash fetched by sendAndConfirmTransaction
+        const tx = new Transaction().add(memoInstruction(memo, payer.publicKey));
+        return sendAndConfirmTransaction(connection, tx, [payer], { commitment: 'finalized' });
+      }, SEND_RETRY);
       const parsed = await connection.getParsedTransaction(signature, {
         commitment: 'finalized',
         maxSupportedTransactionVersion: 0,
@@ -171,8 +219,8 @@ export function web3Rpc(cluster: SolanaCluster, payer: Keypair): SolanaRpc {
 /** Build a READ-ONLY RPC over the given cluster: it can confirm/parse memos (getMemo) but
  *  cannot send (no payer, so sendMemo throws). This is the verifier's path — confirming an
  *  existing memo needs no key and never spends. getMemo mirrors web3Rpc's parsing exactly. */
-export function readOnlyRpc(cluster: SolanaCluster): SolanaRpc {
-  const connection = new Connection(clusterEndpoint(cluster), 'finalized');
+export function readOnlyRpc(cluster: SolanaCluster, overrideUrl?: string): SolanaRpc {
+  const connection = new Connection(clusterEndpoint(cluster, overrideUrl), 'finalized');
   return {
     cluster,
     async sendMemo() {

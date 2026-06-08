@@ -81,18 +81,21 @@ export async function anchorTipAtPublish(input: AnchorPublishInput): Promise<Anc
  *
  *  Env:  QRM_ANCHOR_CLUSTER = mainnet-beta | devnet | testnet   (enables anchoring)
  *        QRM_ANCHOR_KEY     = path to the GITIGNORED keypair JSON (a number[] secret).
+ *        QRM_ANCHOR_RPC_URL = optional custom RPC endpoint (transport only; the logical
+ *                             cluster — and thus anchor-of-record status — is unchanged).
  *
  *  This is the ONLY place that pulls in @solana/web3.js (via web3Rpc); it is imported lazily
  *  so the zero-dep callers that pass an explicit rpc never load it. */
 export async function rpcFromEnv(): Promise<SolanaRpc | null> {
   const cluster = process.env.QRM_ANCHOR_CLUSTER as SolanaCluster | undefined;
   const keyPath = process.env.QRM_ANCHOR_KEY;
+  const rpcUrl = process.env.QRM_ANCHOR_RPC_URL;
   if (!cluster || !keyPath) return null;
   if (!existsSync(keyPath)) return null;
   try {
     const secret = JSON.parse(readFileSync(keyPath, 'utf8')) as number[];
     const { web3Rpc, anchoringKeypairFromSecret } = await import('./solana-anchor.ts');
-    return web3Rpc(cluster, anchoringKeypairFromSecret(secret));
+    return web3Rpc(cluster, anchoringKeypairFromSecret(secret), rpcUrl);
   } catch {
     return null; // never block publishing on a key/config problem
   }

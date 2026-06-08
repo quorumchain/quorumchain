@@ -8,6 +8,7 @@
 //   node src/run-verify-anchored.ts --online   # also confirm mainnet-beta witnesses on-chain (read-only)
 //   QRM=dev …                                  # use the dev chain (votes-dev.log / anchors-dev.jsonl)
 //   QRM_ANCHOR_CLUSTER=mainnet-beta            # cluster for --online (default mainnet-beta)
+//   QRM_ANCHOR_RPC_URL=https://my.rpc          # optional custom RPC for --online (transport only)
 //
 // Exit code: 0 when verification is ok; non-zero when it reports a tamper/inconsistency
 // (NI-17c violation: invalid chain or a committed tip with no Layer-A pre-image).
@@ -23,6 +24,7 @@ export interface RunVerifyAnchoredOpts {
   dataDir: string;
   online: boolean;
   cluster?: SolanaCluster; // only used when online; defaults to mainnet-beta
+  rpcUrl?: string; // optional custom RPC endpoint (transport only; cluster identity unchanged)
 }
 
 export interface RunVerifyAnchoredOutcome {
@@ -38,7 +40,7 @@ export async function runVerifyAnchored(opts: RunVerifyAnchoredOpts): Promise<Ru
   let rpc: SolanaRpc | null = null;
   if (opts.online) {
     const { readOnlyRpc } = await import('./solana-anchor.ts');
-    rpc = readOnlyRpc(opts.cluster ?? 'mainnet-beta');
+    rpc = readOnlyRpc(opts.cluster ?? 'mainnet-beta', opts.rpcUrl);
   }
   const report = await verifyAnchored(log, anchors, rpc);
   return { report, exitCode: report.ok ? 0 : 1 };
@@ -70,11 +72,12 @@ async function main() {
   const dataDir = join(HERE, '..', 'data');
   const online = process.argv.includes('--online');
   const cluster = (process.env.QRM_ANCHOR_CLUSTER as SolanaCluster | undefined) ?? 'mainnet-beta';
+  const rpcUrl = process.env.QRM_ANCHOR_RPC_URL;
 
   // dev chain uses suffixed filenames; reuse runVerifyAnchored by pointing at the right files.
   const { report, exitCode } = dev
-    ? await runDev(dataDir, online, cluster)
-    : await runVerifyAnchored({ dataDir, online, cluster });
+    ? await runDev(dataDir, online, cluster, rpcUrl)
+    : await runVerifyAnchored({ dataDir, online, cluster, rpcUrl });
 
   console.log(renderReport(report, online));
   process.exit(exitCode);
@@ -82,13 +85,13 @@ async function main() {
 
 /** Dev-chain variant: votes-dev.log / anchors-dev.jsonl. Kept here (CLI-only) so the core
  *  runVerifyAnchored stays a simple dataDir loader matching the other run-*.ts conventions. */
-async function runDev(dataDir: string, online: boolean, cluster: SolanaCluster): Promise<RunVerifyAnchoredOutcome> {
+async function runDev(dataDir: string, online: boolean, cluster: SolanaCluster, rpcUrl?: string): Promise<RunVerifyAnchoredOutcome> {
   const log = readLog(join(dataDir, 'votes-dev.log'));
   const anchors = readAnchors(join(dataDir, 'anchors-dev.jsonl'));
   let rpc: SolanaRpc | null = null;
   if (online) {
     const { readOnlyRpc } = await import('./solana-anchor.ts');
-    rpc = readOnlyRpc(cluster);
+    rpc = readOnlyRpc(cluster, rpcUrl);
   }
   const report = await verifyAnchored(log, anchors, rpc);
   return { report, exitCode: report.ok ? 0 : 1 };
