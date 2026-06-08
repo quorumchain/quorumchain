@@ -12,6 +12,7 @@ import {
   createPublicKey,
   createPrivateKey,
 } from 'node:crypto';
+import { canonicalAttestation, type Attestation } from './attestation.ts';
 
 export interface ValidatorKey {
   publicKeyPem: string;
@@ -30,6 +31,11 @@ export interface SignedVote {
    *  signed before this field still verify (the nonce simply does not enter the
    *  signed payload when absent). The orchestrator issues it and verifies the echo. */
   nonce?: string;
+  /** Optional, signed provenance envelope (proof-of-inference, increment 1). Appended to the
+   *  signed payload under the SAME `!== undefined` optional-append discipline as `nonce`, so a
+   *  vote signed without one is byte-identical to the pre-attestation format and still verifies.
+   *  The stored value is the canonicalAttestation form (sorted keys, undefined omitted). */
+  attestation?: Attestation;
 }
 
 export interface RatifyResult {
@@ -85,7 +91,7 @@ export function generateValidatorKey(): ValidatorKey {
 // verbatim reasoning cannot be altered after signing. The nonce is appended ONLY
 // when present, so a vote signed without one produces byte-identical payload to the
 // pre-round-57 format (legacy log entries still verify) while a nonced vote binds it.
-function votePayload(v: { validatorId: string; ballotHash: string; verdict: string; rawOutputHash: string; nonce?: string }): string {
+function votePayload(v: { validatorId: string; ballotHash: string; verdict: string; rawOutputHash: string; nonce?: string; attestation?: Attestation }): string {
   const base: Record<string, unknown> = {
     validatorId: v.validatorId,
     ballotHash: v.ballotHash,
@@ -93,6 +99,10 @@ function votePayload(v: { validatorId: string; ballotHash: string; verdict: stri
     rawOutputHash: v.rawOutputHash,
   };
   if (v.nonce !== undefined) base.nonce = v.nonce;
+  // Appended AFTER nonce, under the same !== undefined rule, as the canonical (sorted,
+  // whitelisted) sub-object — so the band and EVERY field is signed and un-alterable
+  // post-signing. Legacy votes (no attestation) stay byte-identical (codex MAJOR-6).
+  if (v.attestation !== undefined) base.attestation = canonicalAttestation(v.attestation);
   return JSON.stringify(base);
 }
 
@@ -103,6 +113,7 @@ export function signVote(params: {
   verdict: string;
   rawOutput: string;
   nonce?: string;
+  attestation?: Attestation;
 }): SignedVote {
   const rawOutputHash = sha256hex(params.rawOutput);
   const payload = votePayload({
@@ -111,6 +122,7 @@ export function signVote(params: {
     verdict: params.verdict,
     rawOutputHash,
     nonce: params.nonce,
+    attestation: params.attestation,
   });
   const signature = cryptoSign(null, Buffer.from(payload, 'utf8'), createPrivateKey(params.privateKeyPem)).toString('hex');
   const vote: SignedVote = {
@@ -122,6 +134,7 @@ export function signVote(params: {
     signature,
   };
   if (params.nonce !== undefined) vote.nonce = params.nonce;
+  if (params.attestation !== undefined) vote.attestation = canonicalAttestation(params.attestation) as Attestation;
   return vote;
 }
 
