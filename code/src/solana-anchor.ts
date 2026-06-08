@@ -168,6 +168,40 @@ export function web3Rpc(cluster: SolanaCluster, payer: Keypair): SolanaRpc {
   };
 }
 
+/** Build a READ-ONLY RPC over the given cluster: it can confirm/parse memos (getMemo) but
+ *  cannot send (no payer, so sendMemo throws). This is the verifier's path — confirming an
+ *  existing memo needs no key and never spends. getMemo mirrors web3Rpc's parsing exactly. */
+export function readOnlyRpc(cluster: SolanaCluster): SolanaRpc {
+  const connection = new Connection(clusterEndpoint(cluster), 'finalized');
+  return {
+    cluster,
+    async sendMemo() {
+      throw new Error('readOnlyRpc cannot send memos (no payer) — read-only verification only');
+    },
+    async getMemo(signature: string) {
+      const parsed = await connection.getParsedTransaction(signature, {
+        commitment: 'finalized',
+        maxSupportedTransactionVersion: 0,
+      });
+      if (!parsed) return null;
+      for (const ix of parsed.transaction.message.instructions as any[]) {
+        if (ix.programId?.toBase58?.() === MEMO_PROGRAM_ID && typeof ix.parsed === 'string') {
+          return { memo: ix.parsed, slot: parsed.slot, cluster };
+        }
+        if (ix.program === 'spl-memo' && typeof ix.parsed === 'string') {
+          return { memo: ix.parsed, slot: parsed.slot, cluster };
+        }
+      }
+      const log = (parsed.meta?.logMessages ?? []).find((l) => l.includes('Memo'));
+      if (log) {
+        const m = log.match(/"(.*)"\s*$/);
+        if (m) return { memo: m[1], slot: parsed.slot, cluster };
+      }
+      return null;
+    },
+  };
+}
+
 /** Build a live DEVNET RPC with a freshly-funded ephemeral key. Used ONLY by the optional
  *  live smoke test; it throws if the airdrop/RPC is unavailable so the test can skip. */
 export async function liveDevnetRpc(): Promise<SolanaRpc> {
