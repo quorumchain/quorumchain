@@ -88,7 +88,10 @@ async function main() {
   const keyring = pinned;
 
   console.error(`Convening panel [${CHAIN} chain] on: ${prompt}`);
-  const r = await convene({ prompt, context, signers: started, keyring, quorum: 2, logPath: LOG, verdicts, registryPath: REGISTRY, meta: ballotMeta });
+  // signerTimeoutMs is convene's OWN ceiling, set ABOVE the RemoteSigner's 600s downstream
+  // timeout so the inner timeout (with its specific "host timed out" error) normally fires
+  // first; convene's ceiling only catches a signer stuck before it arms its own timer.
+  const r = await convene({ prompt, context, signers: started, keyring, quorum: 2, logPath: LOG, verdicts, registryPath: REGISTRY, meta: ballotMeta, signerTimeoutMs: 660_000 });
   for (const s of started) s.close();
 
   // Persist verbatim reasoning keyed by ballot hash. The log stores only the

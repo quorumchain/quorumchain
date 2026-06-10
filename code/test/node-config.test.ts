@@ -30,6 +30,13 @@ test('allowedOrigins defaults to empty and parses QRM_ALLOWED_ORIGINS (trim, dro
   assert.deepEqual(cfg.allowedOrigins, ['http://a.test', 'https://b.test']);
 });
 
+test('trustedProxies defaults to empty and parses QRM_TRUSTED_PROXIES (trim, drop blanks)', () => {
+  const base = { QRM_NODE_DATA: '/tmp/x', QRM_SUBMIT_TOKEN: 's', QRM_ADMIN_TOKEN: 'a' };
+  assert.deepEqual(loadConfig(base, KEYRING).trustedProxies, []);
+  const cfg = loadConfig({ ...base, QRM_TRUSTED_PROXIES: ' 10.0.0.1 , ,203.0.113.7 ' }, KEYRING);
+  assert.deepEqual(cfg.trustedProxies, ['10.0.0.1', '203.0.113.7']);
+});
+
 test('maxBodyBytes defaults to 64KiB but is overridable via QRM_MAX_BODY_BYTES', () => {
   const base = { QRM_NODE_DATA: '/tmp/x', QRM_SUBMIT_TOKEN: 's', QRM_ADMIN_TOKEN: 'a' };
   assert.equal(loadConfig(base, KEYRING).limits.maxBodyBytes, 64 * 1024);

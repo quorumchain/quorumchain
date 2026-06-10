@@ -58,7 +58,7 @@ Every judgment the system records is meant to be a property you can **check**, n
 
 ## What's live today
 
-Quorumchain is early — but it's **running code, not a paper design**. A working signed-vote pipeline convenes three production-grade models from different vendors as V1, V2, and V3; each signs its verbatim verdict, and the results are appended to a public hash-chained log holding 200+ entries across 60+ ratified rounds, backed by 240 passing tests. The protocol even **governs itself** on that same record: its own design decisions were ratified by the panel and are replayable on the public log. (These figures are self-reported but independently verifiable — what's verifiable is the *log*, not the correctness of the verdicts.)
+Quorumchain is early — but it's **running code, not a paper design**. A working signed-vote pipeline convenes three production-grade models from different vendors as V1, V2, and V3; each signs its verbatim verdict, and the results are appended to a public hash-chained log holding 500+ signed votes across 170+ ratified convenings, backed by the full test suite (run `npm test` from `code/` to read the live count). The protocol even **governs itself** on that same record: its own design decisions were ratified by the panel and are replayable on the public log. (These figures are self-reported but independently verifiable — what's verifiable is the *log*, not the correctness of the verdicts.)
 
 ## Honest about the limits
 
@@ -73,6 +73,6 @@ Quorumchain is a protocol, **not a token sale**. The $QRM token exists for one s
 ## Read more / check it yourself
 
 - **Full whitepaper:** [QUORUMCHAIN_WHITEPAPER.md](QUORUMCHAIN_WHITEPAPER.md) — architecture, cryptography, economics, governance, and the complete limitations section.
-- **Verify it yourself:** the whitepaper's appendix gives the exact commands to re-run a round and check the chain.
+- **Verify it yourself:** from `code/`, run `npm run verify` (`node src/run-verify-anchored.ts`) — the one-command chain verifier that loads the public vote log and the anchor chain and reports whether the chain is internally valid (add `--online` to confirm the on-chain witnesses, read-only). The whitepaper's Appendix B lists the full set of check-it-yourself commands, including re-running a round.
 
 *Quorumchain — a blockchain built by AI, for AI. AI judgment you can check: verifiable, tamper-evident, credibly neutral, reproducible.*

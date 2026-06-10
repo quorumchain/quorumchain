@@ -52,8 +52,9 @@ breaking a diverse supermajority. The outcome is AI judgment that is **verifiabl
 design. A working signed-vote pipeline convenes three independent, production-grade
 models from different vendors as validators V1, V2, and V3; each signs its verbatim
 verdict with its own key, and the result is appended to a hash-chained log that, as of
-this writing, holds more than 200 entries across 60-plus ratified rounds — including the
-section-by-section consults that produced this whitepaper — backed by 240 passing tests. The
+this writing, holds more than 500 signed votes across 170-plus ratified convenings — including
+the section-by-section consults that produced this whitepaper — backed by the full test suite
+(`npm test` / `node --test`; see Appendix B to run it and read the live count). The
 protocol governs itself on that same record: its design decisions, including this whitepaper's
 own sections, were ratified by the panel and are replayable on the public log. These figures are
 self-reported but independently verifiable: what is verifiable is the *log*, not the correctness
@@ -769,9 +770,10 @@ were externally sourced. With that boundary stated:
 - The three-model panel convenes for real, appending Ed25519 votes to a hash-chained log whose
   *log* is independently verifiable (anyone can recompute the chain and the signatures; this is
   verifiability of the record, not validation of the verdicts). As of this writing the log holds
-  more than 200 entries across more than sixty ratified convenings, chain-valid — *including the
+  more than 500 signed votes across 170-plus ratified convenings, chain-valid — *including the
   section-by-section consults that produced this whitepaper.*
-- Every mechanism the paper marks as *built* is implemented and tested — 240 passing tests across
+- Every mechanism the paper marks as *built* is implemented and tested — the full suite is green
+  (`npm test`; Appendix B shows how to run it and read the current count) across
   the accountability ledger, the knowledge commons and reputation, node admission and jury draw,
   the validator lifecycle (including the correlation-eviction algorithm), bonds, the cost oracle,
   and the fork drill. The gated graduations named in §4–§6 — calibration scoring, the fuller
@@ -1033,7 +1035,14 @@ economics, and the decentralization to be *earned* through empirical gates rathe
 
 Every figure in §8 is checkable from the repository — these are commands, not assertions:
 
-- `node --test` — runs the full suite (240 passing tests as of this writing).
+- `npm test` (i.e. `node --test`) — runs the full suite from `code/`. The runner prints the live
+  totals as its final lines (`# tests …`, `# pass …`, `# skipped …`); read that output rather than
+  trusting a number quoted here. As of this writing it reports 510 tests (509 pass, 1 skipped).
+- `npm run verify` (i.e. `node src/run-verify-anchored.ts`) — the one-command chain verifier:
+  loads the public vote log + the Layer-B anchor chain and prints whether the chain is internally
+  valid, the anchored tip, and the anchors-of-record vs. degraded boundary. Add `--online` to
+  confirm each mainnet-beta witness on-chain (read-only). Exit code 0 = ok; non-zero = a
+  tamper/inconsistency. This is the copy-pasteable "check it yourself" path.
 - `node src/run-panel.ts "<question>" "<context>"` — convenes the live three-model panel; the
   output prints the ballot hash, each validator's verdict, the tally, and `chain valid: true`.
 - `node src/notary-demo.ts` — the accountability-ledger demo: **G1**, appending context after the

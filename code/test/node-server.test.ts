@@ -52,12 +52,27 @@ function extendSnapshot(seedLog: string, count: number): { votesLog: string; bal
 
 async function startNode(allowedOrigins: string[] = []) {
   const data = bootData();
-  const cfg = { dataDir: data, port: 0, submitToken: 'S', adminToken: 'A', pinnedKeyring: keyring, chainId: 'c', quorum: 2, allowedOrigins,
+  const cfg = { dataDir: data, port: 0, submitToken: 'S', adminToken: 'A', pinnedKeyring: keyring, chainId: 'c', quorum: 2, allowedOrigins, trustedProxies: [],
     limits: { maxBodyBytes: 1024, maxQuestionLen: 200, maxContextLen: 800, rateWindowMs: 60000, rateMaxPerWindow: 100, inboxMaxBytes: 1e9, nearDupThreshold: 0.8 } };
   const node = createNode(cfg);
   await node.listen();
   return { node, base: `http://127.0.0.1:${node.port()}`, data };
 }
+
+// A node configured to TRUST the loopback peer (127.0.0.1 / ::1 / IPv4-mapped) as a proxy, with
+// a tight per-window rate budget so the bucket boundary is observable in a test.
+async function startProxyNode(opts: { trustProxy: boolean; rateMaxPerWindow?: number; rateWindowMs?: number } = { trustProxy: true }) {
+  const data = bootData();
+  const trustedProxies = opts.trustProxy ? ['127.0.0.1', '::1', '::ffff:127.0.0.1'] : [];
+  const cfg = { dataDir: data, port: 0, submitToken: 'S', adminToken: 'A', pinnedKeyring: keyring, chainId: 'c', quorum: 2, allowedOrigins: [], trustedProxies,
+    limits: { maxBodyBytes: 1024, maxQuestionLen: 200, maxContextLen: 800, rateWindowMs: opts.rateWindowMs ?? 60000, rateMaxPerWindow: opts.rateMaxPerWindow ?? 2, inboxMaxBytes: 1e9, nearDupThreshold: 0.8 } };
+  const node = createNode(cfg);
+  await node.listen();
+  return { node, base: `http://127.0.0.1:${node.port()}`, data };
+}
+
+const SUBMIT = (base: string, headers: Record<string, string>) =>
+  fetch(`${base}/submit`, { method: 'POST', headers: { authorization: 'Bearer S', 'content-type': 'application/json', ...headers }, body: JSON.stringify({ question: 'a real question here', context: 'ctx' }) });
 
 const ORIGIN = 'http://127.0.0.1:8765';
 
@@ -231,7 +246,7 @@ test('admin publish with malformed JSON returns 400, not 500', async () => {
 
 async function startNodeReal() {
   const { data, tmpLog } = bootDataReal();
-  const cfg = { dataDir: data, port: 0, submitToken: 'S', adminToken: 'A', pinnedKeyring: keyring, chainId: 'c', quorum: 2,
+  const cfg = { dataDir: data, port: 0, submitToken: 'S', adminToken: 'A', pinnedKeyring: keyring, chainId: 'c', quorum: 2, allowedOrigins: [], trustedProxies: [],
     limits: { maxBodyBytes: 1 << 20, maxQuestionLen: 200, maxContextLen: 800, rateWindowMs: 60000, rateMaxPerWindow: 100, inboxMaxBytes: 1e9, nearDupThreshold: 0.8 } };
   const node = createNode(cfg);
   await node.listen();
@@ -283,7 +298,7 @@ test('isSafeCommonsName allowlist + stageRelease throws on unsafe commons name',
 // An EMPTY data dir: no staged/committed release, no checkpoint — a fresh, never-published node.
 async function startEmptyNode() {
   const data = mkdtempSync(join(tmpdir(), 'qrm-empty-'));
-  const cfg = { dataDir: data, port: 0, submitToken: 'S', adminToken: 'A', pinnedKeyring: keyring, chainId: 'c', quorum: 2,
+  const cfg = { dataDir: data, port: 0, submitToken: 'S', adminToken: 'A', pinnedKeyring: keyring, chainId: 'c', quorum: 2, allowedOrigins: [], trustedProxies: [],
     limits: { maxBodyBytes: 1 << 20, maxQuestionLen: 200, maxContextLen: 800, rateWindowMs: 60000, rateMaxPerWindow: 100, inboxMaxBytes: 1e9, nearDupThreshold: 0.8 } };
   const node = createNode(cfg);
   await node.listen();
@@ -334,9 +349,90 @@ test('first publish on an empty node still requires the admin token (401 without
   } finally { node.close(); }
 });
 
+// ---- Trusted-proxy client-IP resolution (item 1) ----
+
+// (a) From a TRUSTED proxy peer, XFF is respected: each distinct forwarded client IP gets its
+// OWN rate bucket, so two different clients behind the proxy each get the full per-window budget.
+test('trusted proxy: XFF respected — distinct forwarded client IPs get separate rate buckets', async () => {
+  const { node, base } = await startProxyNode({ trustProxy: true, rateMaxPerWindow: 2 });
+  try {
+    // client A: two allowed, third 429 — its own bucket
+    assert.equal((await SUBMIT(base, { 'x-forwarded-for': '198.51.100.10' })).status, 200);
+    assert.equal((await SUBMIT(base, { 'x-forwarded-for': '198.51.100.10' })).status, 200);
+    assert.equal((await SUBMIT(base, { 'x-forwarded-for': '198.51.100.10' })).status, 429);
+    // client B (different forwarded IP): still has its full budget despite A being limited
+    assert.equal((await SUBMIT(base, { 'x-forwarded-for': '198.51.100.20' })).status, 200);
+    assert.equal((await SUBMIT(base, { 'x-forwarded-for': '198.51.100.20' })).status, 200);
+    assert.equal((await SUBMIT(base, { 'x-forwarded-for': '198.51.100.20' })).status, 429);
+  } finally { node.close(); }
+});
+
+// (a') A client behind a trusted proxy that PREPENDS a spoofed XFF cannot escape its bucket:
+// the proxy appends the real client to the right, so the RIGHTMOST entry (the address the proxy
+// observed) is the key. Two requests whose rightmost entry is the same real client share one
+// bucket regardless of differing spoofed leftmost values.
+test('trusted proxy: rightmost XFF entry is the key — a prepended spoof does not win a fresh bucket', async () => {
+  const { node, base } = await startProxyNode({ trustProxy: true, rateMaxPerWindow: 1 });
+  try {
+    // real client 203.0.113.50; attacker prepends a different victim IP each time
+    assert.equal((await SUBMIT(base, { 'x-forwarded-for': '1.2.3.4, 203.0.113.50' })).status, 200);
+    assert.equal((await SUBMIT(base, { 'x-forwarded-for': '9.9.9.9, 203.0.113.50' })).status, 429); // same real client → limited despite different spoofed prefix
+  } finally { node.close(); }
+});
+
+// (b) From an UNTRUSTED socket peer, XFF is ignored entirely: spoofing a fresh client IP on
+// every request does NOT win a new bucket — all requests key on the (single) socket IP, so the
+// budget is exhausted regardless of the forged header.
+test('untrusted source: spoofed XFF is ignored — all requests share the socket-IP bucket', async () => {
+  const { node, base } = await startProxyNode({ trustProxy: false, rateMaxPerWindow: 2 });
+  try {
+    assert.equal((await SUBMIT(base, { 'x-forwarded-for': '198.51.100.1' })).status, 200);
+    assert.equal((await SUBMIT(base, { 'x-forwarded-for': '198.51.100.2' })).status, 200);
+    // a fresh spoofed client IP must NOT grant a fresh budget — keyed on socket IP → 429
+    assert.equal((await SUBMIT(base, { 'x-forwarded-for': '198.51.100.3' })).status, 429);
+  } finally { node.close(); }
+});
+
+// (c) The bucket keys on the RESOLVED real client IP, not the proxy IP: behind a trusted proxy
+// all requests share ONE socket (the proxy), yet two distinct clients are limited independently.
+// (This is the same guarantee as (a), asserted from the "proxy IP is not the key" angle: if the
+// node keyed on the proxy socket IP, client B's first request would already be the 3rd on the
+// shared bucket and 429 — it is 200.)
+test('trusted proxy: rate bucket keys on the resolved client IP, never the shared proxy IP', async () => {
+  const { node, base } = await startProxyNode({ trustProxy: true, rateMaxPerWindow: 1 });
+  try {
+    assert.equal((await SUBMIT(base, { 'x-forwarded-for': '203.0.113.5' })).status, 200);
+    assert.equal((await SUBMIT(base, { 'x-forwarded-for': '203.0.113.5' })).status, 429); // same client → limited
+    assert.equal((await SUBMIT(base, { 'x-forwarded-for': '203.0.113.6' })).status, 200); // different client → not limited by the proxy's shared socket
+  } finally { node.close(); }
+});
+
+// ---- Rate-map eviction (item 2) ----
+
+// Stale entries are evicted: with a very short window, once entries age out, the periodic sweep
+// (triggered on the next access after the window elapses) drops them and the map shrinks back —
+// it does not retain a key per distinct client forever.
+test('rate map evicts stale entries and does not grow without bound', async () => {
+  const { node, base } = await startProxyNode({ trustProxy: true, rateMaxPerWindow: 100, rateWindowMs: 40 });
+  try {
+    // Many distinct forwarded client IPs → many distinct buckets (submit: + subwin: per IP).
+    for (let i = 0; i < 30; i++) {
+      const r = await SUBMIT(base, { 'x-forwarded-for': `198.51.${i}.1` });
+      assert.equal(r.status, 200);
+    }
+    assert.ok(node.rateMapSize() > 1, `map should hold many client buckets, got ${node.rateMapSize()}`);
+    // Let the window fully elapse so every recorded timestamp ages out.
+    await new Promise((r) => setTimeout(r, 60));
+    // One more request (after the window) triggers the periodic sweep, which deletes the now-stale
+    // keys. The map should collapse to just this client's live buckets, not keep the old 30.
+    assert.equal((await SUBMIT(base, { 'x-forwarded-for': '203.0.113.99' })).status, 200);
+    assert.ok(node.rateMapSize() <= 4, `stale keys should be evicted; map size = ${node.rateMapSize()}`);
+  } finally { node.close(); }
+});
+
 test('degraded mode blocks writes but still serves /healthz', async () => {
   const data = bootData();
-  const cfg = { dataDir: data, port: 0, submitToken: 'S', adminToken: 'A', pinnedKeyring: keyring, chainId: 'c', quorum: 2,
+  const cfg = { dataDir: data, port: 0, submitToken: 'S', adminToken: 'A', pinnedKeyring: keyring, chainId: 'c', quorum: 2, allowedOrigins: [], trustedProxies: [],
     limits: { maxBodyBytes: 1024, maxQuestionLen: 200, maxContextLen: 800, rateWindowMs: 60000, rateMaxPerWindow: 100, inboxMaxBytes: 1e9, nearDupThreshold: 0.8 } };
   const node = createNode(cfg, () => 'degraded');
   await node.listen();

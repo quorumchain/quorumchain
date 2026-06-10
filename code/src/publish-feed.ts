@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { loadPinnedKeyring } from './keystore.ts';
 import { buildFeed, renderFeedMarkdown } from './feed.ts';
 import { anchorTipAtPublish, rpcFromEnv } from './anchor-publish.ts';
+import { reportPublishSync } from './publish-sync-report.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const LOG = join(HERE, '..', 'data', 'votes.log');
@@ -34,3 +35,7 @@ console.log(`Published feed: ${feed.convenings.length} convenings, ${feed.entryC
 const anchor = await anchorTipAtPublish({ logPath: LOG, anchorPath: ANCHORS, rpc: await rpcFromEnv(), now: Date.now() });
 if (anchor.skipped) console.log(`Anchor: skipped (${anchor.note})`);
 else console.log(`Anchor: seq ${anchor.anchorSeq} for tip ${anchor.tipHash?.slice(0, 12)} — ${anchor.degraded ? `DEGRADED to Layer-B-only (${anchor.note})` : `witnessed on Solana (${anchor.signature})`}`);
+
+// Publish-time sync guard: head==anchor + committed votes.log matches the chain (catches a
+// forgotten `git add -f code/data/votes.log`). Warns only — never blocks publishing.
+reportPublishSync(LOG, ANCHORS);

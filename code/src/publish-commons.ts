@@ -12,6 +12,7 @@ import { buildViews } from './commons-read.ts';
 import { renderClaimMarkdown, renderIndexMarkdown } from './commons-render.ts';
 import { computeAuditScope, renderScopeRecord, type ScopeClaim } from './audit-scope.ts';
 import { anchorTipAtPublish, rpcFromEnv } from './anchor-publish.ts';
+import { reportPublishSync } from './publish-sync-report.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DATA = join(HERE, '..', 'data');
@@ -50,3 +51,7 @@ console.log(`Wrote ${views.length} claim pages + INDEX.md to docs/commons/ (chai
 const anchor = await anchorTipAtPublish({ logPath: LOG, anchorPath: ANCHORS, rpc: await rpcFromEnv(), now: Date.now() });
 if (anchor.skipped) console.log(`Anchor: skipped (${anchor.note})`);
 else console.log(`Anchor: seq ${anchor.anchorSeq} for tip ${anchor.tipHash?.slice(0, 12)} — ${anchor.degraded ? `DEGRADED to Layer-B-only (${anchor.note})` : `witnessed on Solana (${anchor.signature})`}`);
+
+// Publish-time sync guard: head==anchor + committed votes.log matches the chain (catches a
+// forgotten `git add -f code/data/votes.log`). Warns only — never blocks publishing.
+reportPublishSync(LOG, ANCHORS);

@@ -27,6 +27,22 @@ function bearer(req: IncomingMessage): string | null {
   const h = req.headers.authorization;
   return h && h.startsWith('Bearer ') ? h.slice(7) : null;
 }
+// Resolve the single rate-limit "client IP". X-Forwarded-For is forgeable by any client, so
+// it is honored ONLY when the immediate socket peer is a configured trusted proxy; otherwise
+// it is ignored entirely and we key on the socket IP. When trusted, we take the RIGHTMOST XFF
+// entry — the address the trusted proxy itself observed for its immediate peer. A standards-
+// compliant proxy APPENDS the connecting client to the right, so a client that pre-seeds a
+// spoofed `X-Forwarded-For: victim` only pollutes the LEFT; the rightmost remains the value the
+// trusted proxy added. (We trust exactly ONE hop — the immediate proxy — which is the deploy
+// model here: one website-backend proxy fronts the node.) A blank XFF falls back to socket IP.
+function clientIp(req: IncomingMessage, trustedProxies: string[]): string {
+  const socketIp = req.socket.remoteAddress ?? 'unknown';
+  if (!trustedProxies.includes(socketIp)) return socketIp;
+  const xff = req.headers['x-forwarded-for'];
+  const raw = Array.isArray(xff) ? xff[xff.length - 1] : xff; // multiple XFF headers: last header
+  const parts = (raw ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+  return parts.length ? parts[parts.length - 1] : socketIp; // rightmost entry = proxy's own peer
+}
 function sendRaw(res: ServerResponse, status: number, body: unknown, extra: Record<string, string> = {}): void {
   res.writeHead(status, { 'content-type': 'application/json', ...extra });
   res.end(JSON.stringify(body));
@@ -38,18 +54,50 @@ function materialize(content: string | null, name: string): string | null {
   return p;
 }
 
-export interface NodeHandle { listen(): Promise<void>; close(): void; port(): number }
+export interface NodeHandle { listen(): Promise<void>; close(): void; port(): number; rateMapSize(): number }
 
 export function createNode(cfg: NodeConfig, getMode: () => 'live' | 'degraded' = () => 'live'): NodeHandle {
   const data = cfg.dataDir;
   const inboxPath = join(data, 'inbox.jsonl');
   const auditPath = join(data, 'audit.jsonl');
   const rate = new Map<string, number[]>();
+  // Bound the rate map so a public node can't be made to grow it without limit (one key per
+  // distinct client IP x bucket). The Map is kept in least-recently-used order: every access
+  // DELETES then re-SETS its key, so the most-recently-touched key is always last and the
+  // least-recently-touched is always first. Three bounds: (1) a key whose timestamps have all
+  // aged past the window is dropped on access; (2) a periodic full sweep drops every stale key;
+  // (3) a HARD CAP enforced on EVERY insertion of a new key — when at the cap we evict the
+  // least-recently-used key BEFORE inserting, so the cap holds even within a single window
+  // (an evicted client simply gets a fresh window next time — fail-open, never a crash).
+  const RATE_MAP_MAX = 100_000;
+  let lastSweep = Date.now();
+  const sweepRate = (now: number): void => {
+    for (const [k, arr] of rate) {
+      const live = arr.filter((t) => now - t < cfg.limits.rateWindowMs);
+      if (live.length === 0) rate.delete(k);
+      else rate.set(k, live);
+    }
+  };
 
   const allowed = (key: string): boolean => {
     const now = Date.now();
-    const arr = (rate.get(key) ?? []).filter((t) => now - t < cfg.limits.rateWindowMs);
+    // Periodic full sweep (at most once per window) reclaims keys for clients that fell silent.
+    if (now - lastSweep >= cfg.limits.rateWindowMs) { sweepRate(now); lastSweep = now; }
+    const existing = rate.get(key);
+    const arr = (existing ?? []).filter((t) => now - t < cfg.limits.rateWindowMs);
     arr.push(now);
+    // Refresh LRU order: delete first so re-set moves this key to the most-recent (last) slot.
+    rate.delete(key);
+    // Hard cap on a genuinely NEW key (one not already present): evict the LRU (first) key(s)
+    // until there is room. Enforced here — not only in the periodic sweep — so a burst of
+    // distinct keys within one window cannot exceed the cap.
+    if (existing === undefined) {
+      while (rate.size >= RATE_MAP_MAX) {
+        const lru = rate.keys().next().value as string | undefined;
+        if (lru === undefined) break;
+        rate.delete(lru);
+      }
+    }
     rate.set(key, arr);
     return arr.length <= cfg.limits.rateMaxPerWindow;
   };
@@ -103,7 +151,7 @@ export function createNode(cfg: NodeConfig, getMode: () => 'live' | 'degraded' =
     try {
       const url = new URL(req.url ?? '/', 'http://x');
       const path = url.pathname;
-      const ip = req.socket.remoteAddress ?? 'unknown';
+      const ip = clientIp(req, cfg.trustedProxies);
       const mode = getMode();
       const ref = currentRelease(data);
 
@@ -208,5 +256,6 @@ export function createNode(cfg: NodeConfig, getMode: () => 'live' | 'degraded' =
     listen: () => new Promise<void>((resolve) => server.listen(cfg.port, '0.0.0.0', () => { bound = (server.address() as any).port; resolve(); })),
     close: () => server.close(),
     port: () => bound,
+    rateMapSize: () => rate.size,
   };
 }

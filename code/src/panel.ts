@@ -64,6 +64,35 @@ export async function startSigners(
   return { started, startupFailures };
 }
 
+/** Default bounded per-signer wait in convene. A signer's own downstream timeout (e.g. a
+ *  RemoteSigner's 30s rpc timeout) is the inner floor; this is convene's OWN ceiling so a
+ *  signer with no timeout — or one stuck before it arms its own (a hung local model invoker,
+ *  the flaky Hermes path) — cannot hang the whole round. It must sit ABOVE the signer's own
+ *  downstream timeout so the inner timeout normally fires first with its specific error; the
+ *  live run-panel path passes an explicit ceiling tuned to its RemoteSigner timeout. This
+ *  default is the floor for callers (e.g. tests, ad-hoc convenes) that pass nothing. */
+const DEFAULT_SIGNER_TIMEOUT_MS = 660_000;
+
+/** Race a signer's signBallot against a bounded timeout. A timeout becomes a recorded ABSENCE
+ *  (the same shape convene already uses for a thrown signer error), never a hang and never a
+ *  fabricated vote. The timer is intentionally NOT unref'd: while convene awaits a signer the
+ *  timeout must keep the loop alive so it actually fires (a hung signer may leave nothing else
+ *  pending); it is always cleared the moment the signer settles, so it never lingers. */
+function signWithTimeout(s: Signer, prompt: string, context: string, verdicts: string[] | undefined, nonce: string, boundType: string | undefined, anchorComm: string | undefined, timeoutMs: number): Promise<SignedVote> {
+  return new Promise<SignedVote>((resolve, reject) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      reject(new Error(`signer ${s.validatorId} timed out after ${timeoutMs}ms (recorded as absence)`));
+    }, timeoutMs);
+    s.signBallot(prompt, context, verdicts, nonce, boundType, anchorComm).then(
+      (v) => { if (settled) return; settled = true; clearTimeout(timer); resolve(v); },
+      (e) => { if (settled) return; settled = true; clearTimeout(timer); reject(e instanceof Error ? e : new Error(String(e))); },
+    );
+  });
+}
+
 export async function convene(params: {
   prompt: string;
   context: string;
@@ -75,6 +104,7 @@ export async function convene(params: {
   registryPath?: string;
   meta?: BallotMeta; // CIP-13: declared epistemic type / supersedes / typesClaimFor recorded with the ballot
   dossier?: ContraryDossier; // CIP-10: contrary-evidence dossier recorded with the ballot
+  signerTimeoutMs?: number; // convene's OWN bounded per-signer ceiling (default 120s); a hung signer is recorded as absence
 }): Promise<ConveneResult> {
   // CIP-14: if the ballot declares a hash-bound type, it enters the hash (and every
   // signature). CIP-15 NI-15e: if it carries anchors, their canonical commitment enters too.
@@ -92,6 +122,7 @@ export async function convene(params: {
   // captured from one convening cannot be replayed into another. Verdict integrity still
   // rests on the signature + keyring; the nonce adds convening-binding on top.
   const nonce = randomBytes(16).toString('hex');
+  const signerTimeoutMs = params.signerTimeoutMs ?? DEFAULT_SIGNER_TIMEOUT_MS;
   const votes: SignedVote[] = [];
   const failures: { validatorId: string; error: string }[] = [];
   // Sequential: appendVote reads-then-writes the file, so concurrent appends
@@ -106,7 +137,7 @@ export async function convene(params: {
   // arrived: 2/3 is of the whole registered panel, so absences count against the bar.
   for (const s of params.signers) {
     try {
-      const vote = await s.signBallot(params.prompt, params.context, params.verdicts, nonce, boundType, anchorComm);
+      const vote = await signWithTimeout(s, params.prompt, params.context, params.verdicts, nonce, boundType, anchorComm, signerTimeoutMs);
       if (vote.nonce !== nonce) {
         // a vote not bound to THIS convening (stale/replayed) is recorded as a failure,
         // never logged or counted — the orchestrator only accepts the nonce it issued

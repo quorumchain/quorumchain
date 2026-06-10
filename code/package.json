@@ -5,7 +5,8 @@
   "private": true,
   "description": "Quorumchain ($QRM) — signed-vote consensus protocol (CIP-3)",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "verify": "node src/run-verify-anchored.ts"
   },
   "dependencies": {
     "@solana/web3.js": "^1.98.4"

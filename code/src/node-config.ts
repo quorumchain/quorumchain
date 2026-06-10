@@ -16,6 +16,11 @@ export interface NodeConfig {
   dataDir: string; port: number; submitToken: string; adminToken: string;
   pinnedKeyring: Record<string, string>; chainId: string; quorum: number; limits: NodeLimits;
   allowedOrigins: string[];
+  // Socket source IPs (the immediate TCP peer) that are TRUSTED to set X-Forwarded-For.
+  // Empty (the default) = no proxy is trusted, so XFF is always ignored and rate limiting
+  // keys on the raw socket IP. When the website-backend proxy fronts the node, list its
+  // egress IP(s) here so per-client rate limiting keys on the real client IP, not the proxy.
+  trustedProxies: string[];
 }
 
 const DEFAULT_LIMITS: NodeLimits = {
@@ -59,5 +64,6 @@ export function loadConfig(env: Record<string, string | undefined>, keyring: Rec
     quorum: env.QRM_QUORUM ? Number(env.QRM_QUORUM) : 2,
     limits: { ...DEFAULT_LIMITS, maxBodyBytes },
     allowedOrigins: (env.QRM_ALLOWED_ORIGINS ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+    trustedProxies: (env.QRM_TRUSTED_PROXIES ?? '').split(',').map((s) => s.trim()).filter(Boolean),
   };
 }

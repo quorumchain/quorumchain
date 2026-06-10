@@ -125,6 +125,26 @@ test('convene survives a dead validator: records the failure, ratifies on the st
   assert.equal(readLog(logPath).length, 2); // the dead validator wrote nothing to the log
 });
 
+// A signer whose signBallot never settles — the flaky/hung path convene must not wait on forever.
+const hangingSigner = (id: string): Signer => ({
+  validatorId: id,
+  publicKeyPem: `PLACEHOLDER_${id}`,
+  signBallot: () => new Promise<never>(() => { /* never resolves */ }),
+});
+
+test('convene bounds a hung signer with its own per-signer timeout: records absence, ratifies on the rest', async () => {
+  const { signers, keyring } = fakePanel({ V1: 'VERDICT: YES', V2: 'VERDICT: YES' }); // 2 live
+  keyring.V3 = 'PLACEHOLDER_V3'; // V3's host hangs (never answers, never errors)
+  const logPath = tmpLog();
+  const r = await convene({ prompt: 'q', context: 'c', signers: [...signers, hangingSigner('V3')], keyring, quorum: 2, logPath, signerTimeoutMs: 30 });
+  assert.equal(r.ratified, true); // the hung signer did not hang or abort the round
+  assert.equal(r.verdict, 'YES');
+  assert.equal(r.votes.length, 2); // only the live validators produced votes
+  assert.deepEqual(r.failures.map((f) => f.validatorId), ['V3']); // the timeout is a recorded absence
+  assert.match(r.failures[0].error, /timed out/);
+  assert.equal(readLog(logPath).length, 2); // the hung validator wrote nothing
+});
+
 test('startSigners tolerates a host that fails its startup handshake: records it, returns the rest', async () => {
   // round-49 V2 finding: run-panel must not abort the whole convening if ONE host
   // dies at startup. A failed signer factory is a recorded startup absence, not a throw.
