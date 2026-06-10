@@ -10,6 +10,7 @@ import assert from 'node:assert/strict';
 import { generateValidatorKey, ballotHash, signVote, verifyVote, ratify } from '../src/signed-vote.ts';
 import { makeLocalSigner } from '../src/signer.ts';
 import { parseVerdict } from '../src/panel.ts';
+import { mockAttestor } from '../src/attestor.ts';
 
 const PROMPT = 'Did the agent breach its bond?';
 const CONTEXT = 'evidence';
@@ -77,4 +78,40 @@ test('the orchestrator cannot swap a signed verdict after the fact (no key to re
   const vote = await s.signBallot(PROMPT, CONTEXT);
   const tampered = { ...vote, verdict: 'YES' }; // orchestrator flips the verdict
   assert.equal(verifyVote(tampered, s.publicKeyPem), false); // signature covers the verdict
+});
+
+test('makeLocalSigner with an attestor binds an unattested envelope into the signed vote', async () => {
+  const k = generateValidatorKey();
+  const signer = makeLocalSigner({
+    validatorId: 'V1',
+    key: k,
+    deliberate: async () => ({ verdict: 'YES', rawOutput: 'IGNORED — attestor supplies rawOutput' }),
+    attestor: mockAttestor(async (prompt) => `echo:${prompt}`),
+  });
+  const vote = await signer.signBallot('q', 'c', ['YES', 'NO'], 'conv-nonce', undefined, undefined, 'challenge-1');
+  assert.deepEqual(vote.attestation, { band: 'unattested', reason: 'NO_BACKEND' });
+  assert.equal(verifyVote(vote, signer.publicKeyPem), true);
+  assert.match(vote.rawOutput, /^echo:/);
+});
+
+test('makeLocalSigner WITHOUT an attestor produces a legacy vote (no attestation, byte-identical)', async () => {
+  const k = generateValidatorKey();
+  const signer = makeLocalSigner({ validatorId: 'V1', key: k, deliberate: async () => ({ verdict: 'YES', rawOutput: 'r' }) });
+  const vote = await signer.signBallot('q', 'c');
+  assert.equal(vote.attestation, undefined);
+  assert.equal(verifyVote(vote, signer.publicKeyPem), true);
+});
+
+test('makeLocalSigner passes the derived ballotHash + nonce as requestCtx to the attestor', async () => {
+  const k = generateValidatorKey();
+  let seenCtx: { ballotHash: string; conveningNonce: string } | undefined;
+  const attestor = {
+    async invoke(_v: string, _p: string, _x: string, ctx?: { ballotHash: string; conveningNonce: string }) {
+      seenCtx = ctx; return { rawOutput: 'VERDICT: YES', attestation: { band: 'unattested' as const, reason: 'NO_BACKEND' as const } };
+    },
+  };
+  const signer = makeLocalSigner({ validatorId: 'V1', key: k, deliberate: async () => ({ verdict: 'YES', rawOutput: 'x' }), attestor });
+  await signer.signBallot('q', 'c', undefined, 'nonce-1');
+  assert.equal(seenCtx?.ballotHash, ballotHash('q', 'c'));
+  assert.equal(seenCtx?.conveningNonce, 'nonce-1');
 });

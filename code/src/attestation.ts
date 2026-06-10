@@ -49,13 +49,15 @@ export interface Attestation {
   proofHash?: string;          // sha256 of the attestor proof artifact (enclave quote / zkTLS proof)
   challengeNonce?: string;     // orchestrator-generated token; must appear in the extracted text
   attestorBackend?: string;    // which backend produced the proof
+  vkId?: string;               // verification-key id (whitelisted, zk-web-proof.ts §5)
+  digestAlg?: string;          // versioned public-input digest algorithm (e.g. 'sha256-v1')
 }
 
 // The fields permitted ONLY on an 'attested' envelope, in addition to 'band'. Any other
 // key (or any of these on a non-attested band) is a parse error — the schema is closed.
 const ATTESTED_FIELDS = [
-  'certChainHash', 'challengeNonce', 'endpoint', 'extractionRule', 'modelVersion',
-  'proofHash', 'requestCommitment', 'requestId', 'responseHash', 'transcriptHash', 'attestorBackend',
+  'certChainHash', 'challengeNonce', 'digestAlg', 'endpoint', 'extractionRule', 'modelVersion',
+  'proofHash', 'requestCommitment', 'requestId', 'responseHash', 'transcriptHash', 'attestorBackend', 'vkId',
 ] as const;
 const ATTESTED_FIELD_SET: ReadonlySet<string> = new Set(ATTESTED_FIELDS);
 

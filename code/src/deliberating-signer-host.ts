@@ -18,6 +18,7 @@
 import { createInterface } from 'node:readline';
 import { loadOrCreateKeyring } from './keystore.ts';
 import { invokerFor } from './invokers.ts';
+import { mockAttestor } from './attestor.ts';
 import { makeHostHandler, type HostRequest } from './signer-host-core.ts';
 
 const validatorId = process.env.QRM_VALIDATOR_ID ?? 'V?';
@@ -26,7 +27,10 @@ if (!keystoreDir) throw new Error('deliberating host requires QRM_KEYSTORE_DIR (
 const key = loadOrCreateKeyring(keystoreDir, [validatorId]).keys[validatorId]; // private half lives ONLY here
 // The deliberation + signing logic is shared with the network host (round-57) — the
 // transport differs (stdio here, socket there), the child-side handler does not.
-const handle = makeHostHandler({ validatorId, key, invoke: invokerFor(validatorId) });
+// Proof-of-inference: the `sign` path runs through mockAttestor (every live vote reads
+// unattested/NO_BACKEND until a real backend slots in behind the same seam). The `audit`
+// path still uses the bare invoker, so `invoke` stays wired alongside the attestor.
+const handle = makeHostHandler({ validatorId, key, invoke: invokerFor(validatorId), attestor: mockAttestor(invokerFor(validatorId)) });
 
 const rl = createInterface({ input: process.stdin });
 rl.on('line', (line) => {

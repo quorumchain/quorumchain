@@ -78,7 +78,7 @@ const DEFAULT_SIGNER_TIMEOUT_MS = 660_000;
  *  fabricated vote. The timer is intentionally NOT unref'd: while convene awaits a signer the
  *  timeout must keep the loop alive so it actually fires (a hung signer may leave nothing else
  *  pending); it is always cleared the moment the signer settles, so it never lingers. */
-function signWithTimeout(s: Signer, prompt: string, context: string, verdicts: string[] | undefined, nonce: string, boundType: string | undefined, anchorComm: string | undefined, timeoutMs: number): Promise<SignedVote> {
+function signWithTimeout(s: Signer, prompt: string, context: string, verdicts: string[] | undefined, nonce: string, boundType: string | undefined, anchorComm: string | undefined, challengeNonce: string, timeoutMs: number): Promise<SignedVote> {
   return new Promise<SignedVote>((resolve, reject) => {
     let settled = false;
     const timer = setTimeout(() => {
@@ -86,7 +86,7 @@ function signWithTimeout(s: Signer, prompt: string, context: string, verdicts: s
       settled = true;
       reject(new Error(`signer ${s.validatorId} timed out after ${timeoutMs}ms (recorded as absence)`));
     }, timeoutMs);
-    s.signBallot(prompt, context, verdicts, nonce, boundType, anchorComm).then(
+    s.signBallot(prompt, context, verdicts, nonce, boundType, anchorComm, challengeNonce).then(
       (v) => { if (settled) return; settled = true; clearTimeout(timer); resolve(v); },
       (e) => { if (settled) return; settled = true; clearTimeout(timer); reject(e instanceof Error ? e : new Error(String(e))); },
     );
@@ -137,7 +137,11 @@ export async function convene(params: {
   // arrived: 2/3 is of the whole registered panel, so absences count against the bar.
   for (const s of params.signers) {
     try {
-      const vote = await signWithTimeout(s, params.prompt, params.context, params.verdicts, nonce, boundType, anchorComm, signerTimeoutMs);
+      // Proof-of-inference (§5): a per-validator challenge-nonce, DISTINCT from the
+      // convening `nonce`. It binds only into the attestation envelope (via the attestor)
+      // and NEVER enters ballotHash or the tally — the envelope is descriptive, not a vote.
+      const challengeNonce = randomBytes(16).toString('hex');
+      const vote = await signWithTimeout(s, params.prompt, params.context, params.verdicts, nonce, boundType, anchorComm, challengeNonce, signerTimeoutMs);
       if (vote.nonce !== nonce) {
         // a vote not bound to THIS convening (stale/replayed) is recorded as a failure,
         // never logged or counted — the orchestrator only accepts the nonce it issued

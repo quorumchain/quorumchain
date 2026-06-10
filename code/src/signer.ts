@@ -22,6 +22,8 @@ import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { ballotHash, signVote, type SignedVote, type ValidatorKey } from './signed-vote.ts';
 import { signDossier as signDossierFn, type ContraryDossier } from './dossier.ts';
+import { type Attestor } from './attestor.ts';
+import { buildPrompt, parseVerdict } from './panel.ts';
 
 export interface Signer {
   readonly validatorId: string;
@@ -37,8 +39,11 @@ export interface Signer {
    *  `anchorCommitment` (CIP-15 NI-15e) is the canonical commitment over the ballot's anchor
    *  set: when present, the signer derives the hash WITH it, so the anchors enter the signature
    *  and cannot be swapped post-vote. Both are derived by the orchestrator from the same declared
-   *  meta the registry records, so the registry entry, every vote, and ratify share one preimage. */
-  signBallot(prompt: string, context: string, verdicts?: string[], nonce?: string, boundType?: string, anchorCommitment?: string): Promise<SignedVote>;
+   *  meta the registry records, so the registry entry, every vote, and ratify share one preimage.
+   *  `challengeNonce` (proof-of-inference) is the orchestrator-generated challenge: when an attestor
+   *  is wired, the signer passes it to the attestor so the provenance envelope is bound to this
+   *  convening's challenge (it does NOT enter the ballot hash). Absent an attestor it is ignored. */
+  signBallot(prompt: string, context: string, verdicts?: string[], nonce?: string, boundType?: string, anchorCommitment?: string, challengeNonce?: string): Promise<SignedVote>;
   /** Sign a CIP-10 contrary-evidence dossier with this validator's key (child-side). */
   signDossier(dossier: ContraryDossier): Promise<ContraryDossier>;
   /** Run this validator's model invoker on a prompt and return raw output (CIP-10 audit). */
@@ -51,15 +56,25 @@ export function makeLocalSigner(params: {
   /** The validator's own deliberation: build the prompt, invoke the model, parse
    *  its verdict — all on the validator side, over the SAME content the hash binds. */
   deliberate: (prompt: string, context: string, verdicts?: string[]) => Promise<{ verdict: string; rawOutput: string }>;
+  /** Optional proof-of-inference attestor: when present it (not `deliberate`) supplies the
+   *  rawOutput AND the signed provenance envelope, bound to `challengeNonce`. Absent, the signer
+   *  is byte-identical to the legacy path (no attestation field on the vote). */
+  attestor?: Attestor;
 }): Signer {
-  const { validatorId, deliberate } = params;
+  const { validatorId, deliberate, attestor } = params;
   const privateKeyPem = params.key.privateKeyPem; // closure-captured; no getter, no property
   const publicKeyPem = params.key.publicKeyPem;
   return {
     validatorId,
     publicKeyPem,
-    async signBallot(prompt, context, verdicts, nonce, boundType, anchorCommitment) {
+    async signBallot(prompt, context, verdicts, nonce, boundType, anchorCommitment, challengeNonce) {
       const bh = ballotHash(prompt, context, boundType, anchorCommitment); // derived here — never caller-supplied (CIP-14 type + CIP-15 anchors when present)
+      if (attestor) {
+        const built = buildPrompt(prompt, context, verdicts);
+        const { rawOutput, attestation } = await attestor.invoke(validatorId, built, challengeNonce ?? '', { ballotHash: bh, conveningNonce: nonce ?? '' });
+        const verdict = parseVerdict(rawOutput);
+        return signVote({ validatorId, privateKeyPem, ballotHash: bh, verdict, rawOutput, nonce, attestation });
+      }
       const { verdict, rawOutput } = await deliberate(prompt, context, verdicts);
       return signVote({ validatorId, privateKeyPem, ballotHash: bh, verdict, rawOutput, nonce });
     },
@@ -128,8 +143,8 @@ export function makeRemoteSigner(params: { validatorId: string; hostPath: string
   return rpc({ type: 'pubkey' }).catch((err) => { child.kill(); throw err; }).then((res) => ({
     validatorId: params.validatorId,
     publicKeyPem: res.publicKeyPem as string,
-    async signBallot(prompt: string, context: string, verdicts?: string[], nonce?: string, boundType?: string, anchorCommitment?: string) {
-      const res = await rpc({ type: 'sign', prompt, context, verdicts, nonce, boundType, anchorCommitment });
+    async signBallot(prompt: string, context: string, verdicts?: string[], nonce?: string, boundType?: string, anchorCommitment?: string, challengeNonce?: string) {
+      const res = await rpc({ type: 'sign', prompt, context, verdicts, nonce, boundType, anchorCommitment, challengeNonce });
       return res.vote as SignedVote;
     },
     async signDossier(dossier: ContraryDossier) {

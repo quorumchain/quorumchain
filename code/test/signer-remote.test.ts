@@ -10,8 +10,11 @@ import { fileURLToPath } from 'node:url';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { ballotHash, verifyVote } from '../src/signed-vote.ts';
+import { ballotHash, verifyVote, generateValidatorKey } from '../src/signed-vote.ts';
+import type { SignedVote } from '../src/signed-vote.ts';
 import { makeRemoteSigner } from '../src/signer.ts';
+import { makeHostHandler } from '../src/signer-host-core.ts';
+import { mockAttestor } from '../src/attestor.ts';
 import { loadOrCreateKeyring } from '../src/keystore.ts';
 
 const HOST = fileURLToPath(new URL('../src/remote-signer-host.ts', import.meta.url));
@@ -102,4 +105,37 @@ test('the host derives the ballot hash from content (round-45 binding holds acro
   } finally {
     s.close();
   }
+});
+
+test('makeHostHandler with an attestor signs an unattested envelope on the sign request', async () => {
+  const key = generateValidatorKey();
+  const handle = makeHostHandler({ validatorId: 'V1', key, invoke: async () => 'unused', attestor: mockAttestor(async (p) => `echo:${p}`) });
+  const res = await handle({ type: 'sign', prompt: 'q', context: 'c', verdicts: ['YES', 'NO'], nonce: 'cn', challengeNonce: 'xn' });
+  const vote = res.vote as SignedVote;
+  assert.deepEqual(vote.attestation, { band: 'unattested', reason: 'NO_BACKEND' });
+  assert.equal(verifyVote(vote, key.publicKeyPem), true);
+  assert.match(vote.rawOutput, /^echo:/);
+});
+
+test('makeHostHandler WITHOUT an attestor signs a legacy vote (no attestation)', async () => {
+  const key = generateValidatorKey();
+  const handle = makeHostHandler({ validatorId: 'V1', key, invoke: async () => 'reasoning\nVERDICT: YES' });
+  const res = await handle({ type: 'sign', prompt: 'q', context: 'c', nonce: 'cn' });
+  const vote = res.vote as SignedVote;
+  assert.equal(vote.attestation, undefined);
+  assert.equal(verifyVote(vote, key.publicKeyPem), true);
+});
+
+test('makeHostHandler threads the derived ballotHash + nonce as requestCtx to the attestor', async () => {
+  const k = generateValidatorKey();
+  let seen: { ballotHash: string; conveningNonce: string } | undefined;
+  const attestor = {
+    async invoke(_v: string, _p: string, _x: string, ctx?: { ballotHash: string; conveningNonce: string }) {
+      seen = ctx; return { rawOutput: 'VERDICT: YES', attestation: { band: 'unattested' as const, reason: 'NO_BACKEND' as const } };
+    },
+  };
+  const handler = makeHostHandler({ validatorId: 'V1', key: k, invoke: async () => 'x', attestor });
+  await handler({ type: 'sign', prompt: 'q', context: 'c', nonce: 'n1' });
+  assert.equal(seen?.ballotHash, ballotHash('q', 'c'));
+  assert.equal(seen?.conveningNonce, 'n1');
 });

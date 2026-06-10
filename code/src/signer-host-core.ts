@@ -12,6 +12,7 @@
 import { ballotHash, signVote, type ValidatorKey } from './signed-vote.ts';
 import { buildPrompt, parseVerdict, type ValidatorInvoker } from './panel.ts';
 import { signDossier, type ContraryDossier } from './dossier.ts';
+import { type Attestor } from './attestor.ts';
 
 export interface HostRequest {
   id?: number;
@@ -20,6 +21,7 @@ export interface HostRequest {
   context?: string;
   verdicts?: string[];
   nonce?: string;
+  challengeNonce?: string; // proof-of-inference §5: orchestrator-generated, forwarded to the attestor child-side
   boundType?: string; // CIP-14: a hash-bound epistemic type, derived into the hash child-side
   anchorCommitment?: string; // CIP-15 NI-15e: the canonical anchor-set commitment, derived into the hash child-side
   dossier?: ContraryDossier; // CIP-10: unsigned dossier for child-side signing
@@ -28,8 +30,8 @@ export interface HostRequest {
 /** Build the handler. `key`'s private half is captured in the closure; only the
  *  public half is ever returned (the `pubkey` reply). A child-side invoker failure
  *  becomes a signed NO_VERDICT, so a dead CLI never crashes the host. */
-export function makeHostHandler(params: { validatorId: string; key: ValidatorKey; invoke: ValidatorInvoker }): (req: HostRequest) => Promise<Record<string, unknown>> {
-  const { validatorId, invoke } = params;
+export function makeHostHandler(params: { validatorId: string; key: ValidatorKey; invoke: ValidatorInvoker; attestor?: Attestor }): (req: HostRequest) => Promise<Record<string, unknown>> {
+  const { validatorId, invoke, attestor } = params;
   const privateKeyPem = params.key.privateKeyPem;
   const publicKeyPem = params.key.publicKeyPem;
   return async (req) => {
@@ -39,6 +41,14 @@ export function makeHostHandler(params: { validatorId: string; key: ValidatorKey
     if (req.type === 'sign') {
       const prompt = req.prompt ?? '';
       const context = req.context ?? '';
+      if (attestor) {
+        // Proof-of-inference path: the attestor produces BOTH rawOutput + provenance envelope.
+        const built = buildPrompt(prompt, context, req.verdicts);
+        const bh = ballotHash(prompt, context, req.boundType, req.anchorCommitment);
+        const { rawOutput, attestation } = await attestor.invoke(validatorId, built, req.challengeNonce ?? '', { ballotHash: bh, conveningNonce: req.nonce ?? '' });
+        const verdict = parseVerdict(rawOutput);
+        return { vote: signVote({ validatorId, privateKeyPem, ballotHash: bh, verdict, rawOutput, nonce: req.nonce, attestation }) };
+      }
       let rawOutput: string;
       try {
         rawOutput = await invoke(buildPrompt(prompt, context, req.verdicts));
